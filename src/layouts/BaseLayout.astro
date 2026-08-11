@@ -1,0 +1,91 @@
+---
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = "OLD TOWNS | Global Walking Tours & Cinematic Urban Exploration",
+  description = "Experience immersive 4K 60fps walking tours across historic cities, ancient streets, and modern metropolis routes around the world."
+} = Astro.props;
+---
+
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- SEO Meta Tags -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,700;1,400&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#0b0f17] text-slate-100 font-sans antialiased selection:bg-amber-500 selection:text-black">
+    
+    <!-- Navigation -->
+    <header class="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/10">
+      <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+        <a href="/" class="flex items-center gap-3 group">
+          <span class="text-2xl font-serif font-bold tracking-widest text-white group-hover:text-amber-400 transition-colors">
+            OLD TOWNS
+          </span>
+          <span class="hidden sm:inline-block text-[10px] uppercase tracking-widest px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-semibold">
+            POV TV
+          </span>
+        </a>
+
+        <nav class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide text-slate-300">
+          <a href="/" class="text-white hover:text-amber-400 transition-colors">Home</a>
+          <a href="#featured" class="hover:text-amber-400 transition-colors">Walking Tours</a>
+          <a href="#destinations" class="hover:text-amber-400 transition-colors">Destinations</a>
+        </nav>
+
+        <a 
+          href="#featured" 
+          class="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold text-xs uppercase tracking-wider px-5 py-2.5 rounded-full transition-all shadow-lg shadow-amber-500/20 hover:scale-105"
+        >
+          Watch Latest Tour
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Page Content -->
+    <main class="pt-20">
+      <slot />
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 border-t border-white/10 py-16 text-slate-400 text-sm">
+      <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-12">
+        <div class="md:col-span-2 space-y-4">
+          <h2 class="text-2xl font-serif font-bold text-white tracking-widest">OLD TOWNS</h2>
+          <p class="text-slate-400 max-w-sm leading-relaxed">
+            Immersive 4K walking tours around the world. Designed for large screen TV viewing, bringing historic streets and modern cities directly to your home.
+          </p>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold uppercase text-xs tracking-wider mb-4">Quick Links</h3>
+          <ul class="space-y-2.5">
+            <li><a href="#featured" class="hover:text-amber-400 transition-colors">Düsseldorf Tour</a></li>
+            <li><a href="#destinations" class="hover:text-amber-400 transition-colors">Walking Tours</a></li>
+          </ul>
+        </div>
+        <div>
+          <h3 class="text-white font-semibold uppercase text-xs tracking-wider mb-4">Channel & Broadcast</h3>
+          <p class="text-xs text-slate-400 mb-3">Optimized for Smart TV & 4K HDR playback with spatial audio.</p>
+        </div>
+      </div>
+    </footer>
+
+  </body>
+</html>

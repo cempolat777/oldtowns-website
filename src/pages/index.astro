@@ -1,0 +1,732 @@
+```astro
+---
+import heroIzmir from "../assets/Walk for a Lifetime.png";
+import heroGermany from "../assets/Walk for a Lifetime (1).png";
+
+const featuredVideo = "cXorOhK2Abo";
+
+const izmirTours = [
+  {
+    id: "-_CnD2d4Zus",
+    title: "Izmir City Walk | Vibrant Streets & Old Town",
+    views: "18,607 views"
+  },
+  {
+    id: "BjBfo1UPJZA",
+    title: "Izmir Walking Tour | Lively Spring Atmosphere",
+    views: "11,201 views"
+  },
+  {
+    id: "1c4lvi2geng",
+    title: "Izmir Walking Tour | Lively City Streets",
+    views: "10,783 views"
+  },
+  {
+    id: "DrtuvDgJvmc",
+    title: "Izmir Walking Tour | Historic Kemeraltı Bazaar",
+    views: "6,809 views"
+  },
+  {
+    id: "HsQ0-45emcU",
+    title: "Izmir Walking Tour | Historic Streets & City Life",
+    views: "5,796 views"
+  }
+];
+
+const germanyTours = [
+  {
+    id: "cXorOhK2Abo",
+    title: "Düsseldorf Walking Tour",
+    views: ""
+  },
+  {
+    id: "7e8o68jZyvU",
+    title: "Düsseldorf Walking Tour",
+    views: ""
+  },
+  {
+    id: "JFWYuQnf1yg",
+    title: "Düsseldorf Walking Tour",
+    views: ""
+  },
+  {
+    id: "pHAFLoHfFz8",
+    title: "Düsseldorf Walking Tour",
+    views: ""
+  },
+  {
+    id: "MUw1riHcsaA",
+    title: "Düsseldorf Walking Tour",
+    views: ""
+  }
+];
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Old Towns | Walking Tours Around the World</title>
+    <meta
+      name="description"
+      content="Explore cities, streets and destinations through immersive walking tours."
+    />
+  </head>
+
+  <body>
+    <header>
+      <div class="container nav-inner">
+        <a href="/" class="logo">OLD TOWNS</a>
+
+        <nav>
+          <a href="/">Home</a>
+          <a href="/walking-tours">Walking Tours</a>
+          <a href="/explore">Explore</a>
+          <a href="/map">Map</a>
+          <a href="/journal">Journal</a>
+          <a href="/about">About</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- HERO -->
+      <section class="hero">
+        <div class="hero-slides">
+          <img src={heroIzmir.src} alt="Izmir walking tour" />
+          <img src={heroGermany.src} alt="Germany walking tour" />
+        </div>
+
+        <div class="hero-overlay">
+          <div class="container">
+            <p class="eyebrow">WALKING TOURS</p>
+
+            <h1>Explore the world<br />one walk at a time.</h1>
+
+            <p class="hero-text">
+              Discover cities, streets and unforgettable places through
+              immersive walking tours.
+            </p>
+
+            <a href="/walking-tours" class="button">
+              Explore Walking Tours
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- FEATURED -->
+      <section class="featured">
+        <div class="container">
+          <div class="section-heading">
+            <p class="eyebrow">FEATURED WALK</p>
+            <h2>Explore Düsseldorf</h2>
+          </div>
+
+          <div class="featured-grid">
+            <div class="featured-info">
+              <p>
+                Walk through Düsseldorf and discover its streets, architecture,
+                atmosphere and everyday city life.
+              </p>
+
+              <a href="/walking-tours" class="text-link">
+                View all walking tours →
+              </a>
+            </div>
+
+            <div class="video-wrapper">
+              <iframe
+                src={`https://www.youtube.com/embed/${featuredVideo}`}
+                title="Düsseldorf Walking Tour"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerpolicy="strict-origin-when-cross-origin"
+                allowfullscreen
+              ></iframe>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- POPULAR IZMIR -->
+      <section class="popular">
+        <div class="container">
+
+          <div class="section-heading">
+            <p class="eyebrow">POPULAR WALKS</p>
+            <h2>Turkey · İzmir</h2>
+          </div>
+
+          <div class="tour-grid">
+            {izmirTours.map((tour) => (
+              <button
+                class="tour-card"
+                data-video={tour.id}
+                data-title={tour.title}
+              >
+                <div class="thumbnail">
+                  <img
+                    src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
+                    alt={tour.title}
+                  />
+
+                  <div class="play-button">▶</div>
+                </div>
+
+                <div class="tour-info">
+                  <span>🇹🇷 İZMIR · TURKEY</span>
+                  <h3>{tour.title}</h3>
+                  <small>{tour.views} · 4K</small>
+                </div>
+              </button>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      <!-- POPULAR GERMANY -->
+      <section class="popular germany">
+        <div class="container">
+
+          <div class="section-heading">
+            <p class="eyebrow">POPULAR WALKS</p>
+            <h2>Germany · Düsseldorf</h2>
+          </div>
+
+          <div class="tour-grid">
+            {germanyTours.map((tour) => (
+              <button
+                class="tour-card"
+                data-video={tour.id}
+                data-title={tour.title}
+              >
+                <div class="thumbnail">
+                  <img
+                    src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
+                    alt={tour.title}
+                  />
+
+                  <div class="play-button">▶</div>
+                </div>
+
+                <div class="tour-info">
+                  <span>🇩🇪 DÜSSELDORF · GERMANY</span>
+                  <h3>{tour.title}</h3>
+                  <small>{tour.views ? `${tour.views} · ` : ""}4K</small>
+                </div>
+              </button>
+            ))}
+          </div>
+
+        </div>
+      </section>
+
+      <!-- VIDEO MODAL -->
+      <div class="video-modal" id="videoModal">
+        <div class="modal-content">
+
+          <button class="close-modal" id="closeModal">×</button>
+
+          <div class="modal-video">
+            <iframe
+              id="modalPlayer"
+              src=""
+              title="Walking Tour"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerpolicy="strict-origin-when-cross-origin"
+              allowfullscreen
+            ></iframe>
+          </div>
+
+          <h3 id="modalTitle"></h3>
+
+        </div>
+      </div>
+
+      <!-- DESTINATIONS -->
+      <section class="destinations">
+        <div class="container">
+
+          <div class="section-heading">
+            <p class="eyebrow">EXPLORE</p>
+            <h2>Our Destinations</h2>
+          </div>
+
+          <div class="destination-grid">
+
+            <a href="/destinations/turkey" class="destination">
+              <span>Turkey</span>
+              <small>Explore →</small>
+            </a>
+
+            <a href="/destinations/germany" class="destination">
+              <span>Germany</span>
+              <small>Explore →</small>
+            </a>
+
+            <div class="destination coming-soon">
+              <span>More destinations</span>
+              <small>Coming soon</small>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- LATEST -->
+      <section class="latest">
+        <div class="container">
+
+          <div class="section-heading">
+            <p class="eyebrow">LATEST</p>
+            <h2>Latest Walking Tours</h2>
+          </div>
+
+          <p class="empty-message">
+            More walking tours will be added here.
+          </p>
+
+        </div>
+      </section>
+
+    </main>
+
+    <footer>
+      <div class="container footer-inner">
+        <strong>OLD TOWNS</strong>
+        <span>Walking Tours Around the World</span>
+      </div>
+    </footer>
+
+    <script>
+      const modal = document.getElementById("videoModal");
+      const player = document.getElementById("modalPlayer");
+      const modalTitle = document.getElementById("modalTitle");
+      const closeButton = document.getElementById("closeModal");
+
+      document.querySelectorAll(".tour-card").forEach((card) => {
+        card.addEventListener("click", () => {
+          const videoId = card.getAttribute("data-video");
+          const title = card.getAttribute("data-title");
+
+          player.src =
+            `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+
+          modalTitle.textContent = title;
+          modal.classList.add("open");
+          document.body.classList.add("modal-open");
+        });
+      });
+
+      function closeVideo() {
+        modal.classList.remove("open");
+        player.src = "";
+        document.body.classList.remove("modal-open");
+      }
+
+      closeButton.addEventListener("click", closeVideo);
+
+      modal.addEventListener("click", (event) => {
+        if (event.target === modal) {
+          closeVideo();
+        }
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          closeVideo();
+        }
+      });
+    </script>
+  </body>
+</html>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    color: #111;
+    background: #fff;
+  }
+
+  body.modal-open {
+    overflow: hidden;
+  }
+
+  .container {
+    width: min(1180px, 90%);
+    margin: 0 auto;
+  }
+
+  header {
+    border-bottom: 1px solid #eee;
+    background: #fff;
+  }
+
+  .nav-inner {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+  }
+
+  .logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: #111;
+    text-decoration: none;
+    letter-spacing: 1px;
+  }
+
+  nav {
+    display: flex;
+    gap: 26px;
+  }
+
+  nav a {
+    color: #333;
+    text-decoration: none;
+    font-size: 14px;
+  }
+
+  .hero {
+    position: relative;
+    min-height: 620px;
+    overflow: hidden;
+    color: #fff;
+  }
+
+  .hero-slides {
+    position: absolute;
+    inset: 0;
+    display: flex;
+  }
+
+  .hero-slides img {
+    width: 50%;
+    height: 620px;
+    object-fit: cover;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    background: linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.72),
+      rgba(0, 0, 0, 0.28),
+      rgba(0, 0, 0, 0.08)
+    );
+  }
+
+  .eyebrow {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: clamp(44px, 6vw, 76px);
+    line-height: 1.02;
+    margin: 0 0 24px;
+    max-width: 800px;
+  }
+
+  .hero-text {
+    max-width: 560px;
+    font-size: 18px;
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+
+  .button {
+    display: inline-block;
+    padding: 14px 22px;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    font-weight: 700;
+  }
+
+  section:not(.hero) {
+    padding: 90px 0;
+  }
+
+  .section-heading {
+    margin-bottom: 40px;
+  }
+
+  h2 {
+    font-size: 42px;
+    margin: 0;
+  }
+
+  .featured-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 50px;
+    align-items: center;
+  }
+
+  .featured-info p {
+    line-height: 1.7;
+    font-size: 17px;
+  }
+
+  .text-link {
+    color: #111;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .video-wrapper {
+    aspect-ratio: 16 / 9;
+  }
+
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  .tour-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+  }
+
+  .tour-card {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    color: #111;
+    text-align: left;
+    font-family: inherit;
+    background: #f5f5f5;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .tour-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .thumbnail {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #ddd;
+  }
+
+  .thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+  }
+
+  .tour-card:hover .thumbnail img {
+    transform: scale(1.03);
+  }
+
+  .play-button {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 62px;
+    height: 62px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.78);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 23px;
+    padding-left: 4px;
+    box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  .tour-info {
+    padding: 20px;
+  }
+
+  .tour-info span {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+  }
+
+  .tour-info h3 {
+    font-size: 19px;
+    line-height: 1.35;
+    margin: 10px 0;
+  }
+
+  .tour-info small {
+    color: #777;
+  }
+
+  .germany {
+    background: #fafafa;
+  }
+
+  .destination-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .destination {
+    min-height: 180px;
+    padding: 28px;
+    background: #f3f3f3;
+    color: #111;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+
+  .destination span {
+    font-size: 28px;
+    font-weight: 700;
+  }
+
+  .destination small {
+    font-size: 13px;
+  }
+
+  .coming-soon {
+    color: #777;
+  }
+
+  .empty-message {
+    color: #777;
+  }
+
+  /* VIDEO MODAL */
+
+  .video-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 30px;
+    background: rgba(0, 0, 0, 0.88);
+  }
+
+  .video-modal.open {
+    display: flex;
+  }
+
+  .modal-content {
+    position: relative;
+    width: min(1000px, 95vw);
+    background: #111;
+    padding: 20px;
+  }
+
+  .modal-video {
+    aspect-ratio: 16 / 9;
+  }
+
+  .modal-video iframe {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .modal-content h3 {
+    color: #fff;
+    margin: 15px 0 0;
+    font-size: 20px;
+  }
+
+  .close-modal {
+    position: absolute;
+    right: -15px;
+    top: -15px;
+    z-index: 2;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 50%;
+    background: #fff;
+    color: #111;
+    font-size: 28px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  footer {
+    border-top: 1px solid #eee;
+    padding: 30px 0;
+  }
+
+  .footer-inner {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    color: #666;
+    font-size: 13px;
+  }
+
+  @media (max-width: 800px) {
+    nav {
+      display: none;
+    }
+
+    .hero {
+      min-height: 560px;
+    }
+
+    .hero-slides img {
+      height: 560px;
+    }
+
+    .hero-slides img:nth-child(2) {
+      display: none;
+    }
+
+    .hero-slides img:first-child {
+      width: 100%;
+    }
+
+    .featured-grid,
+    .tour-grid,
+    .destination-grid {
+      grid-template-columns: 1fr;
+    }
+
+    h1 {
+      font-size: 48px;
+    }
+
+    .video-modal {
+      padding: 15px;
+    }
+
+    .modal-content {
+      width: 100%;
+      padding: 10px;
+    }
+  }
+</style>
+```
