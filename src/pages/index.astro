@@ -157,7 +157,7 @@ const youtubeHighlights = [
           {
             heroImages.map((image, index) => (
               <img
-                src={image.src}
+                src={typeof image === "string" ? image : image.src}
                 alt={`Old Towns walking tour ${index + 1}`}
                 class:list={{ active: index === 0 }}
                 loading={index === 0 ? "eager" : "lazy"}
@@ -244,10 +244,9 @@ const youtubeHighlights = [
                   <div class="youtube-thumbnail">
 
                     <img
-                      src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
+                      src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
                       alt={tour.title}
                       loading="lazy"
-                      onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${tour.id}/hqdefault.jpg';`}
                     />
 
                     <div class="youtube-play">
@@ -302,10 +301,9 @@ const youtubeHighlights = [
                   <div class="thumbnail">
 
                     <img
-                      src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
+                      src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
                       alt={tour.title}
                       loading="lazy"
-                      onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${tour.id}/hqdefault.jpg';`}
                     />
 
                     <div class="play-button">
@@ -356,10 +354,9 @@ const youtubeHighlights = [
                   <div class="thumbnail">
 
                     <img
-                      src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
+                      src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
                       alt={tour.title}
                       loading="lazy"
-                      onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${tour.id}/hqdefault.jpg';`}
                     />
 
                     <div class="play-button">
@@ -507,8 +504,13 @@ const youtubeHighlights = [
       if (menuToggle && mainNav) {
         menuToggle.addEventListener("click", () => {
           const isOpen = mainNav.classList.toggle("open");
+
           menuToggle.classList.toggle("open", isOpen);
-          menuToggle.setAttribute("aria-expanded", String(isOpen));
+
+          menuToggle.setAttribute(
+            "aria-expanded",
+            String(isOpen)
+          );
         });
 
         mainNav.querySelectorAll("a").forEach((link) => {
@@ -521,11 +523,11 @@ const youtubeHighlights = [
       }
 
 
-      const modal = document.getElementById("videoModal") as HTMLDivElement;
-      const player = document.getElementById("modalPlayer") as HTMLIFrameElement;
-      const modalTitle = document.getElementById("modalTitle") as HTMLHeadingElement;
-      const modalYoutube = document.getElementById("modalYoutube") as HTMLAnchorElement;
-      const closeButton = document.getElementById("closeModal") as HTMLButtonElement;
+      const modal = document.getElementById("videoModal") as HTMLDivElement | null;
+      const player = document.getElementById("modalPlayer") as HTMLIFrameElement | null;
+      const modalTitle = document.getElementById("modalTitle") as HTMLHeadingElement | null;
+      const modalYoutube = document.getElementById("modalYoutube") as HTMLAnchorElement | null;
+      const closeButton = document.getElementById("closeModal") as HTMLButtonElement | null;
 
 
       document
@@ -534,13 +536,21 @@ const youtubeHighlights = [
 
           card.addEventListener("click", () => {
 
-            const videoId = card.getAttribute("data-video");
-            const title = card.getAttribute("data-title");
+            const videoId = card.getAttribute("data-video") || "";
+            const title = card.getAttribute("data-title") || "";
+
+            if (!player || !modal || !modalTitle || !modalYoutube) {
+              return;
+            }
+
+            if (!videoId) {
+              return;
+            }
 
             player.src =
               `https://www.youtube.com/embed/${videoId}?autoplay=1`;
 
-            player.title = title;
+            player.title = title || "Walking Tour";
 
             modalTitle.textContent = title;
 
@@ -557,22 +567,26 @@ const youtubeHighlights = [
 
 
       function closeVideo() {
-        modal.classList.remove("open");
-
-        player.src = "";
-
-        document.body.classList.remove("modal-open");
+        if (modal && player) {
+          modal.classList.remove("open");
+          player.src = "";
+          document.body.classList.remove("modal-open");
+        }
       }
 
 
-      closeButton.addEventListener("click", closeVideo);
+      if (closeButton) {
+        closeButton.addEventListener("click", closeVideo);
+      }
 
 
-      modal.addEventListener("click", (event) => {
-        if (event.target === modal) {
-          closeVideo();
-        }
-      });
+      if (modal) {
+        modal.addEventListener("click", (event) => {
+          if (event.target === modal) {
+            closeVideo();
+          }
+        });
+      }
 
 
       document.addEventListener("keydown", (event) => {
