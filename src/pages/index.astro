@@ -99,9 +99,7 @@ const germanyTours = [
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
-
     <title>Old Towns | Walking Tours Around the World</title>
-
     <meta
       name="description"
       content="Explore cities, streets and destinations through immersive 4K walking tours."
@@ -148,7 +146,6 @@ const germanyTours = [
     </header>
 
     <main>
-
       <!-- HERO SECTION -->
       <section class="hero">
         <div class="hero-slides">
@@ -166,12 +163,16 @@ const germanyTours = [
 
         <div class="hero-overlay">
           <div class="container hero-content">
-
             <div class="hero-copy">
               <p class="eyebrow">WALKING TOURS</p>
 
-              <h1>Walk for a lifetime.</h1>
+              <!-- 1. SLOGAN (EN BÜYÜK) -->
+              <h1 class="slogan">Walk for a lifetime.</h1>
 
+              <!-- 2. ANA BAŞLIK METNİ (ORTA BOYUT) -->
+              <h2 class="hero-subheading">Explore the world one walk at a time.</h2>
+
+              <!-- 3. AÇIKLAMA METNİ (EN KÜÇÜK) -->
               <p class="hero-text">
                 Discover cities, streets and unforgettable places through
                 immersive 4K walking tours.
@@ -213,16 +214,13 @@ const germanyTours = [
                 </a>
               </div>
             </div>
-
           </div>
         </div>
       </section>
 
-
-      <!-- RECOMMENDED FOR YOU -->
+      <!-- RECOMMENDED FOR YOU (5 GRID) -->
       <section class="youtube-section">
         <div class="container">
-
           <div class="section-heading">
             <p class="section-label">RECOMMENDED FOR YOU</p>
             <h2>Handpicked Walks</h2>
@@ -238,21 +236,15 @@ const germanyTours = [
                   type="button"
                 >
                   <div class="youtube-thumbnail">
-
                     <img
                       src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
                       alt={tour.title}
                       loading="lazy"
                     />
 
-                    <div class="youtube-play">
-                      ▶
-                    </div>
+                    <div class="youtube-play">▶</div>
 
-                    <div class="youtube-watch-small">
-                      Watch on YouTube
-                    </div>
-
+                    <div class="youtube-watch-small">Watch on YouTube</div>
                   </div>
 
                   <div class="youtube-card-info">
@@ -273,15 +265,12 @@ const germanyTours = [
               Visit Old Towns on YouTube →
             </a>
           </div>
-
         </div>
       </section>
-
 
       <!-- POPULAR IZMIR -->
       <section class="popular">
         <div class="container">
-
           <div class="section-heading">
             <p class="section-label">POPULAR WALKS</p>
             <h2>Turkey · İzmir</h2>
@@ -297,45 +286,32 @@ const germanyTours = [
                   type="button"
                 >
                   <div class="thumbnail">
-
                     <img
                       src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
                       alt={tour.title}
                       loading="lazy"
                     />
 
-                    <div class="play-button">
-                      ▶
-                    </div>
+                    <div class="play-button">▶</div>
 
-                    <div class="youtube-watch-small">
-                      Watch on YouTube
-                    </div>
-
+                    <div class="youtube-watch-small">Watch on YouTube</div>
                   </div>
 
                   <div class="tour-info">
                     <span>🇹🇷 IZMIR · TURKEY</span>
-
                     <h3>{tour.title}</h3>
-
-                    <small>
-                      {tour.views ? `${tour.views} · ` : ""}4K
-                    </small>
+                    <small>{tour.views ? `${tour.views} · ` : ""}4K</small>
                   </div>
                 </button>
               ))
             }
           </div>
-
         </div>
       </section>
-
 
       <!-- POPULAR GERMANY -->
       <section class="popular germany">
         <div class="container">
-
           <div class="section-heading">
             <p class="section-label">POPULAR WALKS</p>
             <h2>Germany · Düsseldorf</h2>
@@ -351,45 +327,32 @@ const germanyTours = [
                   type="button"
                 >
                   <div class="thumbnail">
-
                     <img
                       src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
                       alt={tour.title}
                       loading="lazy"
                     />
 
-                    <div class="play-button">
-                      ▶
-                    </div>
+                    <div class="play-button">▶</div>
 
-                    <div class="youtube-watch-small">
-                      Watch on YouTube
-                    </div>
-
+                    <div class="youtube-watch-small">Watch on YouTube</div>
                   </div>
 
                   <div class="tour-info">
                     <span>🇩🇪 DÜSSELDORF · GERMANY</span>
-
                     <h3>{tour.title}</h3>
-
-                    <small>
-                      {tour.views ? `${tour.views} · ` : ""}4K
-                    </small>
+                    <small>{tour.views ? `${tour.views} · ` : ""}4K</small>
                   </div>
                 </button>
               ))
             }
           </div>
-
         </div>
       </section>
-
 
       <!-- VIDEO MODAL -->
       <div class="video-modal" id="videoModal">
         <div class="modal-content">
-
           <button
             class="close-modal"
             id="closeModal"
@@ -421,22 +384,18 @@ const germanyTours = [
           >
             Watch on YouTube
           </a>
-
         </div>
       </div>
-
 
       <!-- DESTINATIONS -->
       <section class="destinations">
         <div class="container">
-
           <div class="section-heading">
             <p class="section-label">EXPLORE</p>
             <h2>Our Destinations</h2>
           </div>
 
           <div class="destination-grid">
-
             <a href="/destinations/turkey" class="destination">
               <span>Turkey</span>
               <small>Explore →</small>
@@ -451,14 +410,10 @@ const germanyTours = [
               <span>More destinations</span>
               <small>Coming soon</small>
             </div>
-
           </div>
-
         </div>
       </section>
-
     </main>
-
 
     <footer>
       <div class="container footer-inner">
@@ -466,7 +421,6 @@ const germanyTours = [
         <span>Walking Tours Around the World</span>
       </div>
     </footer>
-
 
     <script>
       const slides = document.querySelectorAll(".hero-slides img");
@@ -553,10 +507,8 @@ const germanyTours = [
         }
       });
     </script>
-
   </body>
 </html>
-
 
 <style>
   * {
@@ -574,19 +526,20 @@ const germanyTours = [
     overflow: hidden;
   }
 
+  /* CONTAINER KONTROLÜ - SİMETRİ SAĞLAR */
   .container {
-    width: min(1320px, 94%);
+    width: min(1400px, 92%);
     margin: 0 auto;
   }
 
-  /* HEADER */
+  /* HEADER & BÜYÜTÜLMÜŞ LOGO */
   header {
     border-bottom: 1px solid #eee;
     background: #fff;
   }
 
   .nav-inner {
-    min-height: 82px;
+    min-height: 90px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -597,28 +550,28 @@ const germanyTours = [
     display: inline-flex;
     align-items: stretch;
     text-decoration: none;
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 1px;
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
     line-height: 1;
   }
 
   .logo-old {
     background: #111;
     color: #f3c400;
-    padding: 12px 11px;
+    padding: 15px 16px;
   }
 
   .logo-towns {
     background: #f3c400;
     color: #111;
-    padding: 12px 11px;
+    padding: 15px 16px;
   }
 
   nav {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 28px;
   }
 
   nav a {
@@ -635,7 +588,7 @@ const germanyTours = [
   .youtube-button {
     background: #e60000;
     color: #ffffff !important;
-    padding: 11px 17px;
+    padding: 12px 20px;
     font-weight: 800 !important;
     border-radius: 2px;
   }
@@ -674,7 +627,7 @@ const germanyTours = [
     transform: translateY(-7px) rotate(-45deg);
   }
 
-  /* HERO SECTION */
+  /* HERO SECTION & ORANTILI YERLEŞİM */
   .hero {
     position: relative;
     min-height: 640px;
@@ -710,50 +663,59 @@ const germanyTours = [
     align-items: center;
     background: linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0.85) 0%,
-      rgba(0, 0, 0, 0.65) 45%,
-      rgba(0, 0, 0, 0.25) 80%,
-      rgba(0, 0, 0, 0.10) 100%
+      rgba(0, 0, 0, 0.88) 0%,
+      rgba(0, 0, 0, 0.70) 50%,
+      rgba(0, 0, 0, 0.20) 100%
     );
   }
 
   .hero-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 60px;
+    gap: 50px;
     width: 100%;
-    max-width: 1400px;
-    margin-left: 20px;
-    margin-right: auto;
-    padding-right: 20px;
   }
 
   .hero-copy {
+    flex: 1;
     max-width: 620px;
   }
 
   .eyebrow {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 800;
     letter-spacing: 2px;
     margin-bottom: 16px;
     color: #f3c400;
   }
 
-  h1 {
-    font-size: clamp(48px, 6vw, 76px);
-    line-height: 1.05;
-    margin: 0 0 24px;
-    font-weight: 800;
+  /* 1. SLOGAN (EN BÜYÜK VE TEK SATIR) */
+  .slogan {
+    font-size: clamp(38px, 4.2vw, 64px);
+    line-height: 1.1;
+    margin: 0 0 16px 0;
+    font-weight: 900;
+    white-space: nowrap;
   }
 
+  /* 2. ANA BAŞLIK METNİ (ORTA BOYUT) */
+  .hero-subheading {
+    font-size: clamp(28px, 3.2vw, 48px);
+    line-height: 1.12;
+    margin: 0 0 20px 0;
+    font-weight: 800;
+    color: #ffffff;
+    max-width: 580px;
+  }
+
+  /* 3. AÇIKLAMA METNİ (EN KÜÇÜK) */
   .hero-text {
-    max-width: 520px;
-    font-size: 18px;
+    max-width: 500px;
+    font-size: 16px;
     line-height: 1.6;
     margin-bottom: 30px;
-    color: #e0e0e0;
+    color: #d8d8d8;
   }
 
   .hero-actions {
@@ -781,16 +743,16 @@ const germanyTours = [
   }
 
   .hero-video {
+    flex: 1;
+    max-width: 560px;
     width: 100%;
-    max-width: 620px;
-    margin-left: auto;
   }
 
   .video-frame {
     position: relative;
     aspect-ratio: 16 / 9;
     background: #000;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.45);
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.5);
   }
 
   iframe {
@@ -837,12 +799,11 @@ const germanyTours = [
     line-height: 1.1;
   }
 
-  /* RECOMMENDED FOR YOU */
   .youtube-section {
     background: #fff;
   }
 
-  /* POPULAR & RECOMMENDED GRID (5 COLUMNS) */
+  /* POPULAR & RECOMMENDED GRID (5 EŞİT KOLON) */
   .tour-grid {
     display: grid;
     gap: 20px;
@@ -1066,8 +1027,8 @@ const germanyTours = [
     font-size: 13px;
   }
 
-  /* RESPONSIVE */
-  @media (max-width: 1200px) {
+  /* RESPONSIVE DÜZENLEMELER */
+  @media (max-width: 1280px) {
     .tour-grid.five {
       grid-template-columns: repeat(3, 1fr);
     }
@@ -1075,20 +1036,17 @@ const germanyTours = [
 
   @media (max-width: 1024px) {
     .hero-content {
-      grid-template-columns: 1fr;
-      gap: 35px;
-      margin-left: auto;
-      width: min(1200px, 92%);
-      padding-right: 0;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 40px;
     }
 
-    .hero {
-      min-height: 760px;
+    .slogan {
+      white-space: normal;
     }
 
     .hero-video {
-      max-width: 650px;
-      margin-left: 0;
+      max-width: 100%;
     }
   }
 
@@ -1131,23 +1089,6 @@ const germanyTours = [
       display: inline-block;
     }
 
-    .hero {
-      min-height: 720px;
-    }
-
-    .hero-overlay {
-      align-items: flex-start;
-      padding-top: 60px;
-    }
-
-    h1 {
-      font-size: 44px;
-    }
-
-    .hero-text {
-      font-size: 16px;
-    }
-
     .tour-grid.five {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -1155,41 +1096,24 @@ const germanyTours = [
     .destination-grid {
       grid-template-columns: 1fr;
     }
-
-    h2 {
-      font-size: 32px;
-    }
-
-    .video-modal {
-      padding: 15px;
-    }
-
-    .modal-content {
-      width: 100%;
-      padding: 10px;
-    }
   }
 
-@media (max-width: 520px) {
+  @media (max-width: 520px) {
     .logo {
-      font-size: 17px;
+      font-size: 18px;
     }
 
     .logo-old,
     .logo-towns {
-      padding: 10px 8px;
+      padding: 10px 10px;
     }
 
-    .hero {
-      min-height: 680px;
+    .slogan {
+      font-size: 32px;
     }
 
-    .hero-overlay {
-      padding-top: 45px;
-    }
-
-    h1 {
-      font-size: 36px;
+    .hero-subheading {
+      font-size: 24px;
     }
 
     .hero-actions {
@@ -1199,10 +1123,6 @@ const germanyTours = [
 
     .tour-grid.five {
       grid-template-columns: 1fr;
-    }
-
-    section:not(.hero) {
-      padding: 55px 0;
     }
   
 </style>
