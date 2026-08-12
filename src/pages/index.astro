@@ -4,13 +4,12 @@ import heroGermany from "../assets/Walk for a Lifetime (1).png";
 
 const featuredVideo = "cXorOhK2Abo";
 
-// Sadece mevcut 2 görsel döngüye alındı
 const heroImages = [
   heroIzmir,
   heroGermany
 ];
 
-// YouTube "Size Özel / Recommendations" Bölümü
+// YouTube Recommendations (5 Video)
 const recommendedWalks = [
   {
     id: "cXorOhK2Abo",
@@ -31,6 +30,11 @@ const recommendedWalks = [
     id: "DrtuvDgJvmc",
     title: "Izmir Walking Tour | Historic Kemeraltı Bazaar",
     views: "6,809 views"
+  },
+  {
+    id: "HsQ0-45emcU",
+    title: "Izmir Walking Tour | Historic Streets & City Life",
+    views: "5,796 views"
   }
 ];
 
@@ -166,10 +170,7 @@ const germanyTours = [
             <div class="hero-copy">
               <p class="eyebrow">WALKING TOURS</p>
 
-              <h1>
-                Explore the world<br />
-                one walk at a time.
-              </h1>
+              <h1>Walk for a lifetime.</h1>
 
               <p class="hero-text">
                 Discover cities, streets and unforgettable places through
@@ -177,7 +178,7 @@ const germanyTours = [
               </p>
 
               <div class="hero-actions">
-                <a href="/walking-tours" class="button">
+                <a href="/walking-tours" class="button button-explore">
                   Explore Walking Tours
                 </a>
 
@@ -227,7 +228,7 @@ const germanyTours = [
             <h2>Handpicked Walks</h2>
           </div>
 
-          <div class="youtube-grid four">
+          <div class="tour-grid five">
             {
               recommendedWalks.map((tour) => (
                 <button
@@ -574,7 +575,7 @@ const germanyTours = [
   }
 
   .container {
-    width: min(1200px, 92%);
+    width: min(1320px, 94%);
     margin: 0 auto;
   }
 
@@ -632,10 +633,11 @@ const germanyTours = [
   }
 
   .youtube-button {
-    background: #111;
-    color: #f3c400 !important;
+    background: #e60000;
+    color: #ffffff !important;
     padding: 11px 17px;
     font-weight: 800 !important;
+    border-radius: 2px;
   }
 
   /* MOBILE MENU TOGGLE */
@@ -675,7 +677,7 @@ const germanyTours = [
   /* HERO SECTION */
   .hero {
     position: relative;
-    min-height: 620px;
+    min-height: 640px;
     overflow: hidden;
     color: #fff;
   }
@@ -708,25 +710,27 @@ const germanyTours = [
     align-items: center;
     background: linear-gradient(
       90deg,
-      rgba(0, 0, 0, 0.82) 0%,
-      rgba(0, 0, 0, 0.60) 40%,
-      rgba(0, 0, 0, 0.25) 75%,
+      rgba(0, 0, 0, 0.85) 0%,
+      rgba(0, 0, 0, 0.65) 45%,
+      rgba(0, 0, 0, 0.25) 80%,
       rgba(0, 0, 0, 0.10) 100%
     );
   }
 
   .hero-content {
     display: grid;
-    grid-template-columns: 1fr 0.95fr;
+    grid-template-columns: 1fr 1fr;
     align-items: center;
-    gap: 50px;
-    margin-left: max(20px, calc((100vw - 1200px) / 2));
+    gap: 60px;
+    width: 100%;
+    max-width: 1400px;
+    margin-left: 20px;
     margin-right: auto;
     padding-right: 20px;
   }
 
   .hero-copy {
-    max-width: 580px;
+    max-width: 620px;
   }
 
   .eyebrow {
@@ -738,9 +742,10 @@ const germanyTours = [
   }
 
   h1 {
-    font-size: clamp(40px, 5.5vw, 70px);
+    font-size: clamp(48px, 6vw, 76px);
     line-height: 1.05;
     margin: 0 0 24px;
+    font-weight: 800;
   }
 
   .hero-text {
@@ -757,26 +762,28 @@ const germanyTours = [
     gap: 14px;
   }
 
-  .button {
+  .button-explore {
     display: inline-block;
     padding: 14px 22px;
-    background: #fff;
-    color: #111;
+    background: #111111;
+    color: #f3c400;
     text-decoration: none;
-    font-weight: 700;
+    font-weight: 800;
   }
 
   .hero-youtube {
     display: inline-block;
     padding: 14px 22px;
-    background: #111;
-    color: #f3c400;
+    background: #e60000;
+    color: #ffffff;
     text-decoration: none;
     font-weight: 800;
   }
 
   .hero-video {
     width: 100%;
+    max-width: 620px;
+    margin-left: auto;
   }
 
   .video-frame {
@@ -835,13 +842,17 @@ const germanyTours = [
     background: #fff;
   }
 
-  .youtube-grid.four {
+  /* POPULAR & RECOMMENDED GRID (5 COLUMNS) */
+  .tour-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 22px;
+    gap: 20px;
   }
 
-  .youtube-card {
+  .tour-grid.five {
+    grid-template-columns: repeat(5, 1fr);
+  }
+
+  .youtube-card, .tour-card {
     display: block;
     width: 100%;
     padding: 0;
@@ -852,15 +863,21 @@ const germanyTours = [
     background: #f8f8f8;
     overflow: hidden;
     cursor: pointer;
+    transition: transform 0.2s ease;
   }
 
-  .youtube-thumbnail {
+  .youtube-card:hover, .tour-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .youtube-thumbnail, .thumbnail {
     position: relative;
     aspect-ratio: 16 / 9;
     overflow: hidden;
+    background: #ddd;
   }
 
-  .youtube-thumbnail img {
+  .youtube-thumbnail img, .thumbnail img {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -868,24 +885,24 @@ const germanyTours = [
     transition: transform 0.3s ease;
   }
 
-  .youtube-card:hover img {
+  .youtube-card:hover img, .tour-card:hover img {
     transform: scale(1.03);
   }
 
-  .youtube-play {
+  .youtube-play, .play-button {
     position: absolute;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: 54px;
-    height: 54px;
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     background: rgba(0, 0, 0, 0.80);
     color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 18px;
     padding-left: 3px;
   }
 
@@ -900,17 +917,23 @@ const germanyTours = [
     font-weight: 800;
   }
 
-  .youtube-card-info {
-    padding: 16px;
+  .youtube-card-info, .tour-info {
+    padding: 15px;
   }
 
-  .youtube-card-info h3 {
-    margin: 0 0 6px;
+  .tour-info span {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+  }
+
+  .youtube-card-info h3, .tour-info h3 {
+    margin: 6px 0;
     font-size: 15px;
     line-height: 1.35;
   }
 
-  .youtube-card-info small {
+  .youtube-card-info small, .tour-info small {
     color: #777;
     font-size: 11px;
   }
@@ -925,98 +948,12 @@ const germanyTours = [
     text-decoration: none;
   }
 
-  /* POPULAR WALKS */
   .popular {
     background: #fff;
   }
 
   .germany {
     background: #fafafa;
-  }
-
-  .tour-grid {
-    display: grid;
-    gap: 20px;
-  }
-
-  .tour-grid.five {
-    grid-template-columns: repeat(5, 1fr);
-  }
-
-  .tour-card {
-    display: block;
-    width: 100%;
-    padding: 0;
-    border: 0;
-    color: #111;
-    text-align: left;
-    font-family: inherit;
-    background: #f5f5f5;
-    overflow: hidden;
-    cursor: pointer;
-    transition: transform 0.2s ease;
-  }
-
-  .tour-card:hover {
-    transform: translateY(-4px);
-  }
-
-  .thumbnail {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background: #ddd;
-  }
-
-  .thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-    transition: transform 0.3s ease;
-  }
-
-  .tour-card:hover .thumbnail img {
-    transform: scale(1.03);
-  }
-
-  .play-button {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.78);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    padding-left: 3px;
-  }
-
-  .tour-info {
-    padding: 15px;
-  }
-
-  .tour-info span {
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-  }
-
-  .tour-info h3 {
-    font-size: 15px;
-    line-height: 1.35;
-    margin: 8px 0;
-  }
-
-  .tour-info small {
-    color: #777;
-    font-size: 11px;
   }
 
   /* DESTINATIONS */
@@ -1091,8 +1028,8 @@ const germanyTours = [
 
   .modal-youtube {
     display: inline-block;
-    background: #f3c400;
-    color: #111;
+    background: #e60000;
+    color: #ffffff;
     padding: 10px 14px;
     text-decoration: none;
     font-size: 12px;
@@ -1129,7 +1066,13 @@ const germanyTours = [
     font-size: 13px;
   }
 
-  /* TABLET RESPONSIVE */
+  /* RESPONSIVE */
+  @media (max-width: 1200px) {
+    .tour-grid.five {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
   @media (max-width: 1024px) {
     .hero-content {
       grid-template-columns: 1fr;
@@ -1145,18 +1088,10 @@ const germanyTours = [
 
     .hero-video {
       max-width: 650px;
-    }
-
-    .youtube-grid.four {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .tour-grid.five {
-      grid-template-columns: repeat(3, 1fr);
+      margin-left: 0;
     }
   }
 
-  /* MOBILE RESPONSIVE */
   @media (max-width: 800px) {
     .menu-toggle {
       display: flex;
@@ -1211,10 +1146,6 @@ const germanyTours = [
 
     .hero-text {
       font-size: 16px;
-    }
-
-    .youtube-grid.four {
-      grid-template-columns: 1fr;
     }
 
     .tour-grid.five {
