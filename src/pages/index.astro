@@ -521,11 +521,11 @@ const youtubeHighlights = [
       }
 
 
-      const modal = document.getElementById("videoModal");
-      const player = document.getElementById("modalPlayer");
-      const modalTitle = document.getElementById("modalTitle");
-      const modalYoutube = document.getElementById("modalYoutube");
-      const closeButton = document.getElementById("closeModal");
+      const modal = document.getElementById("videoModal") as HTMLDivElement;
+      const player = document.getElementById("modalPlayer") as HTMLIFrameElement;
+      const modalTitle = document.getElementById("modalTitle") as HTMLHeadingElement;
+      const modalYoutube = document.getElementById("modalYoutube") as HTMLAnchorElement;
+      const closeButton = document.getElementById("closeModal") as HTMLButtonElement;
 
 
       document
