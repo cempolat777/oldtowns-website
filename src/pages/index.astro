@@ -1,29 +1,13 @@
 ---
 import heroIzmir from "../assets/Walk for a Lifetime.png";
 import heroGermany from "../assets/Walk for a Lifetime (1).png";
-import hero03 from "../assets/hero-03.jpg";
-import hero04 from "../assets/hero-04.jpg";
-import hero05 from "../assets/hero-05.jpg";
-import hero06 from "../assets/hero-06.jpg";
-import hero07 from "../assets/hero-07.jpg";
-import hero08 from "../assets/hero-08.jpg";
-import hero09 from "../assets/hero-09.jpg";
-import hero10 from "../assets/hero-10.jpg";
 
 const featuredVideo = "cXorOhK2Abo";
 
-// 10 Adet Arka Plan Slayt Görseli
+// Sadece mevcut 2 görsel döngüye alındı
 const heroImages = [
   heroIzmir,
-  heroGermany,
-  hero03,
-  hero04,
-  hero05,
-  hero06,
-  hero07,
-  hero08,
-  hero09,
-  hero10
+  heroGermany
 ];
 
 // YouTube "Size Özel / Recommendations" Bölümü
@@ -234,7 +218,7 @@ const germanyTours = [
       </section>
 
 
-      <!-- RECOMMENDED FOR YOU (YOUTUBE SIZE OZEL ALANI) -->
+      <!-- RECOMMENDED FOR YOU -->
       <section class="youtube-section">
         <div class="container">
 
@@ -688,7 +672,7 @@ const germanyTours = [
     transform: translateY(-7px) rotate(-45deg);
   }
 
-  /* HERO SECTION (SOLA KAYDIRILMIŞ VE AÇIĞA ÇIKARILMIŞ SLIDE ODAĞI) */
+  /* HERO SECTION */
   .hero {
     position: relative;
     min-height: 620px;
@@ -736,7 +720,6 @@ const germanyTours = [
     grid-template-columns: 1fr 0.95fr;
     align-items: center;
     gap: 50px;
-    /* İçeriği sola çeken ve slide odağını rahatlatan ayar */
     margin-left: max(20px, calc((100vw - 1200px) / 2));
     margin-right: auto;
     padding-right: 20px;
@@ -847,7 +830,7 @@ const germanyTours = [
     line-height: 1.1;
   }
 
-  /* RECOMMENDED FOR YOU (YOUTUBE SLOTS) */
+  /* RECOMMENDED FOR YOU */
   .youtube-section {
     background: #fff;
   }
