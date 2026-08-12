@@ -25,6 +25,33 @@ const heroImages = [
   hero10
 ];
 
+const exploreWalks = [
+  {
+    id: "cXorOhK2Abo",
+    title: "Düsseldorf Walking Tour"
+  },
+  {
+    id: "-_CnD2d4Zus",
+    title: "Izmir City Walk | Vibrant Streets & Old Town"
+  },
+  {
+    id: "BjBfo1UPJZA",
+    title: "Izmir Walking Tour | Lively Spring Atmosphere"
+  },
+  {
+    id: "1c4lvi2geng",
+    title: "Izmir Walking Tour | Lively City Streets"
+  },
+  {
+    id: "DrtuvDgJvmc",
+    title: "Izmir Walking Tour | Historic Kemeraltı Bazaar"
+  },
+  {
+    id: "HsQ0-45emcU",
+    title: "Izmir Walking Tour | Historic Streets & City Life"
+  }
+];
+
 const izmirTours = [
   {
     id: "-_CnD2d4Zus",
@@ -78,21 +105,6 @@ const germanyTours = [
     id: "MUw1riHcsaA",
     title: "Düsseldorf Walking Tour",
     views: ""
-  }
-];
-
-const youtubeHighlights = [
-  {
-    id: "cXorOhK2Abo",
-    title: "Düsseldorf Walking Tour"
-  },
-  {
-    id: "-_CnD2d4Zus",
-    title: "Izmir City Walk | Vibrant Streets & Old Town"
-  },
-  {
-    id: "BjBfo1UPJZA",
-    title: "Izmir Walking Tour | Lively Spring Atmosphere"
   }
 ];
 ---
@@ -224,22 +236,23 @@ const youtubeHighlights = [
       </section>
 
 
-      <!-- FROM OUR YOUTUBE -->
+      <!-- EXPLORE OUR WALKS -->
       <section class="youtube-section">
         <div class="container">
 
           <div class="section-heading">
-            <p class="section-label">FROM OUR YOUTUBE</p>
+            <p class="section-label">EXPLORE OUR WALKS</p>
             <h2>Selected Walks</h2>
           </div>
 
-          <div class="youtube-grid">
+          <div class="youtube-grid six">
             {
-              youtubeHighlights.map((tour) => (
+              exploreWalks.map((tour) => (
                 <button
                   class="youtube-card"
                   data-video={tour.id}
                   data-title={tour.title}
+                  type="button"
                 >
                   <div class="youtube-thumbnail">
 
@@ -269,7 +282,7 @@ const youtubeHighlights = [
 
           <div class="youtube-more">
             <a
-              href="https://www.youtube.com/@oldtowns?sub_confirmation=1"
+              href="https://www.youtube.com/@oldtowns"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -297,6 +310,7 @@ const youtubeHighlights = [
                   class="tour-card"
                   data-video={tour.id}
                   data-title={tour.title}
+                  type="button"
                 >
                   <div class="thumbnail">
 
@@ -317,7 +331,7 @@ const youtubeHighlights = [
                   </div>
 
                   <div class="tour-info">
-                    <span>🇹🇷 İZMIR · TURKEY</span>
+                    <span>🇹🇷 IZMIR · TURKEY</span>
 
                     <h3>{tour.title}</h3>
 
@@ -350,6 +364,7 @@ const youtubeHighlights = [
                   class="tour-card"
                   data-video={tour.id}
                   data-title={tour.title}
+                  type="button"
                 >
                   <div class="thumbnail">
 
@@ -391,7 +406,12 @@ const youtubeHighlights = [
       <div class="video-modal" id="videoModal">
         <div class="modal-content">
 
-          <button class="close-modal" id="closeModal" aria-label="Close video">
+          <button
+            class="close-modal"
+            id="closeModal"
+            aria-label="Close video"
+            type="button"
+          >
             ×
           </button>
 
@@ -523,11 +543,11 @@ const youtubeHighlights = [
       }
 
 
-      const modal = document.getElementById("videoModal") as HTMLDivElement | null;
-      const player = document.getElementById("modalPlayer") as HTMLIFrameElement | null;
-      const modalTitle = document.getElementById("modalTitle") as HTMLHeadingElement | null;
-      const modalYoutube = document.getElementById("modalYoutube") as HTMLAnchorElement | null;
-      const closeButton = document.getElementById("closeModal") as HTMLButtonElement | null;
+      const modal = document.getElementById("videoModal");
+      const player = document.getElementById("modalPlayer");
+      const modalTitle = document.getElementById("modalTitle");
+      const modalYoutube = document.getElementById("modalYoutube");
+      const closeButton = document.getElementById("closeModal");
 
 
       document
@@ -798,6 +818,8 @@ const youtubeHighlights = [
     grid-template-columns: 1fr 0.92fr;
     align-items: center;
     gap: 65px;
+
+    transform: translateX(-45px);
   }
 
 
@@ -928,7 +950,7 @@ const youtubeHighlights = [
   }
 
 
-  /* YOUTUBE */
+  /* EXPLORE OUR WALKS */
 
   .youtube-section {
     background: #fff;
@@ -1320,13 +1342,14 @@ const youtubeHighlights = [
   }
 
 
-  /* MOBILE */
+  /* TABLET */
 
   @media (max-width: 1000px) {
 
     .hero-content {
       grid-template-columns: 1fr;
       gap: 35px;
+      transform: translateX(0);
     }
 
 
@@ -1346,6 +1369,8 @@ const youtubeHighlights = [
 
   }
 
+
+  /* MOBILE */
 
   @media (max-width: 800px) {
 
@@ -1411,6 +1436,7 @@ const youtubeHighlights = [
     .hero-content {
       grid-template-columns: 1fr;
       gap: 30px;
+      transform: translateX(0);
     }
 
 
@@ -1511,5 +1537,4 @@ const youtubeHighlights = [
     }
 
   }
-
 </style>
