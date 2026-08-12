@@ -117,7 +117,19 @@ const youtubeHighlights = [
           <span class="logo-old">OLD</span><span class="logo-towns">TOWNS</span>
         </a>
 
-        <nav>
+        <button
+          class="menu-toggle"
+          id="menuToggle"
+          aria-label="Toggle navigation menu"
+          aria-expanded="false"
+          aria-controls="mainNav"
+        >
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+
+        <nav id="mainNav">
           <a href="/">Home</a>
           <a href="/walking-tours">Walking Tours</a>
           <a href="/explore">Explore</a>
@@ -148,6 +160,7 @@ const youtubeHighlights = [
                 src={image.src}
                 alt={`Old Towns walking tour ${index + 1}`}
                 class:list={{ active: index === 0 }}
+                loading={index === 0 ? "eager" : "lazy"}
               />
             ))
           }
@@ -233,6 +246,8 @@ const youtubeHighlights = [
                     <img
                       src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
                       alt={tour.title}
+                      loading="lazy"
+                      onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${tour.id}/hqdefault.jpg';`}
                     />
 
                     <div class="youtube-play">
@@ -289,6 +304,8 @@ const youtubeHighlights = [
                     <img
                       src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
                       alt={tour.title}
+                      loading="lazy"
+                      onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${tour.id}/hqdefault.jpg';`}
                     />
 
                     <div class="play-button">
@@ -341,6 +358,8 @@ const youtubeHighlights = [
                     <img
                       src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
                       alt={tour.title}
+                      loading="lazy"
+                      onerror={`this.onerror=null;this.src='https://img.youtube.com/vi/${tour.id}/hqdefault.jpg';`}
                     />
 
                     <div class="play-button">
@@ -375,7 +394,7 @@ const youtubeHighlights = [
       <div class="video-modal" id="videoModal">
         <div class="modal-content">
 
-          <button class="close-modal" id="closeModal">
+          <button class="close-modal" id="closeModal" aria-label="Close video">
             ×
           </button>
 
@@ -481,6 +500,27 @@ const youtubeHighlights = [
       }
 
 
+      // Mobile menu toggle
+      const menuToggle = document.getElementById("menuToggle");
+      const mainNav = document.getElementById("mainNav");
+
+      if (menuToggle && mainNav) {
+        menuToggle.addEventListener("click", () => {
+          const isOpen = mainNav.classList.toggle("open");
+          menuToggle.classList.toggle("open", isOpen);
+          menuToggle.setAttribute("aria-expanded", String(isOpen));
+        });
+
+        mainNav.querySelectorAll("a").forEach((link) => {
+          link.addEventListener("click", () => {
+            mainNav.classList.remove("open");
+            menuToggle.classList.remove("open");
+            menuToggle.setAttribute("aria-expanded", "false");
+          });
+        });
+      }
+
+
       const modal = document.getElementById("videoModal");
       const player = document.getElementById("modalPlayer");
       const modalTitle = document.getElementById("modalTitle");
@@ -499,6 +539,8 @@ const youtubeHighlights = [
 
             player.src =
               `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+
+            player.title = title;
 
             modalTitle.textContent = title;
 
@@ -639,6 +681,50 @@ const youtubeHighlights = [
   }
 
 
+  /* MOBILE MENU TOGGLE */
+
+  .menu-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+
+    width: 40px;
+    height: 40px;
+
+    padding: 8px;
+
+    background: transparent;
+    border: 0;
+
+    cursor: pointer;
+  }
+
+
+  .menu-toggle span {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: #111;
+    transition: transform 0.25s ease, opacity 0.25s ease;
+  }
+
+
+  .menu-toggle.open span:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+
+
+  .menu-toggle.open span:nth-child(2) {
+    opacity: 0;
+  }
+
+
+  .menu-toggle.open span:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+
   /* HERO */
 
   .hero {
@@ -698,8 +784,6 @@ const youtubeHighlights = [
     grid-template-columns: 1fr 0.92fr;
     align-items: center;
     gap: 65px;
-
-    transform: translateX(-25px);
   }
 
 
@@ -1229,7 +1313,6 @@ const youtubeHighlights = [
     .hero-content {
       grid-template-columns: 1fr;
       gap: 35px;
-      transform: none;
     }
 
 
@@ -1252,13 +1335,51 @@ const youtubeHighlights = [
 
   @media (max-width: 800px) {
 
-    nav {
-      display: none;
+    .menu-toggle {
+      display: flex;
     }
 
 
     .nav-inner {
       min-height: 72px;
+    }
+
+
+    nav {
+      position: fixed;
+      top: 72px;
+      left: 0;
+      right: 0;
+
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+
+      background: #fff;
+      border-top: 1px solid #eee;
+
+      max-height: 0;
+      overflow: hidden;
+
+      transition: max-height 0.25s ease;
+    }
+
+
+    nav.open {
+      max-height: 400px;
+    }
+
+
+    nav a {
+      width: 100%;
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+
+    .youtube-button {
+      margin: 12px 20px;
+      display: inline-block;
     }
 
 
