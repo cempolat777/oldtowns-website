@@ -1,4 +1,3 @@
-
 ---
 import heroIzmir from "../assets/Walk for a Lifetime.png";
 import heroGermany from "../assets/Walk for a Lifetime (1).png";
@@ -102,7 +101,9 @@ const youtubeHighlights = [
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
+
     <title>Old Towns | Walking Tours Around the World</title>
+
     <meta
       name="description"
       content="Explore cities, streets and destinations through immersive walking tours."
@@ -112,7 +113,6 @@ const youtubeHighlights = [
   <body>
     <header>
       <div class="container nav-inner">
-
         <a href="/" class="logo" aria-label="Old Towns Home">
           <span class="logo-old">OLD</span><span class="logo-towns">TOWNS</span>
         </a>
@@ -124,16 +124,16 @@ const youtubeHighlights = [
           <a href="/map">Map</a>
           <a href="/journal">Journal</a>
           <a href="/about">About</a>
+
           <a
             href="https://www.youtube.com/@oldtowns?sub_confirmation=1"
             class="youtube-button"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
           >
             YouTube
           </a>
         </nav>
-
       </div>
     </header>
 
@@ -141,15 +141,16 @@ const youtubeHighlights = [
 
       <!-- HERO -->
       <section class="hero">
-
         <div class="hero-slides">
-          {heroImages.map((image, index) => (
-            <img
-              src={image.src}
-              alt={`Old Towns walking tour ${index + 1}`}
-              class:list={{ active: index === 0 }}
-            />
-          ))}
+          {
+            heroImages.map((image, index) => (
+              <img
+                src={image.src}
+                alt={`Old Towns walking tour ${index + 1}`}
+                class:list={{ active: index === 0 }}
+              />
+            ))
+          }
         </div>
 
         <div class="hero-overlay">
@@ -158,7 +159,10 @@ const youtubeHighlights = [
             <div class="hero-copy">
               <p class="eyebrow">WALKING TOURS</p>
 
-              <h1>Explore the world<br />one walk at a time.</h1>
+              <h1>
+                Explore the world<br />
+                one walk at a time.
+              </h1>
 
               <p class="hero-text">
                 Discover cities, streets and unforgettable places through
@@ -174,7 +178,7 @@ const youtubeHighlights = [
                   href="https://www.youtube.com/@oldtowns?sub_confirmation=1"
                   class="hero-youtube"
                   target="_blank"
-                  rel="noopener"
+                  rel="noopener noreferrer"
                 >
                   Visit YouTube
                 </a>
@@ -190,11 +194,12 @@ const youtubeHighlights = [
                   referrerpolicy="strict-origin-when-cross-origin"
                   allowfullscreen
                 ></iframe>
+
                 <a
                   class="youtube-watch"
                   href={`https://www.youtube.com/watch?v=${featuredVideo}`}
                   target="_blank"
-                  rel="noopener"
+                  rel="noopener noreferrer"
                 >
                   Watch on YouTube
                 </a>
@@ -203,7 +208,6 @@ const youtubeHighlights = [
 
           </div>
         </div>
-
       </section>
 
 
@@ -217,39 +221,43 @@ const youtubeHighlights = [
           </div>
 
           <div class="youtube-grid">
-            {youtubeHighlights.map((tour) => (
-              <button
-                class="youtube-card"
-                data-video={tour.id}
-                data-title={tour.title}
-              >
-                <div class="youtube-thumbnail">
-                  <img
-                    src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
-                    alt={tour.title}
-                  />
+            {
+              youtubeHighlights.map((tour) => (
+                <button
+                  class="youtube-card"
+                  data-video={tour.id}
+                  data-title={tour.title}
+                >
+                  <div class="youtube-thumbnail">
 
-                  <div class="youtube-play">
-                    ▶
+                    <img
+                      src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
+                      alt={tour.title}
+                    />
+
+                    <div class="youtube-play">
+                      ▶
+                    </div>
+
+                    <div class="youtube-watch-small">
+                      Watch on YouTube
+                    </div>
+
                   </div>
 
-                  <div class="youtube-watch-small">
-                    Watch on YouTube
+                  <div class="youtube-card-info">
+                    <h3>{tour.title}</h3>
                   </div>
-                </div>
-
-                <div class="youtube-card-info">
-                  <h3>{tour.title}</h3>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))
+            }
           </div>
 
           <div class="youtube-more">
             <a
               href="https://www.youtube.com/@oldtowns?sub_confirmation=1"
               target="_blank"
-              rel="noopener"
+              rel="noopener noreferrer"
             >
               Visit Old Towns on YouTube →
             </a>
@@ -269,36 +277,42 @@ const youtubeHighlights = [
           </div>
 
           <div class="tour-grid five">
+            {
+              izmirTours.map((tour) => (
+                <button
+                  class="tour-card"
+                  data-video={tour.id}
+                  data-title={tour.title}
+                >
+                  <div class="thumbnail">
 
-            {izmirTours.map((tour) => (
-              <button
-                class="tour-card"
-                data-video={tour.id}
-                data-title={tour.title}
-              >
+                    <img
+                      src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
+                      alt={tour.title}
+                    />
 
-                <div class="thumbnail">
-                  <img
-                    src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
-                    alt={tour.title}
-                  />
+                    <div class="play-button">
+                      ▶
+                    </div>
 
-                  <div class="play-button">▶</div>
+                    <div class="youtube-watch-small">
+                      Watch on YouTube
+                    </div>
 
-                  <div class="youtube-watch-small">
-                    Watch on YouTube
                   </div>
-                </div>
 
-                <div class="tour-info">
-                  <span>🇹🇷 İZMIR · TURKEY</span>
-                  <h3>{tour.title}</h3>
-                  <small>{tour.views} · 4K</small>
-                </div>
+                  <div class="tour-info">
+                    <span>🇹🇷 İZMIR · TURKEY</span>
 
-              </button>
-            ))}
+                    <h3>{tour.title}</h3>
 
+                    <small>
+                      {tour.views ? `${tour.views} · ` : ""}4K
+                    </small>
+                  </div>
+                </button>
+              ))
+            }
           </div>
 
         </div>
@@ -315,38 +329,42 @@ const youtubeHighlights = [
           </div>
 
           <div class="tour-grid five">
+            {
+              germanyTours.map((tour) => (
+                <button
+                  class="tour-card"
+                  data-video={tour.id}
+                  data-title={tour.title}
+                >
+                  <div class="thumbnail">
 
-            {germanyTours.map((tour) => (
-              <button
-                class="tour-card"
-                data-video={tour.id}
-                data-title={tour.title}
-              >
+                    <img
+                      src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
+                      alt={tour.title}
+                    />
 
-                <div class="thumbnail">
-                  <img
-                    src={`https://img.youtube.com/vi/${tour.id}/maxresdefault.jpg`}
-                    alt={tour.title}
-                  />
+                    <div class="play-button">
+                      ▶
+                    </div>
 
-                  <div class="play-button">▶</div>
+                    <div class="youtube-watch-small">
+                      Watch on YouTube
+                    </div>
 
-                  <div class="youtube-watch-small">
-                    Watch on YouTube
                   </div>
-                </div>
 
-                <div class="tour-info">
-                  <span>🇩🇪 DÜSSELDORF · GERMANY</span>
-                  <h3>{tour.title}</h3>
-                  <small>
-                    {tour.views ? `${tour.views} · ` : ""}4K
-                  </small>
-                </div>
+                  <div class="tour-info">
+                    <span>🇩🇪 DÜSSELDORF · GERMANY</span>
 
-              </button>
-            ))}
+                    <h3>{tour.title}</h3>
 
+                    <small>
+                      {tour.views ? `${tour.views} · ` : ""}4K
+                    </small>
+                  </div>
+                </button>
+              ))
+            }
           </div>
 
         </div>
@@ -355,13 +373,13 @@ const youtubeHighlights = [
 
       <!-- VIDEO MODAL -->
       <div class="video-modal" id="videoModal">
-
         <div class="modal-content">
 
-          <button class="close-modal" id="closeModal">×</button>
+          <button class="close-modal" id="closeModal">
+            ×
+          </button>
 
           <div class="modal-video">
-
             <iframe
               id="modalPlayer"
               src=""
@@ -370,7 +388,6 @@ const youtubeHighlights = [
               referrerpolicy="strict-origin-when-cross-origin"
               allowfullscreen
             ></iframe>
-
           </div>
 
           <h3 id="modalTitle"></h3>
@@ -380,13 +397,12 @@ const youtubeHighlights = [
             class="modal-youtube"
             href="#"
             target="_blank"
-            rel="noopener"
+            rel="noopener noreferrer"
           >
             Watch on YouTube
           </a>
 
         </div>
-
       </div>
 
 
@@ -499,13 +515,11 @@ const youtubeHighlights = [
 
 
       function closeVideo() {
-
         modal.classList.remove("open");
 
         player.src = "";
 
         document.body.classList.remove("modal-open");
-
       }
 
 
@@ -513,20 +527,16 @@ const youtubeHighlights = [
 
 
       modal.addEventListener("click", (event) => {
-
         if (event.target === modal) {
           closeVideo();
         }
-
       });
 
 
       document.addEventListener("keydown", (event) => {
-
         if (event.key === "Escape") {
           closeVideo();
         }
-
       });
     </script>
 
@@ -535,7 +545,6 @@ const youtubeHighlights = [
 
 
 <style>
-
   * {
     box-sizing: border-box;
   }
@@ -654,6 +663,7 @@ const youtubeHighlights = [
     object-fit: cover;
     opacity: 0;
     transform: scale(1.02);
+
     transition:
       opacity 1.8s ease,
       transform 8s ease;
@@ -860,6 +870,7 @@ const youtubeHighlights = [
     height: 100%;
     object-fit: cover;
     display: block;
+
     transition: transform 0.3s ease;
   }
 
@@ -996,6 +1007,7 @@ const youtubeHighlights = [
     height: 100%;
     object-fit: cover;
     display: block;
+
     transition: transform 0.3s ease;
   }
 
@@ -1217,7 +1229,6 @@ const youtubeHighlights = [
     .hero-content {
       grid-template-columns: 1fr;
       gap: 35px;
-
       transform: none;
     }
 
