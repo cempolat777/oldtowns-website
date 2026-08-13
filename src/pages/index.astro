@@ -486,7 +486,7 @@ const germanyTours = [
 
 
     <script>
-      const slides = document.querySelectorAll(".hero-slides img");
+      const slides = document.querySelectorAll<HTMLImageElement>(".hero-slides img");
 
       let currentSlide = 0;
 
@@ -520,17 +520,19 @@ const germanyTours = [
         mainNav.querySelectorAll("a").forEach((link) => {
           link.addEventListener("click", () => {
             mainNav.classList.remove("open");
-            menuToggle.classList.remove("open");
-            menuToggle.setAttribute("aria-expanded", "false");
+            if (menuToggle) {
+              menuToggle.classList.remove("open");
+              menuToggle.setAttribute("aria-expanded", "false");
+            }
           });
         });
       }
 
 
       const modal = document.getElementById("videoModal");
-      const player = document.getElementById("modalPlayer");
+      const player = document.getElementById("modalPlayer") as HTMLIFrameElement | null;
       const modalTitle = document.getElementById("modalTitle");
-      const modalYoutube = document.getElementById("modalYoutube");
+      const modalYoutube = document.getElementById("modalYoutube") as HTMLAnchorElement | null;
       const closeButton = document.getElementById("closeModal");
 
 
@@ -585,7 +587,7 @@ const germanyTours = [
 
 
       if (modal) {
-        modal.addEventListener("click", (event) => {
+        modal.addEventListener("click", (event: MouseEvent) => {
           if (event.target === modal) {
             closeVideo();
           }
@@ -593,7 +595,7 @@ const germanyTours = [
       }
 
 
-      document.addEventListener("keydown", (event) => {
+      document.addEventListener("keydown", (event: KeyboardEvent) => {
         if (event.key === "Escape") {
           closeVideo();
         }
@@ -1520,4 +1522,5 @@ const germanyTours = [
       padding: 65px 0;
     }
 
+  }
 </style>
