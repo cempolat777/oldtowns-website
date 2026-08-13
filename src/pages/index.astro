@@ -1,1526 +1,647 @@
 ---
-import heroIzmir from "../assets/Walk for a Lifetime.png";
-import heroGermany from "../assets/Walk for a Lifetime (1).png";
-
-const featuredVideo = "cXorOhK2Abo";
-
-const heroImages = [
-  heroIzmir,
-  heroGermany
-];
-
-const exploreWalks = [
+const myVideos = [
   {
     id: "cXorOhK2Abo",
-    title: "Düsseldorf Walking Tour"
+    title: "Düsseldorf Walking Tour | Airport Terminal & Modern Calm 4K",
+    channel: "Old Towns Walks",
+    badge: "4K"
   },
   {
     id: "-_CnD2d4Zus",
-    title: "Izmir City Walk | Vibrant Streets & Old Town"
+    title: "Izmir City Walk | Vibrant Streets & Exploring Old Town 4K",
+    channel: "Old Towns Walks",
+    badge: "4K"
   },
   {
     id: "BjBfo1UPJZA",
-    title: "Izmir Walking Tour | Lively Spring Atmosphere"
-  },
-  {
-    id: "1c4lvi2geng",
-    title: "Izmir Walking Tour | Lively City Streets"
-  },
-  {
-    id: "DrtuvDgJvmc",
-    title: "Izmir Walking Tour | Historic Kemeraltı Bazaar"
-  },
-  {
-    id: "HsQ0-45emcU",
-    title: "Izmir Walking Tour | Historic Streets & City Life"
-  }
-];
-
-const izmirTours = [
-  {
-    id: "-_CnD2d4Zus",
-    title: "Izmir City Walk | Vibrant Streets & Old Town",
-    views: "18,607 views"
-  },
-  {
-    id: "BjBfo1UPJZA",
-    title: "Izmir Walking Tour | Lively Spring Atmosphere",
-    views: "11,201 views"
-  },
-  {
-    id: "1c4lvi2geng",
-    title: "Izmir Walking Tour | Lively City Streets",
-    views: "10,783 views"
-  },
-  {
-    id: "DrtuvDgJvmc",
-    title: "Izmir Walking Tour | Historic Kemeraltı Bazaar",
-    views: "6,809 views"
-  },
-  {
-    id: "HsQ0-45emcU",
-    title: "Izmir Walking Tour | Historic Streets & City Life",
-    views: "5,796 views"
-  }
-];
-
-const germanyTours = [
-  {
-    id: "cXorOhK2Abo",
-    title: "Düsseldorf Walking Tour",
-    views: ""
+    title: "Walking Tour | Exploring Historic Streets",
+    channel: "Old Towns Walks",
+    badge: "4K"
   },
   {
     id: "7e8o68jZyvU",
-    title: "Düsseldorf Walking Tour",
-    views: ""
+    title: "City Ambience & Scenic Walking Tour",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "1c4lvi2geng",
+    title: "Old Town Discovery & Street Atmosphere",
+    channel: "Old Towns Walks",
+    badge: "4K"
   },
   {
     id: "JFWYuQnf1yg",
-    title: "Düsseldorf Walking Tour",
-    views: ""
+    title: "Historical City Walk 4K 60fps",
+    channel: "Old Towns Walks",
+    badge: "4K"
   },
   {
     id: "pHAFLoHfFz8",
-    title: "Düsseldorf Walking Tour",
-    views: ""
+    title: "Relaxing City Atmosphere Walking Tour",
+    channel: "Old Towns Walks",
+    badge: "4K"
   },
   {
     id: "MUw1riHcsaA",
-    title: "Düsseldorf Walking Tour",
-    views: ""
+    title: "Urban Streets & Local Life Walk",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "DrtuvDgJvmc",
+    title: "Scenic City Highlights & Old Streets",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "HsQ0-45emcU",
+    title: "Full City Tour | Architectural Wonders",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "T_zFbMG9t1g",
+    title: "Peaceful Evening Walking Tour",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "KG73WC4DrVM",
+    title: "Historic Alleyways & Old Town Ambience",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "LoYAPns8WwE",
+    title: "Coastal & City Center Walk",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "-l9U2QuPBr8",
+    title: "Daytime City Exploration Walking Tour",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "9_a66mahQ9U",
+    title: "Historic Quarter City Walk",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "MAD6o_rzfO8",
+    title: "Cultural Heritage Walk 4K",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "1SkTYbCif_Q",
+    title: "Vibrant City Streets & Architecture",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "7DpYlixV2qQ",
+    title: "Old Town Walk & Local Vibes",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "j1Aj6nd3yos",
+    title: "Immersive City Walking Tour 4K",
+    channel: "Old Towns Walks",
+    badge: "4K"
+  },
+  {
+    id: "HB2AU1po8I",
+    title: "Scenic Walking Tour Experience",
+    channel: "Old Towns Walks",
+    badge: "4K"
   }
+];
+
+const categories = [
+  "All",
+  "Walking Tours",
+  "Drone & Aerial",
+  "POV Rides",
+  "Night & Rain",
+  "Museums & Culture",
+  "Street Food",
+  "Nature Trails",
+  "Documentaries"
 ];
 ---
 
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Old Towns Walks - Explore World Cities in 4K</title>
 
-    <title>Old Towns | Walking Tours Around the World</title>
+    <!-- Google Fonts & Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 
-    <meta
-      name="description"
-      content="Explore cities, streets and destinations through immersive walking tours."
-    />
+    <style is:inline>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html, body {
+        height: 100%;
+        background-color: #0f0f0f;
+        color: #f1f1f1;
+        font-family: 'Roboto', sans-serif;
+        overflow: hidden; /* Main window scroll disabled for fixed frame layout */
+      }
+
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0f0f0f;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #373737;
+        border-radius: 4px;
+      }
+
+      /* Navbar Layout */
+      .navbar {
+        height: 56px;
+        background-color: #0f0f0f;
+        border-bottom: 1px solid #222222;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+      }
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+      .icon-btn {
+        background: transparent;
+        border: none;
+        color: #f1f1f1;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .icon-btn:hover {
+        background-color: #272727;
+      }
+
+      /* Brand Logo */
+      .brand-logo {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: 0.5px;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .logo-box-1 {
+        background-color: #1a1a1a;
+        color: #fbc02d;
+        padding: 4px 8px;
+      }
+      .logo-box-2 {
+        background-color: #fbc02d;
+        color: #0f0f0f;
+        padding: 4px 8px;
+      }
+
+      /* Search Bar */
+      .nav-center {
+        display: flex;
+        align-items: center;
+        width: 45%;
+        max-width: 650px;
+      }
+      .search-box {
+        display: flex;
+        width: 100%;
+      }
+      .search-input {
+        width: 100%;
+        background-color: #121212;
+        border: 1px solid #303030;
+        border-radius: 40px 0 0 40px;
+        padding: 8px 16px;
+        color: #f1f1f1;
+        font-size: 14px;
+        outline: none;
+      }
+      .search-input:focus {
+        border-color: #fbc02d;
+      }
+      .search-btn {
+        background-color: #222222;
+        border: 1px solid #303030;
+        border-left: none;
+        border-radius: 0 40px 40px 0;
+        padding: 0 20px;
+        color: #f1f1f1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+      }
+      .search-btn:hover {
+        background-color: #272727;
+      }
+
+      /* Main App Body (Fixed height below Navbar) */
+      .app-body {
+        display: flex;
+        margin-top: 56px;
+        height: calc(100vh - 56px);
+      }
+
+      /* FIXED SIDEBAR */
+      .sidebar {
+        width: 240px;
+        background-color: #0f0f0f;
+        border-right: 1px solid #222222;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex-shrink: 0;
+        height: 100%;
+        overflow-y: auto;
+      }
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        color: #aaaaaa;
+        text-decoration: none;
+        font-size: 14px;
+      }
+      .nav-link:hover {
+        background-color: #272727;
+        color: #ffffff;
+      }
+      .nav-link.active {
+        background-color: #272727;
+        color: #ffffff;
+        font-weight: 500;
+      }
+      .nav-link.active .material-symbols-outlined {
+        color: #fbc02d;
+      }
+      .sidebar-divider {
+        border: none;
+        border-top: 1px solid #222222;
+        margin: 8px 0;
+      }
+      .sidebar-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: #aaaaaa;
+        text-transform: uppercase;
+        padding: 8px 12px 4px 12px;
+      }
+
+      /* MAIN SCROLLABLE CONTENT AREA */
+      .content-area {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+        height: 100%;
+      }
+
+      /* Category Chips Bar */
+      .chips-bar {
+        display: flex;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 16px;
+        margin-bottom: 24px;
+      }
+      .chips-bar::-webkit-scrollbar {
+        display: none;
+      }
+      .chip {
+        background-color: #272727;
+        color: #ffffff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+      .chip:hover {
+        background-color: #3f3f3f;
+      }
+      .chip.active {
+        background-color: #ffffff;
+        color: #000000;
+      }
+
+      /* Video Grid Structure - Max 3 Columns */
+      .video-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px 20px;
+      }
+
+      /* Video Card Element */
+      .video-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      /* Custom Video Wrapper (Thumbnail + Custom Play Button) */
+      .thumbnail-wrapper {
+        position: relative;
+        width: 100%;
+        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        border-radius: 12px;
+        overflow: hidden;
+        background-color: #1f1f1f;
+        border: 1px solid #222222;
+        cursor: pointer;
+      }
+
+      .video-poster {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+
+      .thumbnail-wrapper:hover .video-poster {
+        transform: scale(1.03);
+      }
+
+      /* Custom Yellow & Black Play Button */
+      .custom-play-btn {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 58px;
+        height: 58px;
+        background-color: #fbc02d;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        transition: transform 0.2s ease, background-color 0.2s ease;
+        z-index: 2;
+      }
+
+      .custom-play-btn span {
+        color: #0f0f0f;
+        font-size: 32px;
+        margin-left: 3px; /* Visual center alignment for play triangle */
+      }
+
+      .thumbnail-wrapper:hover .custom-play-btn {
+        transform: translate(-50%, -50%) scale(1.12);
+        background-color: #ffca28;
+      }
+
+      .thumbnail-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+      }
+
+      .video-details {
+        display: flex;
+        gap: 12px;
+      }
+      .video-info {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+      .video-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: #f1f1f1;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .channel-name {
+        font-size: 13px;
+        color: #aaaaaa;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .verified-icon {
+        font-size: 15px;
+        color: #aaaaaa;
+      }
+      .video-stats {
+        font-size: 13px;
+        color: #aaaaaa;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 2px;
+      }
+      .badge-tag {
+        margin-left: auto;
+        background-color: #272727;
+        color: #aaaaaa;
+        font-size: 11px;
+        font-weight: bold;
+        padding: 1px 5px;
+        border-radius: 3px;
+        border: 1px solid #303030;
+      }
+
+      /* Responsive Rules */
+      @media (max-width: 1100px) {
+        .video-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+      @media (max-width: 700px) {
+        .sidebar {
+          display: none;
+        }
+        .video-grid {
+          grid-template-columns: 1fr;
+        }
+        .nav-center {
+          width: 70%;
+        }
+      }
+    </style>
   </head>
-
+  
   <body>
-    <header>
-      <div class="container nav-inner">
-        <a href="/" class="logo" aria-label="Old Towns Home">
-          <span class="logo-old">OLD</span><span class="logo-towns">TOWNS</span>
-        </a>
 
-        <button
-          class="menu-toggle"
-          id="menuToggle"
-          aria-label="Toggle navigation menu"
-          aria-expanded="false"
-          aria-controls="mainNav"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
+    <!-- TOP FIXED NAVBAR -->
+    <header class="navbar">
+      <div class="nav-left">
+        <button class="icon-btn">
+          <span class="material-symbols-outlined">menu</span>
         </button>
+        <a href="/" class="brand-logo">
+          <div class="logo-box-1">OLD</div>
+          <div class="logo-box-2">TOWNS</div>
+        </a>
+      </div>
 
-        <nav id="mainNav">
-          <a href="/">Home</a>
-          <a href="/walking-tours">Walking Tours</a>
-          <a href="/explore">Explore</a>
-          <a href="/map">Map</a>
-          <a href="/journal">Journal</a>
-          <a href="/about">About</a>
-
-          <a
-            href="https://www.youtube.com/@oldtowns?sub_confirmation=1"
-            class="youtube-button"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            YouTube
-          </a>
-        </nav>
+      <div class="nav-center">
+        <div class="search-box">
+          <input 
+            type="text" 
+            placeholder="Search cities, countries, or walking tours..." 
+            class="search-input"
+          />
+          <button class="search-btn">
+            <span class="material-symbols-outlined">search</span>
+          </button>
+        </div>
       </div>
     </header>
 
-    <main>
+    <!-- MAIN APP STRUCTURE -->
+    <div class="app-body">
+      
+      <!-- FIXED SIDEBAR -->
+      <aside class="sidebar">
+        <a href="#" class="nav-link active">
+          <span class="material-symbols-outlined">home</span> Home
+        </a>
+        <a href="#" class="nav-link">
+          <span class="material-symbols-outlined">directions_walk</span> Walking Tours
+        </a>
+        <a href="#" class="nav-link">
+          <span class="material-symbols-outlined">flight</span> Drone & Aerial
+        </a>
+        <a href="#" class="nav-link">
+          <span class="material-symbols-outlined">pedal_bike</span> POV Rides
+        </a>
+        <a href="#" class="nav-link">
+          <span class="material-symbols-outlined">nights_stay</span> Night & Rain
+        </a>
+        
+        <hr class="sidebar-divider" />
+        
+        <div class="sidebar-label">Explore</div>
+        <a href="#" class="nav-link">
+          <span class="material-symbols-outlined">museum</span> Museums
+        </a>
+        <a href="#" class="nav-link">
+          <span class="material-symbols-outlined">restaurant</span> Street Food
+        </a>
+        <a href="#" class="nav-link">
+          <span class="material-symbols-outlined">movie</span> Documentaries
+        </a>
+      </aside>
 
-      <!-- HERO -->
-      <section class="hero">
-        <div class="hero-slides">
-          {
-            heroImages.map((image, index) => (
-              <img
-                src={typeof image === "string" ? image : image.src}
-                alt={`Old Towns walking tour ${index + 1}`}
-                class:list={{ active: index === 0 }}
-                loading={index === 0 ? "eager" : "lazy"}
-              />
-            ))
-          }
+      <!-- SCROLLABLE CONTENT AREA -->
+      <main class="content-area">
+        
+        <!-- CATEGORIES BAR -->
+        <div class="chips-bar">
+          {categories.map((category, index) => (
+            <button class={`chip ${index === 0 ? 'active' : ''}`}>
+              {category}
+            </button>
+          ))}
         </div>
 
-        <div class="hero-overlay">
-          <div class="container hero-content">
-
-            <div class="hero-copy">
-              <p class="eyebrow">WALKING TOURS</p>
-
-              <h1>
-                Explore the world<br />
-                one walk at a time.
-              </h1>
-
-              <p class="hero-text">
-                Discover cities, streets and unforgettable places through
-                immersive walking tours.
-              </p>
-
-              <div class="hero-actions">
-                <a href="/walking-tours" class="button">
-                  Explore Walking Tours
-                </a>
-
-                <a
-                  href="https://www.youtube.com/@oldtowns?sub_confirmation=1"
-                  class="hero-youtube"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Visit YouTube
-                </a>
+        <!-- VIDEO GRID -->
+        <div class="video-grid">
+          {myVideos.map((video) => (
+            <div class="video-card">
+              
+              <!-- Custom Player Area -->
+              <div class="thumbnail-wrapper" data-video-id={video.id}>
+                <img 
+                  src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} 
+                  alt={video.title} 
+                  class="video-poster"
+                  loading="lazy"
+                />
+                <div class="custom-play-btn">
+                  <span class="material-symbols-outlined">play_arrow</span>
+                </div>
               </div>
-            </div>
 
-            <div class="hero-video">
-              <div class="video-frame">
-                <iframe
-                  src={`https://www.youtube.com/embed/${featuredVideo}`}
-                  title="Düsseldorf Walking Tour"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  referrerpolicy="strict-origin-when-cross-origin"
-                  allowfullscreen
-                ></iframe>
+              <div class="video-details">
+                <div class="video-info">
+                  <h3 class="video-title">{video.title}</h3>
+                  
+                  <div class="channel-name">
+                    <span>{video.channel}</span>
+                    <span class="material-symbols-outlined verified-icon">check_circle</span>
+                  </div>
 
-                <a
-                  class="youtube-watch"
-                  href={`https://www.youtube.com/watch?v=${featuredVideo}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Watch on YouTube
-                </a>
+                  <div class="video-stats">
+                    <span class="badge-tag">{video.badge}</span>
+                  </div>
+                </div>
               </div>
+
             </div>
-
-          </div>
+          ))}
         </div>
-      </section>
 
+      </main>
 
-      <!-- EXPLORE OUR WALKS -->
-      <section class="youtube-section">
-        <div class="container">
+    </div>
 
-          <div class="section-heading">
-            <p class="section-label">EXPLORE OUR WALKS</p>
-            <h2>Selected Walks</h2>
-          </div>
-
-          <div class="youtube-grid six">
-            {
-              exploreWalks.map((tour) => (
-                <button
-                  class="youtube-card"
-                  data-video={tour.id}
-                  data-title={tour.title}
-                  type="button"
-                >
-                  <div class="youtube-thumbnail">
-
-                    <img
-                      src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
-                      alt={tour.title}
-                      loading="lazy"
-                    />
-
-                    <div class="youtube-play">
-                      ▶
-                    </div>
-
-                    <div class="youtube-watch-small">
-                      Watch on YouTube
-                    </div>
-
-                  </div>
-
-                  <div class="youtube-card-info">
-                    <h3>{tour.title}</h3>
-                  </div>
-                </button>
-              ))
-            }
-          </div>
-
-          <div class="youtube-more">
-            <a
-              href="https://www.youtube.com/@oldtowns"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Visit Old Towns on YouTube →
-            </a>
-          </div>
-
-        </div>
-      </section>
-
-
-      <!-- POPULAR IZMIR -->
-      <section class="popular">
-        <div class="container">
-
-          <div class="section-heading">
-            <p class="section-label">POPULAR WALKS</p>
-            <h2>Turkey · İzmir</h2>
-          </div>
-
-          <div class="tour-grid five">
-            {
-              izmirTours.map((tour) => (
-                <button
-                  class="tour-card"
-                  data-video={tour.id}
-                  data-title={tour.title}
-                  type="button"
-                >
-                  <div class="thumbnail">
-
-                    <img
-                      src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
-                      alt={tour.title}
-                      loading="lazy"
-                    />
-
-                    <div class="play-button">
-                      ▶
-                    </div>
-
-                    <div class="youtube-watch-small">
-                      Watch on YouTube
-                    </div>
-
-                  </div>
-
-                  <div class="tour-info">
-                    <span>🇹🇷 IZMIR · TURKEY</span>
-
-                    <h3>{tour.title}</h3>
-
-                    <small>
-                      {tour.views ? `${tour.views} · ` : ""}4K
-                    </small>
-                  </div>
-                </button>
-              ))
-            }
-          </div>
-
-        </div>
-      </section>
-
-
-      <!-- POPULAR GERMANY -->
-      <section class="popular germany">
-        <div class="container">
-
-          <div class="section-heading">
-            <p class="section-label">POPULAR WALKS</p>
-            <h2>Germany · Düsseldorf</h2>
-          </div>
-
-          <div class="tour-grid five">
-            {
-              germanyTours.map((tour) => (
-                <button
-                  class="tour-card"
-                  data-video={tour.id}
-                  data-title={tour.title}
-                  type="button"
-                >
-                  <div class="thumbnail">
-
-                    <img
-                      src={`https://img.youtube.com/vi/${tour.id}/hqdefault.jpg`}
-                      alt={tour.title}
-                      loading="lazy"
-                    />
-
-                    <div class="play-button">
-                      ▶
-                    </div>
-
-                    <div class="youtube-watch-small">
-                      Watch on YouTube
-                    </div>
-
-                  </div>
-
-                  <div class="tour-info">
-                    <span>🇩🇪 DÜSSELDORF · GERMANY</span>
-
-                    <h3>{tour.title}</h3>
-
-                    <small>
-                      {tour.views ? `${tour.views} · ` : ""}4K
-                    </small>
-                  </div>
-                </button>
-              ))
-            }
-          </div>
-
-        </div>
-      </section>
-
-
-      <!-- VIDEO MODAL -->
-      <div class="video-modal" id="videoModal">
-        <div class="modal-content">
-
-          <button
-            class="close-modal"
-            id="closeModal"
-            aria-label="Close video"
-            type="button"
-          >
-            ×
-          </button>
-
-          <div class="modal-video">
-            <iframe
-              id="modalPlayer"
-              src=""
-              title="Walking Tour"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerpolicy="strict-origin-when-cross-origin"
+    <!-- Inline Script to embed Clean Player without YouTube Redirects -->
+    <script is:inline>
+      document.querySelectorAll('.thumbnail-wrapper').forEach(wrapper => {
+        wrapper.addEventListener('click', () => {
+          const videoId = wrapper.getAttribute('data-video-id');
+          wrapper.innerHTML = `
+            <iframe 
+              src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0" 
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
               allowfullscreen
             ></iframe>
-          </div>
-
-          <h3 id="modalTitle"></h3>
-
-          <a
-            id="modalYoutube"
-            class="modal-youtube"
-            href="#"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Watch on YouTube
-          </a>
-
-        </div>
-      </div>
-
-
-      <!-- DESTINATIONS -->
-      <section class="destinations">
-        <div class="container">
-
-          <div class="section-heading">
-            <p class="section-label">EXPLORE</p>
-            <h2>Our Destinations</h2>
-          </div>
-
-          <div class="destination-grid">
-
-            <a href="/destinations/turkey" class="destination">
-              <span>Turkey</span>
-              <small>Explore →</small>
-            </a>
-
-            <a href="/destinations/germany" class="destination">
-              <span>Germany</span>
-              <small>Explore →</small>
-            </a>
-
-            <div class="destination coming-soon">
-              <span>More destinations</span>
-              <small>Coming soon</small>
-            </div>
-
-          </div>
-
-        </div>
-      </section>
-
-
-      <!-- LATEST -->
-      <section class="latest">
-        <div class="container">
-
-          <div class="section-heading">
-            <p class="section-label">LATEST</p>
-            <h2>Latest Walking Tours</h2>
-          </div>
-
-          <p class="empty-message">
-            More walking tours will be added here.
-          </p>
-
-        </div>
-      </section>
-
-    </main>
-
-
-    <footer>
-      <div class="container footer-inner">
-        <strong>OLD TOWNS</strong>
-        <span>Walking Tours Around the World</span>
-      </div>
-    </footer>
-
-
-    <script>
-      const slides = document.querySelectorAll<HTMLImageElement>(".hero-slides img");
-
-      let currentSlide = 0;
-
-      if (slides.length > 1) {
-        setInterval(() => {
-          slides[currentSlide].classList.remove("active");
-
-          currentSlide = (currentSlide + 1) % slides.length;
-
-          slides[currentSlide].classList.add("active");
-        }, 8000);
-      }
-
-
-      // Mobile menu toggle
-      const menuToggle = document.getElementById("menuToggle");
-      const mainNav = document.getElementById("mainNav");
-
-      if (menuToggle && mainNav) {
-        menuToggle.addEventListener("click", () => {
-          const isOpen = mainNav.classList.toggle("open");
-
-          menuToggle.classList.toggle("open", isOpen);
-
-          menuToggle.setAttribute(
-            "aria-expanded",
-            String(isOpen)
-          );
+          `;
         });
-
-        mainNav.querySelectorAll("a").forEach((link) => {
-          link.addEventListener("click", () => {
-            mainNav.classList.remove("open");
-            if (menuToggle) {
-              menuToggle.classList.remove("open");
-              menuToggle.setAttribute("aria-expanded", "false");
-            }
-          });
-        });
-      }
-
-
-      const modal = document.getElementById("videoModal");
-      const player = document.getElementById("modalPlayer") as HTMLIFrameElement | null;
-      const modalTitle = document.getElementById("modalTitle");
-      const modalYoutube = document.getElementById("modalYoutube") as HTMLAnchorElement | null;
-      const closeButton = document.getElementById("closeModal");
-
-
-      document
-        .querySelectorAll(".tour-card, .youtube-card")
-        .forEach((card) => {
-
-          card.addEventListener("click", () => {
-
-            const videoId = card.getAttribute("data-video") || "";
-            const title = card.getAttribute("data-title") || "";
-
-            if (!player || !modal || !modalTitle || !modalYoutube) {
-              return;
-            }
-
-            if (!videoId) {
-              return;
-            }
-
-            player.src =
-              `https://www.youtube.com/embed/${videoId}?autoplay=1`;
-
-            player.title = title || "Walking Tour";
-
-            modalTitle.textContent = title;
-
-            modalYoutube.href =
-              `https://www.youtube.com/watch?v=${videoId}`;
-
-            modal.classList.add("open");
-
-            document.body.classList.add("modal-open");
-
-          });
-
-        });
-
-
-      function closeVideo() {
-        if (modal && player) {
-          modal.classList.remove("open");
-          player.src = "";
-          document.body.classList.remove("modal-open");
-        }
-      }
-
-
-      if (closeButton) {
-        closeButton.addEventListener("click", closeVideo);
-      }
-
-
-      if (modal) {
-        modal.addEventListener("click", (event: MouseEvent) => {
-          if (event.target === modal) {
-            closeVideo();
-          }
-        });
-      }
-
-
-      document.addEventListener("keydown", (event: KeyboardEvent) => {
-        if (event.key === "Escape") {
-          closeVideo();
-        }
       });
     </script>
-
   </body>
 </html>
-
-
-<style>
-  * {
-    box-sizing: border-box;
-  }
-
-
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    color: #111;
-    background: #fff;
-  }
-
-
-  body.modal-open {
-    overflow: hidden;
-  }
-
-
-  .container {
-    width: min(1180px, 92%);
-    margin: 0 auto;
-  }
-
-
-  /* HEADER */
-
-  header {
-    border-bottom: 1px solid #eee;
-    background: #fff;
-  }
-
-
-  .nav-inner {
-    min-height: 82px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 30px;
-  }
-
-
-  .logo {
-    display: inline-flex;
-    align-items: stretch;
-    text-decoration: none;
-    font-size: 20px;
-    font-weight: 800;
-    letter-spacing: 1px;
-    line-height: 1;
-  }
-
-
-  .logo-old {
-    background: #111;
-    color: #f3c400;
-    padding: 12px 11px;
-  }
-
-
-  .logo-towns {
-    background: #f3c400;
-    color: #111;
-    padding: 12px 11px;
-  }
-
-
-  nav {
-    display: flex;
-    align-items: center;
-    gap: 24px;
-  }
-
-
-  nav a {
-    color: #333;
-    text-decoration: none;
-    font-size: 15px;
-    font-weight: 600;
-  }
-
-
-  nav a:hover {
-    color: #111;
-  }
-
-
-  .youtube-button {
-    background: #111;
-    color: #f3c400 !important;
-    padding: 11px 17px;
-    font-weight: 800 !important;
-  }
-
-
-  /* MOBILE MENU TOGGLE */
-
-  .menu-toggle {
-    display: none;
-    flex-direction: column;
-    justify-content: center;
-    gap: 5px;
-
-    width: 40px;
-    height: 40px;
-
-    padding: 8px;
-
-    background: transparent;
-    border: 0;
-
-    cursor: pointer;
-  }
-
-
-  .menu-toggle span {
-    display: block;
-    height: 2px;
-    width: 100%;
-    background: #111;
-    transition: transform 0.25s ease, opacity 0.25s ease;
-  }
-
-
-  .menu-toggle.open span:nth-child(1) {
-    transform: translateY(7px) rotate(45deg);
-  }
-
-
-  .menu-toggle.open span:nth-child(2) {
-    opacity: 0;
-  }
-
-
-  .menu-toggle.open span:nth-child(3) {
-    transform: translateY(-7px) rotate(-45deg);
-  }
-
-
-  /* HERO */
-
-  .hero {
-    position: relative;
-    min-height: 620px;
-    overflow: hidden;
-    color: #fff;
-  }
-
-
-  .hero-slides {
-    position: absolute;
-    inset: 0;
-  }
-
-
-  .hero-slides img {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    opacity: 0;
-    transform: scale(1.02);
-
-    transition:
-      opacity 1.8s ease,
-      transform 8s ease;
-  }
-
-
-  .hero-slides img.active {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-
-  .hero-overlay {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-
-    background:
-      linear-gradient(
-        90deg,
-        rgba(0, 0, 0, 0.78) 0%,
-        rgba(0, 0, 0, 0.55) 34%,
-        rgba(0, 0, 0, 0.20) 67%,
-        rgba(0, 0, 0, 0.10) 100%
-      );
-  }
-
-
-  .hero-content {
-    display: grid;
-    grid-template-columns: 1fr 0.92fr;
-    align-items: center;
-    gap: 65px;
-
-    transform: translateX(-45px);
-  }
-
-
-  .hero-copy {
-    max-width: 620px;
-  }
-
-
-  .eyebrow {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    margin-bottom: 16px;
-  }
-
-
-  h1 {
-    font-size: clamp(44px, 6vw, 76px);
-    line-height: 1.02;
-    margin: 0 0 24px;
-    max-width: 800px;
-  }
-
-
-  .hero-text {
-    max-width: 560px;
-    font-size: 18px;
-    line-height: 1.6;
-    margin-bottom: 30px;
-  }
-
-
-  .hero-actions {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-  }
-
-
-  .button {
-    display: inline-block;
-    padding: 14px 22px;
-    background: #fff;
-    color: #111;
-    text-decoration: none;
-    font-weight: 700;
-  }
-
-
-  .hero-youtube {
-    display: inline-block;
-    padding: 14px 22px;
-    background: #111;
-    color: #f3c400;
-    text-decoration: none;
-    font-weight: 800;
-  }
-
-
-  .hero-video {
-    width: 100%;
-  }
-
-
-  .video-frame {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    background: #000;
-    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.35);
-  }
-
-
-  iframe {
-    width: 100%;
-    height: 100%;
-    border: 0;
-  }
-
-
-  .youtube-watch {
-    position: absolute;
-    left: 15px;
-    bottom: 15px;
-
-    padding: 8px 12px;
-
-    background: #fff;
-    color: #111;
-
-    text-decoration: none;
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-
-  /* SECTIONS */
-
-  section:not(.hero) {
-    padding: 82px 0;
-  }
-
-
-  .section-heading {
-    margin-bottom: 38px;
-  }
-
-
-  .section-label {
-    display: inline-block;
-
-    margin: 0 0 14px;
-
-    padding: 8px 12px;
-
-    background: #111;
-    color: #f3c400;
-
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 1.7px;
-  }
-
-
-  h2 {
-    font-size: 42px;
-    margin: 0;
-    line-height: 1.1;
-  }
-
-
-  /* EXPLORE OUR WALKS */
-
-  .youtube-section {
-    background: #fff;
-  }
-
-
-  .youtube-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 28px;
-  }
-
-
-  .youtube-card {
-    display: block;
-    width: 100%;
-    padding: 0;
-    border: 0;
-    color: #111;
-    text-align: left;
-    font-family: inherit;
-    background: #f5f5f5;
-    overflow: hidden;
-    cursor: pointer;
-  }
-
-
-  .youtube-thumbnail {
-    position: relative;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-  }
-
-
-  .youtube-thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-
-    transition: transform 0.3s ease;
-  }
-
-
-  .youtube-card:hover img {
-    transform: scale(1.03);
-  }
-
-
-  .youtube-play {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-
-    transform: translate(-50%, -50%);
-
-    width: 60px;
-    height: 60px;
-
-    border-radius: 50%;
-
-    background: rgba(0, 0, 0, 0.80);
-    color: #fff;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 22px;
-    padding-left: 4px;
-  }
-
-
-  .youtube-watch-small {
-    position: absolute;
-    left: 12px;
-    bottom: 12px;
-
-    padding: 7px 10px;
-
-    background: #fff;
-    color: #111;
-
-    font-size: 10px;
-    font-weight: 800;
-  }
-
-
-  .youtube-card-info {
-    padding: 18px;
-  }
-
-
-  .youtube-card-info h3 {
-    margin: 0;
-    font-size: 18px;
-    line-height: 1.35;
-  }
-
-
-  .youtube-more {
-    margin-top: 30px;
-  }
-
-
-  .youtube-more a {
-    color: #111;
-    font-weight: 800;
-    text-decoration: none;
-  }
-
-
-  /* POPULAR */
-
-  .popular {
-    background: #fff;
-  }
-
-
-  .germany {
-    background: #fafafa;
-  }
-
-
-  .tour-grid {
-    display: grid;
-    gap: 22px;
-  }
-
-
-  .tour-grid.five {
-    grid-template-columns: repeat(5, 1fr);
-  }
-
-
-  .tour-card {
-    display: block;
-    width: 100%;
-    padding: 0;
-
-    border: 0;
-
-    color: #111;
-
-    text-align: left;
-    font-family: inherit;
-
-    background: #f5f5f5;
-
-    overflow: hidden;
-
-    cursor: pointer;
-
-    transition: transform 0.2s ease;
-  }
-
-
-  .tour-card:hover {
-    transform: translateY(-4px);
-  }
-
-
-  .thumbnail {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-    background: #ddd;
-  }
-
-
-  .thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-
-    transition: transform 0.3s ease;
-  }
-
-
-  .tour-card:hover .thumbnail img {
-    transform: scale(1.03);
-  }
-
-
-  .play-button {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-
-    transform: translate(-50%, -50%);
-
-    width: 54px;
-    height: 54px;
-
-    border-radius: 50%;
-
-    background: rgba(0, 0, 0, 0.78);
-    color: #fff;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    font-size: 20px;
-    padding-left: 4px;
-  }
-
-
-  .tour-info {
-    padding: 17px;
-  }
-
-
-  .tour-info span {
-    font-size: 9px;
-    font-weight: 800;
-    letter-spacing: 1.2px;
-  }
-
-
-  .tour-info h3 {
-    font-size: 16px;
-    line-height: 1.35;
-    margin: 9px 0;
-  }
-
-
-  .tour-info small {
-    color: #777;
-    font-size: 11px;
-  }
-
-
-  /* DESTINATIONS */
-
-  .destination-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-  }
-
-
-  .destination {
-    min-height: 180px;
-    padding: 28px;
-
-    background: #f3f3f3;
-    color: #111;
-
-    text-decoration: none;
-
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-
-
-  .destination span {
-    font-size: 28px;
-    font-weight: 700;
-  }
-
-
-  .destination small {
-    font-size: 13px;
-  }
-
-
-  .coming-soon {
-    color: #777;
-  }
-
-
-  .empty-message {
-    color: #777;
-  }
-
-
-  /* MODAL */
-
-  .video-modal {
-    position: fixed;
-    inset: 0;
-
-    z-index: 9999;
-
-    display: none;
-
-    align-items: center;
-    justify-content: center;
-
-    padding: 30px;
-
-    background: rgba(0, 0, 0, 0.88);
-  }
-
-
-  .video-modal.open {
-    display: flex;
-  }
-
-
-  .modal-content {
-    position: relative;
-
-    width: min(1000px, 95vw);
-
-    background: #111;
-
-    padding: 20px;
-  }
-
-
-  .modal-video {
-    aspect-ratio: 16 / 9;
-  }
-
-
-  .modal-video iframe {
-    display: block;
-    width: 100%;
-    height: 100%;
-  }
-
-
-  .modal-content h3 {
-    color: #fff;
-    margin: 15px 0 12px;
-    font-size: 20px;
-  }
-
-
-  .modal-youtube {
-    display: inline-block;
-
-    background: #f3c400;
-    color: #111;
-
-    padding: 10px 14px;
-
-    text-decoration: none;
-
-    font-size: 12px;
-    font-weight: 800;
-  }
-
-
-  .close-modal {
-    position: absolute;
-
-    right: -15px;
-    top: -15px;
-
-    z-index: 2;
-
-    width: 40px;
-    height: 40px;
-
-    border: 0;
-    border-radius: 50%;
-
-    background: #fff;
-    color: #111;
-
-    font-size: 28px;
-    line-height: 1;
-
-    cursor: pointer;
-  }
-
-
-  /* FOOTER */
-
-  footer {
-    border-top: 1px solid #eee;
-    padding: 30px 0;
-  }
-
-
-  .footer-inner {
-    display: flex;
-    justify-content: space-between;
-    gap: 20px;
-
-    color: #666;
-    font-size: 13px;
-  }
-
-
-  /* TABLET */
-
-  @media (max-width: 1000px) {
-
-    .hero-content {
-      grid-template-columns: 1fr;
-      gap: 35px;
-      transform: translateX(0);
-    }
-
-
-    .hero {
-      min-height: 780px;
-    }
-
-
-    .hero-video {
-      max-width: 650px;
-    }
-
-
-    .tour-grid.five {
-      grid-template-columns: repeat(3, 1fr);
-    }
-
-  }
-
-
-  /* MOBILE */
-
-  @media (max-width: 800px) {
-
-    .menu-toggle {
-      display: flex;
-    }
-
-
-    .nav-inner {
-      min-height: 72px;
-    }
-
-
-    nav {
-      position: fixed;
-      top: 72px;
-      left: 0;
-      right: 0;
-
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0;
-
-      background: #fff;
-      border-top: 1px solid #eee;
-
-      max-height: 0;
-      overflow: hidden;
-
-      transition: max-height 0.25s ease;
-    }
-
-
-    nav.open {
-      max-height: 400px;
-    }
-
-
-    nav a {
-      width: 100%;
-      padding: 16px 20px;
-      border-bottom: 1px solid #f0f0f0;
-    }
-
-
-    .youtube-button {
-      margin: 12px 20px;
-      display: inline-block;
-    }
-
-
-    .hero {
-      min-height: 720px;
-    }
-
-
-    .hero-overlay {
-      align-items: flex-start;
-      padding-top: 75px;
-    }
-
-
-    .hero-content {
-      grid-template-columns: 1fr;
-      gap: 30px;
-      transform: translateX(0);
-    }
-
-
-    .hero-copy {
-      max-width: 100%;
-    }
-
-
-    h1 {
-      font-size: 48px;
-    }
-
-
-    .hero-text {
-      font-size: 16px;
-    }
-
-
-    .hero-video {
-      width: 100%;
-    }
-
-
-    .youtube-grid {
-      grid-template-columns: 1fr;
-    }
-
-
-    .tour-grid.five {
-      grid-template-columns: 1fr 1fr;
-    }
-
-
-    .destination-grid {
-      grid-template-columns: 1fr;
-    }
-
-
-    h2 {
-      font-size: 34px;
-    }
-
-
-    .video-modal {
-      padding: 15px;
-    }
-
-
-    .modal-content {
-      width: 100%;
-      padding: 10px;
-    }
-
-  }
-
-
-  @media (max-width: 520px) {
-
-    .logo {
-      font-size: 17px;
-    }
-
-
-    .logo-old,
-    .logo-towns {
-      padding: 10px 8px;
-    }
-
-
-    .hero {
-      min-height: 680px;
-    }
-
-
-    .hero-overlay {
-      padding-top: 55px;
-    }
-
-
-    h1 {
-      font-size: 40px;
-    }
-
-
-    .hero-actions {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-
-    .tour-grid.five {
-      grid-template-columns: 1fr;
-    }
-
-
-    section:not(.hero) {
-      padding: 65px 0;
-    }
-
-  }
-</style>
