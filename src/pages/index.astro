@@ -159,10 +159,9 @@ const categories = [
         background-color: #0f0f0f;
         color: #f1f1f1;
         font-family: 'Roboto', sans-serif;
-        overflow: hidden; /* Main window scroll disabled for fixed frame layout */
+        overflow: hidden;
       }
 
-      /* Custom Scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -271,7 +270,7 @@ const categories = [
         background-color: #272727;
       }
 
-      /* Main App Body (Fixed height below Navbar) */
+      /* App Body Structure */
       .app-body {
         display: flex;
         margin-top: 56px;
@@ -326,21 +325,56 @@ const categories = [
         padding: 8px 12px 4px 12px;
       }
 
-      /* MAIN SCROLLABLE CONTENT AREA */
-      .content-area {
-        flex: 1;
-        padding: 24px;
-        overflow-y: auto;
-        height: 100%;
+      /* SILIK - TEMİZ REKLAM YERLEŞKE KUTULARI (YAZISIZ VE HAFİF ÇİZGİLİ) */
+      .sidebar-ad-container {
+        position: sticky;
+        top: 10px;
+        margin-top: auto;
+        padding: 12px;
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        min-height: 250px;
+        width: 100%;
       }
 
-      /* Category Chips Bar */
+      .ad-banner-top {
+        width: 100%;
+        min-height: 90px;
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        margin-bottom: 24px;
+      }
+
+      .ad-card-slot {
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        min-height: 220px;
+        width: 100%;
+      }
+
+      /* MAIN CONTENT CONTAINER */
+      .content-area {
+        flex: 1;
+        overflow-y: auto;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* FIXED TOP HEADER INSIDE CONTENT AREA (KATEGORİLER VE ÜST BANNER SABİTLENDİ) */
+      .sticky-header-wrapper {
+        position: sticky;
+        top: 0;
+        background-color: #0f0f0f;
+        z-index: 10;
+        padding: 24px 24px 0 24px;
+      }
+
       .chips-bar {
         display: flex;
         gap: 12px;
         overflow-x: auto;
         padding-bottom: 16px;
-        margin-bottom: 20px;
       }
       .chips-bar::-webkit-scrollbar {
         display: none;
@@ -364,68 +398,27 @@ const categories = [
         color: #000000;
       }
 
-      /* REKLAM ALANLARI STİLLERİ */
-      .ad-banner-top {
-        width: 100%;
-        min-height: 90px;
-        background-color: #141414;
-        border: 1px dashed #333333;
-        border-radius: 8px;
-        margin-bottom: 24px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        color: #666666;
-        font-size: 11px;
-        letter-spacing: 1px;
+      .scrollable-grid-container {
+        padding: 0 24px 24px 24px;
       }
 
-      .ad-card-slot {
-        background-color: #141414;
-        border: 1px dashed #333333;
-        border-radius: 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 220px;
-        color: #666666;
-        font-size: 11px;
-        letter-spacing: 1px;
-        padding: 16px;
-        text-align: center;
-      }
-
-      .ad-label {
-        font-size: 9px;
-        color: #555555;
-        border: 1px solid #333333;
-        padding: 2px 6px;
-        border-radius: 3px;
-        margin-bottom: 6px;
-        text-transform: uppercase;
-      }
-
-      /* Video Grid Structure - Max 3 Columns */
+      /* Video Grid (3 Columns) */
       .video-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 24px 20px;
       }
 
-      /* Video Card Element */
       .video-card {
         display: flex;
         flex-direction: column;
         gap: 12px;
       }
       
-      /* Custom Video Wrapper (Thumbnail + Custom Play Button) */
       .thumbnail-wrapper {
         position: relative;
         width: 100%;
-        padding-top: 56.25%; /* 16:9 Aspect Ratio */
+        padding-top: 56.25%;
         border-radius: 12px;
         overflow: hidden;
         background-color: #1f1f1f;
@@ -447,7 +440,6 @@ const categories = [
         transform: scale(1.03);
       }
 
-      /* Custom Yellow & Black Play Button */
       .custom-play-btn {
         position: absolute;
         top: 50%;
@@ -552,11 +544,10 @@ const categories = [
           width: 70%;
         }
         .content-area {
-          padding-bottom: 80px; /* Mobil alt bar için ekstra alt boşluk */
+          padding-bottom: 80px;
         }
       }
 
-      /* Mobile Bottom Navigation Styles */
       .mobile-bottom-nav {
         display: none;
       }
@@ -596,7 +587,7 @@ const categories = [
   
   <body>
 
-    <!-- TOP FIXED NAVBAR -->
+    <!-- FIXED TOP NAVBAR -->
     <header class="navbar">
       <div class="nav-left">
         <button class="icon-btn">
@@ -655,77 +646,76 @@ const categories = [
         <a href="#" class="nav-link">
           <span class="material-symbols-outlined">movie</span> Documentaries
         </a>
+
+        <!-- REKLAM 1: SOL SIDEBAR STICKY AD SLOT -->
+        <div class="sidebar-ad-container"></div>
       </aside>
 
-      <!-- SCROLLABLE CONTENT AREA -->
+      <!-- MAIN SCROLLABLE CONTENT AREA -->
       <main class="content-area">
         
-        <!-- CATEGORIES BAR -->
-        <div class="chips-bar">
-          {categories.map((category, index) => (
-            <button class={`chip ${index === 0 ? 'active' : ''}`}>
-              {category}
-            </button>
-          ))}
+        <!-- FIX DUBLE HEADER: KATEGORİLER VE TOP BANNER KAYDIRILDIĞINDA SABİT KALIR -->
+        <div class="sticky-header-wrapper">
+          <div class="chips-bar">
+            {categories.map((category, index) => (
+              <button class={`chip ${index === 0 ? 'active' : ''}`}>
+                {category}
+              </button>
+            ))}
+          </div>
+
+          <!-- REKLAM 2: TOP BANNER AD SLOT -->
+          <div class="ad-banner-top"></div>
         </div>
 
-        <!-- REKLAM ALANI 1: Üst Yatay Banner (Header Ad Slot) -->
-        <div class="ad-banner-top">
-          <span class="ad-label">Advertisement</span>
-          <span>SPONSOR / ADSENSE BANNER AREA (970x90)</span>
-        </div>
+        <!-- VIDEO GRID CONTAINER -->
+        <div class="scrollable-grid-container">
+          <div class="video-grid">
+            {myVideos.map((video, index) => (
+              <>
+                <div class="video-card">
+                  <div class="thumbnail-wrapper" data-video-id={video.id}>
+                    <img 
+                      src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} 
+                      alt={video.title} 
+                      class="video-poster"
+                      loading="lazy"
+                    />
+                    <div class="custom-play-btn">
+                      <span class="material-symbols-outlined">play_arrow</span>
+                    </div>
+                  </div>
 
-        <!-- VIDEO GRID -->
-        <div class="video-grid">
-          {myVideos.map((video, index) => (
-            <>
-              <!-- Video Kartı -->
-              <div class="video-card">
-                <div class="thumbnail-wrapper" data-video-id={video.id}>
-                  <img 
-                    src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} 
-                    alt={video.title} 
-                    class="video-poster"
-                    loading="lazy"
-                  />
-                  <div class="custom-play-btn">
-                    <span class="material-symbols-outlined">play_arrow</span>
+                  <div class="video-details">
+                    <div class="video-info">
+                      <h3 class="video-title">{video.title}</h3>
+                      
+                      <div class="channel-name">
+                        <span>{video.channel}</span>
+                        <span class="material-symbols-outlined verified-icon">check_circle</span>
+                      </div>
+
+                      <div class="video-stats">
+                        <span class="badge-tag">{video.badge}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div class="video-details">
-                  <div class="video-info">
-                    <h3 class="video-title">{video.title}</h3>
-                    
-                    <div class="channel-name">
-                      <span>{video.channel}</span>
-                      <span class="material-symbols-outlined verified-icon">check_circle</span>
-                    </div>
-
-                    <div class="video-stats">
-                      <span class="badge-tag">{video.badge}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- REKLAM ALANI 2: 5. Videodan Sonra Izgara İçi Reklam Kartı -->
-              {index === 4 && (
-                <div class="ad-card-slot">
-                  <span class="ad-label">Sponsor</span>
-                  <span class="material-symbols-outlined" style="font-size: 36px; margin: 8px 0; color: #444;">ads_click</span>
-                  <span>IN-FEED ADSENSE CARD</span>
-                </div>
-              )}
-            </>
-          ))}
+                <!-- REKLAM 3: HER 5 VİDEODAN SONRA 6. SLOT OLARAK GELEN DENGELİ IN-FEED AD SLOT -->
+                {(index + 1) % 5 === 0 && (
+                  <div class="ad-card-slot"></div>
+                )}
+              </>
+            ))}
+          </div>
         </div>
 
       </main>
 
     </div>
 
-    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    <!-- MOBILE NAVIGATION BAR -->
     <nav class="mobile-bottom-nav">
       <a href="/" class="mobile-nav-item active">
         <span class="material-symbols-outlined">home</span>
@@ -745,7 +735,7 @@ const categories = [
       </a>
     </nav>
 
-    <!-- Inline Script to embed Clean Player without YouTube Redirects -->
+    <!-- Inline Script -->
     <script is:inline>
       document.querySelectorAll('.thumbnail-wrapper').forEach(wrapper => {
         wrapper.addEventListener('click', () => {
