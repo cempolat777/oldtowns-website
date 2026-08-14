@@ -340,7 +340,7 @@ const categories = [
         gap: 12px;
         overflow-x: auto;
         padding-bottom: 16px;
-        margin-bottom: 24px;
+        margin-bottom: 20px;
       }
       .chips-bar::-webkit-scrollbar {
         display: none;
@@ -362,6 +362,49 @@ const categories = [
       .chip.active {
         background-color: #ffffff;
         color: #000000;
+      }
+
+      /* REKLAM ALANLARI STİLLERİ */
+      .ad-banner-top {
+        width: 100%;
+        min-height: 90px;
+        background-color: #141414;
+        border: 1px dashed #333333;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #666666;
+        font-size: 11px;
+        letter-spacing: 1px;
+      }
+
+      .ad-card-slot {
+        background-color: #141414;
+        border: 1px dashed #333333;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 220px;
+        color: #666666;
+        font-size: 11px;
+        letter-spacing: 1px;
+        padding: 16px;
+        text-align: center;
+      }
+
+      .ad-label {
+        font-size: 9px;
+        color: #555555;
+        border: 1px solid #333333;
+        padding: 2px 6px;
+        border-radius: 3px;
+        margin-bottom: 6px;
+        text-transform: uppercase;
       }
 
       /* Video Grid Structure - Max 3 Columns */
@@ -425,7 +468,7 @@ const categories = [
       .custom-play-btn span {
         color: #0f0f0f;
         font-size: 32px;
-        margin-left: 3px; /* Visual center alignment for play triangle */
+        margin-left: 3px;
       }
 
       .thumbnail-wrapper:hover .custom-play-btn {
@@ -508,6 +551,45 @@ const categories = [
         .nav-center {
           width: 70%;
         }
+        .content-area {
+          padding-bottom: 80px; /* Mobil alt bar için ekstra alt boşluk */
+        }
+      }
+
+      /* Mobile Bottom Navigation Styles */
+      .mobile-bottom-nav {
+        display: none;
+      }
+      @media (max-width: 700px) {
+        .mobile-bottom-nav {
+          display: flex;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 60px;
+          background-color: #0f0f0f;
+          border-top: 1px solid #222222;
+          justify-content: space-around;
+          align-items: center;
+          z-index: 1000;
+        }
+        .mobile-nav-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: #aaaaaa;
+          text-decoration: none;
+          font-size: 10px;
+          gap: 2px;
+        }
+        .mobile-nav-item.active, .mobile-nav-item:hover {
+          color: #fbc02d;
+        }
+        .mobile-nav-item .material-symbols-outlined {
+          font-size: 22px;
+        }
       }
     </style>
   </head>
@@ -587,46 +669,81 @@ const categories = [
           ))}
         </div>
 
+        <!-- REKLAM ALANI 1: Üst Yatay Banner (Header Ad Slot) -->
+        <div class="ad-banner-top">
+          <span class="ad-label">Advertisement</span>
+          <span>SPONSOR / ADSENSE BANNER AREA (970x90)</span>
+        </div>
+
         <!-- VIDEO GRID -->
         <div class="video-grid">
-          {myVideos.map((video) => (
-            <div class="video-card">
-              
-              <!-- Custom Player Area -->
-              <div class="thumbnail-wrapper" data-video-id={video.id}>
-                <img 
-                  src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} 
-                  alt={video.title} 
-                  class="video-poster"
-                  loading="lazy"
-                />
-                <div class="custom-play-btn">
-                  <span class="material-symbols-outlined">play_arrow</span>
+          {myVideos.map((video, index) => (
+            <>
+              <!-- Video Kartı -->
+              <div class="video-card">
+                <div class="thumbnail-wrapper" data-video-id={video.id}>
+                  <img 
+                    src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} 
+                    alt={video.title} 
+                    class="video-poster"
+                    loading="lazy"
+                  />
+                  <div class="custom-play-btn">
+                    <span class="material-symbols-outlined">play_arrow</span>
+                  </div>
+                </div>
+
+                <div class="video-details">
+                  <div class="video-info">
+                    <h3 class="video-title">{video.title}</h3>
+                    
+                    <div class="channel-name">
+                      <span>{video.channel}</span>
+                      <span class="material-symbols-outlined verified-icon">check_circle</span>
+                    </div>
+
+                    <div class="video-stats">
+                      <span class="badge-tag">{video.badge}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div class="video-details">
-                <div class="video-info">
-                  <h3 class="video-title">{video.title}</h3>
-                  
-                  <div class="channel-name">
-                    <span>{video.channel}</span>
-                    <span class="material-symbols-outlined verified-icon">check_circle</span>
-                  </div>
-
-                  <div class="video-stats">
-                    <span class="badge-tag">{video.badge}</span>
-                  </div>
+              <!-- REKLAM ALANI 2: 5. Videodan Sonra Izgara İçi Reklam Kartı -->
+              {index === 4 && (
+                <div class="ad-card-slot">
+                  <span class="ad-label">Sponsor</span>
+                  <span class="material-symbols-outlined" style="font-size: 36px; margin: 8px 0; color: #444;">ads_click</span>
+                  <span>IN-FEED ADSENSE CARD</span>
                 </div>
-              </div>
-
-            </div>
+              )}
+            </>
           ))}
         </div>
 
       </main>
 
     </div>
+
+    <!-- MOBILE BOTTOM NAVIGATION BAR -->
+    <nav class="mobile-bottom-nav">
+      <a href="/" class="mobile-nav-item active">
+        <span class="material-symbols-outlined">home</span>
+        <span>Home</span>
+      </a>
+      <a href="#" class="mobile-nav-item">
+        <span class="material-symbols-outlined">bolt</span>
+        <span>Shorts</span>
+      </a>
+      <a href="#" class="mobile-nav-item">
+        <span class="material-symbols-outlined">flight</span>
+        <span>Drone</span>
+      </a>
+      <a href="#" class="mobile-nav-item">
+        <span class="material-symbols-outlined">grid_view</span>
+        <span>Categories</span>
+      </a>
+    </nav>
 
     <!-- Inline Script to embed Clean Player without YouTube Redirects -->
     <script is:inline>
