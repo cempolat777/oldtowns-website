@@ -154,18 +154,15 @@ const {
       <slot />
     </main>
 
-     <footer class="border-t border-gray-800 bg-gray-950 py-8 text-center text-sm text-gray-400">
-  <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
-    <p>&copy; {new Date().getFullYear()} Old Towns Walks. All rights reserved.</p>
-
-    <div class="flex items-center space-x-6">
-      <a href="/about" class="hover:text-yellow-500 transition-colors">About Us</a>
-      <a href="/privacy" class="hover:text-yellow-500 transition-colors">Privacy Policy</a>
-      <a href="/contact" class="hover:text-yellow-500 transition-colors">Contact</a>
-    </div>
-  </div>
-    </footer>
-  </div>
+<footer class="bg-gray-900 border-t border-gray-800 py-8 mt-16 relative z-10">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-400 text-sm">
+        <div class="flex flex-wrap justify-center gap-6 mb-4">
+          <a href="/about" class="hover:text-white transition-colors">About Us</a>
+          <a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a>
+          <a href="/contact" class="hover:text-white transition-colors">Contact</a>
+        </div>
+        <p>&copy; {new Date().getFullYear()} Old Towns Walks. All rights reserved.</p>
+      </div>
     </footer>
 
     <!-- Schema.org Structural Data -->
