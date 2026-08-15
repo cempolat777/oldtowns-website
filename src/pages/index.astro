@@ -133,8 +133,19 @@ const categories = [
   "Nature Trails",
   "Documentaries"
 ];
+const videoSchema = myVideos.map((walk) => ({
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": walk.title,
+  "description": `${walk.title} - High quality 4K 60fps POV walking tour.`,
+  "thumbnailUrl": [
+    `https://img.youtube.com/vi/${walk.id}/maxresdefault.jpg`
+  ],
+  "uploadDate": "2026-01-01T08:00:00+00:00",
+  "contentUrl": `https://www.youtube.com/watch?v=${walk.id}`,
+  "embedUrl": `https://www.youtube.com/embed/${walk.id}`
+}));
 ---
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -760,8 +771,14 @@ const categories = [
               allowfullscreen
             ></iframe>
           `;
-        });
-      });
-    </script>
+});
+});
+</script>
+<!-- VideoObject Schema Structure for Google Videos -->
+<script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
+
+  }))
+)} />
   </body>
 </html>
+

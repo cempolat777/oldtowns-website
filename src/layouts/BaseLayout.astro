@@ -123,6 +123,22 @@ const {
         font-size: 13px;
       }
     </style>
+  <!-- Canonical URL -->
+    <link rel="canonical" href={Astro.url.href} />
+
+    <!-- Open Graph / Facebook / WhatsApp -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={Astro.url.href} />
+    <meta property="og:title" content={title || "Old Towns Walks - 4K Walking Tours"} />
+    <meta property="og:description" content={description || "Experience immersive 4K 60fps walking tours with binaural 3D audio from historic old towns around the world."} />
+    <meta property="og:image" content="https://oldtownswalks.com/favicon-v3.png" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={Astro.url.href} />
+    <meta property="twitter:title" content={title || "Old Towns Walks - 4K Walking Tours"} />
+    <meta property="twitter:description" content={description || "Experience immersive 4K 60fps walking tours with binaural 3D audio from historic old towns around the world."} />
+    <meta property="twitter:image" content="https://oldtownswalks.com/favicon-v3.png" />
   </head>
   <body>
     <header>
@@ -138,23 +154,28 @@ const {
       <slot />
     </main>
 
-    <footer>
-      <p>© OLD TOWNS — Immersive 4K Walking Tours & Atmospheric Exploration.</p>
+     <footer class="border-t border-gray-800 bg-gray-950 py-8 text-center text-sm text-gray-400">
+  <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
+    <p>&copy; {new Date().getFullYear()} Old Towns Walks. All rights reserved.</p>
+
+    <div class="flex items-center space-x-6">
+      <a href="/about" class="hover:text-yellow-500 transition-colors">About Us</a>
+      <a href="/privacy" class="hover:text-yellow-500 transition-colors">Privacy Policy</a>
+      <a href="/contact" class="hover:text-yellow-500 transition-colors">Contact</a>
+    </div>
+  </div>
     </footer>
+  </div>
+    </footer>
+
+    <!-- Schema.org Structural Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Old Towns Walks",
+      "url": "https://oldtownswalks.com/"
+    }
+    </script>
   </body>
 </html>
-<!-- Schema.org Structural Data -->
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Old Towns Walks",
-  "url": "https://oldtownswalks.com/",
-  "description": "4K 60fps Binaural 3D Sound Walking Tours and Historic Old Town Explorations",
-  "publisher": {
-    "@type": "Organization",
-    "name": "Old Towns Walks",
-    "logo": "https://oldtownswalks.com/favicon-v3.png"
-  }
-}
-</script>
