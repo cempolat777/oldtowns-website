@@ -325,7 +325,7 @@ const categories = [
         padding: 8px 12px 4px 12px;
       }
 
-      /* SILIK - TEMİZ REKLAM YERLEŞKE KUTULARI (YAZISIZ VE HAFİF ÇİZGİLİ) */
+      /* REKLAM ALANLARI (SADECE SİLİK ÇİZGİLERLE BELİRTİLMİŞ YAZISIZ KUTULAR) */
       .sidebar-ad-container {
         position: sticky;
         top: 10px;
@@ -361,7 +361,7 @@ const categories = [
         flex-direction: column;
       }
 
-      /* FIXED TOP HEADER INSIDE CONTENT AREA (KATEGORİLER VE ÜST BANNER SABİTLENDİ) */
+      /* FIXED TOP HEADER INSIDE CONTENT AREA (KATEGORİLER VE ÜST BANNER KAYDIRILDIĞINDA SABİT KALIR) */
       .sticky-header-wrapper {
         position: sticky;
         top: 0;
@@ -527,7 +527,7 @@ const categories = [
         border: 1px solid #303030;
       }
 
-      /* Responsive Rules */
+      /* MOBILE RESPONSIVE RULES */
       @media (max-width: 1100px) {
         .video-grid {
           grid-template-columns: repeat(2, 1fr);
@@ -539,12 +539,25 @@ const categories = [
         }
         .video-grid {
           grid-template-columns: 1fr;
+          gap: 16px;
         }
         .nav-center {
-          width: 70%;
+          width: 60%;
         }
         .content-area {
           padding-bottom: 80px;
+        }
+        .sticky-header-wrapper {
+          padding: 12px 12px 0 12px;
+        }
+        .scrollable-grid-container {
+          padding: 0 12px 12px 12px;
+        }
+        .ad-banner-top {
+          min-height: 50px;
+        }
+        .ad-card-slot {
+          min-height: 180px;
         }
       }
 
@@ -654,7 +667,7 @@ const categories = [
       <!-- MAIN SCROLLABLE CONTENT AREA -->
       <main class="content-area">
         
-        <!-- FIX DUBLE HEADER: KATEGORİLER VE TOP BANNER KAYDIRILDIĞINDA SABİT KALIR -->
+        <!-- FIXED TOP HEADER INSIDE CONTENT AREA (KATEGORİLER VE TOP BANNER) -->
         <div class="sticky-header-wrapper">
           <div class="chips-bar">
             {categories.map((category, index) => (
@@ -702,7 +715,7 @@ const categories = [
                   </div>
                 </div>
 
-                <!-- REKLAM 3: HER 5 VİDEODAN SONRA 6. SLOT OLARAK GELEN DENGELİ IN-FEED AD SLOT -->
+                <!-- REKLAM 3: HER 5 VİDEODAN SONRA 6. SLOT OLARAK GELEN IN-FEED AD SLOT -->
                 {(index + 1) % 5 === 0 && (
                   <div class="ad-card-slot"></div>
                 )}

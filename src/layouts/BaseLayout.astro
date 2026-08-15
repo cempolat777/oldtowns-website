@@ -19,7 +19,18 @@ const {
     <meta name="generator" content={Astro.generator} />
 
     <title>{title}</title>
-      <meta name="description" content={description} />
+    <!-- SEO & Open Graph Meta Tags -->
+  <meta name="description" content="Explore historic cities, atmospheric old towns, and scenic walking tours in 4K 60fps binaural 3D sound. Experience immersive city walks worldwide." />
+  <meta name="keywords" content="walking tour, 4k walking tour, old towns, binaural audio, city walk, izmir walking tour, dusseldorf walk, travel 4k" />
+  <meta name="author" content="Old Towns Walks" />
+  <link rel="canonical" href="https://oldtownswalks.com/" />
+
+  <!-- Social Media Share (Open Graph) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://oldtownswalks.com/" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content="Explore historic cities, atmospheric old towns, and scenic walking tours in 4K 60fps binaural 3D sound." />
+  <meta property="og:image" content="https://oldtownswalks.com/favicon-v3.png" />
 
       <meta property="og:image" content="https://oldtownswalks.com/og-image.png" />
       <meta property="og:title" content="OLD TOWNS | Global Walking Tours & Cinematic Urban Exploration" />
@@ -132,3 +143,18 @@ const {
     </footer>
   </body>
 </html>
+<!-- Schema.org Structural Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Old Towns Walks",
+  "url": "https://oldtownswalks.com/",
+  "description": "4K 60fps Binaural 3D Sound Walking Tours and Historic Old Town Explorations",
+  "publisher": {
+    "@type": "Organization",
+    "name": "Old Towns Walks",
+    "logo": "https://oldtownswalks.com/favicon-v3.png"
+  }
+}
+</script>
