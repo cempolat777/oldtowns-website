@@ -133,6 +133,7 @@ const categories = [
   "Nature Trails",
   "Documentaries"
 ];
+
 const videoSchema = myVideos.map((walk) => ({
   "@context": "https://schema.org",
   "@type": "VideoObject",
@@ -281,6 +282,21 @@ const videoSchema = myVideos.map((walk) => ({
         background-color: #272727;
       }
 
+      .nav-right-links {
+        display: flex;
+        align-items: center;
+        gap: 1.25rem;
+        font-size: 0.85rem;
+      }
+      .nav-right-links a {
+        color: #9ca3af;
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+      .nav-right-links a:hover {
+        color: #ffffff;
+      }
+
       /* App Body Structure */
       .app-body {
         display: flex;
@@ -336,7 +352,7 @@ const videoSchema = myVideos.map((walk) => ({
         padding: 8px 12px 4px 12px;
       }
 
-      /* REKLAM ALANLARI (SADECE SİLİK ÇİZGİLERLE BELİRTİLMİŞ YAZISIZ KUTULAR) */
+      /* REKLAM ALANLARI */
       .sidebar-ad-container {
         position: sticky;
         top: 10px;
@@ -372,7 +388,7 @@ const videoSchema = myVideos.map((walk) => ({
         flex-direction: column;
       }
 
-      /* FIXED TOP HEADER INSIDE CONTENT AREA (KATEGORİLER VE ÜST BANNER KAYDIRILDIĞINDA SABİT KALIR) */
+      /* FIXED TOP HEADER INSIDE CONTENT AREA */
       .sticky-header-wrapper {
         position: sticky;
         top: 0;
@@ -553,7 +569,11 @@ const videoSchema = myVideos.map((walk) => ({
           gap: 16px;
         }
         .nav-center {
-          width: 60%;
+          width: 50%;
+        }
+        .nav-right-links {
+          gap: 0.75rem;
+          font-size: 0.75rem;
         }
         .content-area {
           padding-bottom: 80px;
@@ -635,6 +655,12 @@ const videoSchema = myVideos.map((walk) => ({
           </button>
         </div>
       </div>
+
+      <div class="nav-right-links">
+        <a href="/about">About</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/contact">Contact</a>
+      </div>
     </header>
 
     <!-- MAIN APP STRUCTURE -->
@@ -672,15 +698,7 @@ const videoSchema = myVideos.map((walk) => ({
         </a>
 
         <!-- REKLAM 1: SOL SIDEBAR STICKY AD SLOT -->
-        <div class="sidebar-ad-container"></div>
-        <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid #1f2937; font-size: 0.75rem; color: #9ca3af;">
-        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem 0.75rem; padding: 0 0.5rem; margin-bottom: 0.5rem;">
-          <a href="/about" style="color: #9ca3af; text-decoration: none;">About</a>
-          <a href="/privacy" style="color: #9ca3af; text-decoration: none;">Privacy</a>
-          <a href="/contact" style="color: #9ca3af; text-decoration: none;">Contact</a>
-        </div>
-        <p style="padding: 0 0.5rem; font-size: 0.65rem; color: #4b5563;">&copy; {new Date().getFullYear()} Old Towns Walks</p>
-      </div>
+      
       </aside>
 
       <!-- MAIN SCROLLABLE CONTENT AREA -->
@@ -734,7 +752,7 @@ const videoSchema = myVideos.map((walk) => ({
                   </div>
                 </div>
 
-                <!-- REKLAM 3: HER 5 VİDEODAN SONRA 6. SLOT OLARAK GELEN IN-FEED AD SLOT -->
+                <!-- REKLAM 3: HER 5 VİDEODAN SONRA IN-FEED AD SLOT -->
                 {(index + 1) % 5 === 0 && (
                   <div class="ad-card-slot"></div>
                 )}
@@ -779,14 +797,12 @@ const videoSchema = myVideos.map((walk) => ({
               allowfullscreen
             ></iframe>
           `;
-});
-});
-</script>
-<!-- VideoObject Schema Structure for Google Videos -->
-<script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
+        });
+      });
+    </script>
 
-  }))
-)} />
+    <!-- VideoObject Schema Structure for Google Videos -->
+    <script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
   </body>
 </html>
 
