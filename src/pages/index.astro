@@ -352,7 +352,6 @@ const videoSchema = myVideos.map((walk) => ({
         padding: 8px 12px 4px 12px;
       }
 
-      /* REKLAM ALANLARI */
       .sidebar-ad-container {
         position: sticky;
         top: 10px;
@@ -388,7 +387,6 @@ const videoSchema = myVideos.map((walk) => ({
         flex-direction: column;
       }
 
-      /* FIXED TOP HEADER INSIDE CONTENT AREA */
       .sticky-header-wrapper {
         position: sticky;
         top: 0;
@@ -429,7 +427,6 @@ const videoSchema = myVideos.map((walk) => ({
         padding: 0 24px 24px 24px;
       }
 
-      /* Video Grid (3 Columns) */
       .video-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -554,7 +551,6 @@ const videoSchema = myVideos.map((walk) => ({
         border: 1px solid #303030;
       }
 
-      /* MOBILE RESPONSIVE RULES */
       @media (max-width: 1100px) {
         .video-grid {
           grid-template-columns: repeat(2, 1fr);
@@ -630,7 +626,6 @@ const videoSchema = myVideos.map((walk) => ({
   </head>
   
   <body>
-
     <!-- FIXED TOP NAVBAR -->
     <header class="navbar">
       <div class="nav-left">
@@ -665,7 +660,6 @@ const videoSchema = myVideos.map((walk) => ({
 
     <!-- MAIN APP STRUCTURE -->
     <div class="app-body">
-      
       <!-- FIXED SIDEBAR -->
       <aside class="sidebar">
         <a href="#" class="nav-link active">
@@ -696,15 +690,10 @@ const videoSchema = myVideos.map((walk) => ({
         <a href="#" class="nav-link">
           <span class="material-symbols-outlined">movie</span> Documentaries
         </a>
-
-        <!-- REKLAM 1: SOL SIDEBAR STICKY AD SLOT -->
-      
       </aside>
 
       <!-- MAIN SCROLLABLE CONTENT AREA -->
       <main class="content-area">
-        
-        <!-- FIXED TOP HEADER INSIDE CONTENT AREA (KATEGORİLER VE TOP BANNER) -->
         <div class="sticky-header-wrapper">
           <div class="chips-bar">
             {categories.map((category, index) => (
@@ -713,8 +702,6 @@ const videoSchema = myVideos.map((walk) => ({
               </button>
             ))}
           </div>
-
-          <!-- REKLAM 2: TOP BANNER AD SLOT -->
           <div class="ad-banner-top"></div>
         </div>
 
@@ -752,7 +739,6 @@ const videoSchema = myVideos.map((walk) => ({
                   </div>
                 </div>
 
-                <!-- REKLAM 3: HER 5 VİDEODAN SONRA IN-FEED AD SLOT -->
                 {(index + 1) % 5 === 0 && (
                   <div class="ad-card-slot"></div>
                 )}
@@ -760,9 +746,7 @@ const videoSchema = myVideos.map((walk) => ({
             ))}
           </div>
         </div>
-
       </main>
-
     </div>
 
     <!-- MOBILE NAVIGATION BAR -->
@@ -801,7 +785,7 @@ const videoSchema = myVideos.map((walk) => ({
       });
     </script>
 
-    <!-- VideoObject Schema Structure for Google Videos -->
+    <!-- Schema Structure -->
     <script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
   </body>
 </html>
