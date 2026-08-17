@@ -3,29 +3,200 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="About Us - Old Towns Walks" description="Learn more about Old Towns Walks, our mission, and high-quality 4K walking tour video production.">
-  <div class="max-w-4xl mx-auto px-4 py-12 text-gray-200">
-    <h1 class="text-3xl md:text-4xl font-bold text-yellow-500 mb-6">About Old Towns Walks</h1>
+  <div class="about-container">
     
-    <div class="space-y-6 text-lg leading-relaxed text-gray-300">
+    <!-- Başlık Kartı -->
+    <div class="info-card header-card">
+      <h1>About <span class="highlight">Old Towns Walks</span></h1>
+      <p class="subtitle">Your ultimate destination for immersive, high-definition 4K walking tours around the world.</p>
+    </div>
+
+    <!-- Hikaye Kartı -->
+    <div class="info-card">
       <p>
-        Welcome to <strong>Old Towns Walks</strong>, your ultimate destination for immersive, high-definition 4K walking tours around the world. Our mission is to bring the authentic atmosphere, historical streets, vibrant local culture, and scenic routes directly to your screen.
+        Welcome to <strong>Old Towns Walks</strong>. Whether you are looking to explore historic European old towns, tranquil coastal paths, bustling street food markets, or relaxing rain walks, our videos deliver authentic sights and real ambient soundscapes.
       </p>
-
       <p>
-        Whether you are looking to explore historic European old towns, tranquil coastal paths, bustling street food markets, or relaxing rain walks, our point-of-view (POV) walking videos offer a natural and relaxing travel experience.
-      </p>
-
-      <h2 class="text-2xl font-semibold text-white mt-8 mb-4">Our Production Quality</h2>
-      <ul class="list-disc list-inside space-y-2 text-gray-300">
-        <li><strong>Ultra HD 4K 60FPS:</strong> Crystal clear video footage recorded in native 4K resolution.</li>
-        <li><strong>Binaural 3D Audio:</strong> Immersive spatial sound recorded on-site to recreate authentic ambient soundscapes.</li>
-        <li><strong>Natural Experience:</strong> Pure walking perspectives without intrusive music commentary, allowing you to experience every destination authentically.</li>
-      </ul>
-
-      <h2 class="text-2xl font-semibold text-white mt-8 mb-4">Get in Touch</h2>
-      <p>
-        Have questions, location suggestions, or business inquiries? Feel free to reach out to us via our <a href="/contact" class="text-yellow-500 hover:underline">Contact Page</a> or follow our latest releases on our YouTube channel.
+        We focus entirely on pure point-of-view (POV) perspectives without intrusive music commentary, allowing you to experience every destination as if you were walking there yourself.
       </p>
     </div>
+
+    <!-- Özellikler Kartı -->
+    <div class="info-card">
+      <h2 class="card-title">Our Production Quality</h2>
+      
+      <div class="features-grid">
+        <div class="feature-box">
+          <h3>Ultra HD 4K 60FPS</h3>
+          <p>Crystal clear video footage recorded in native 4K resolution optimized for large screens.</p>
+        </div>
+
+        <div class="feature-box">
+          <h3>Binaural 3D Audio</h3>
+          <p>Immersive spatial sound recorded on-site to recreate authentic ambient soundscapes.</p>
+        </div>
+
+        <div class="feature-box">
+          <h3>Natural Experience</h3>
+          <p>Pure walking perspectives without speech interruptions for total relaxation.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- İletişim Kartı -->
+    <div class="info-card contact-card">
+      <div>
+        <h2>Get in Touch</h2>
+        <p>Have questions, location suggestions, or business inquiries?</p>
+      </div>
+      <a href="/contact" class="btn-primary">Contact Us</a>
+    </div>
+
   </div>
 </BaseLayout>
+
+<style>
+  /* Sayfayı Merkeze Alma */
+  .about-container {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 20px;
+    box-sizing: border-box;
+  }
+
+  /* Ortak Kart Yapısı */
+  .info-card {
+    background-color: #181818;
+    border: 1px solid #272727;
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* Başlık Kartına Özel Stiller */
+  .header-card h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+  }
+
+  .highlight {
+    color: #fbc02d;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* İçerik Yazıları */
+  .info-card p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #d1d5db;
+    margin: 0 0 16px 0;
+  }
+
+  .info-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  .info-card p strong {
+    color: #ffffff;
+  }
+
+  .card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 20px 0;
+  }
+
+  /* 3'lü Izgara Yapısı */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .feature-box {
+    background-color: #0f0f0f;
+    border: 1px solid #222222;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .feature-box h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fbc02d;
+    margin: 0 0 8px 0;
+  }
+
+  .feature-box p {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* İletişim Kartı */
+  .contact-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .contact-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 4px 0;
+  }
+
+  .contact-card p {
+    font-size: 0.95rem;
+    color: #9ca3af;
+    margin: 0;
+  }
+
+  .btn-primary {
+    background-color: #fbc02d;
+    color: #0f0f0f;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #fdd835;
+  }
+
+  /* Mobil Uyum */
+  @media (max-width: 640px) {
+    .about-container {
+      padding: 20px 16px;
+    }
+    
+    .contact-card {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .btn-primary {
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+    }
+  }
+</style>

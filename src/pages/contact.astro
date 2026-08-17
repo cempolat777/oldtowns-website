@@ -2,36 +2,227 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout 
-  title="Contact Us - Old Towns Walks" 
-  description="Get in touch with Old Towns Walks for business inquiries, walking location recommendations, or general questions."
->
-  <div class="max-w-4xl mx-auto px-4 py-12 text-gray-200">
-    <h1 class="text-3xl md:text-4xl font-bold mb-6 text-white">Contact Us</h1>
+<BaseLayout title="Contact Us - Old Towns Walks" description="Get in touch with Old Towns Walks for business inquiries, location suggestions, or feedback.">
+  <div class="contact-wrapper">
     
-    <p class="text-lg leading-relaxed mb-8 text-gray-300">
-      Have feedback, destination suggestions, or business inquiry? We would love to hear from you!
-    </p>
+    <!-- Başlık Bölümü -->
+    <header class="contact-header">
+      <h1>Get in <span class="highlight">Touch</span></h1>
+      <p class="subtitle">Have questions, business inquiries, or location suggestions for our next 4K walk? Drop us a line!</p>
+    </header>
 
-    <div class="bg-gray-900 border border-gray-800 rounded-lg p-6 space-y-6">
-      <div>
-        <h2 class="text-xl font-semibold text-white mb-2">Email Us</h2>
-        <p class="text-gray-300">
-          For all general inquiries and collaboration requests:
-        </p>
-        <a href="mailto:contact@oldtownswalks.com" class="text-yellow-500 font-medium hover:underline text-lg block mt-1">
-          contact@oldtownswalks.com
-        </a>
-      </div>
+    <div class="contact-grid">
+      <!-- İletişim Bilgileri Kartı -->
+      <section class="info-card">
+        <h2 class="card-title">Contact Information</h2>
+        <p class="card-desc">Feel free to reach out directly via email or connect with us on social media.</p>
+        
+        <div class="contact-details">
+          <div class="contact-item">
+            <span class="label">Email Us</span>
+            <a href="mailto:contact@oldtownswalks.com" class="value link">contact@oldtownswalks.com</a>
+          </div>
 
-      <hr class="border-gray-800" />
+          <div class="contact-item">
+            <span class="label">YouTube Channel</span>
+            <a href="https://www.youtube.com" target="_blank" rel="noopener noreferrer" class="value link">Old Towns Walks on YouTube</a>
+          </div>
 
-      <div>
-        <h2 class="text-xl font-semibold text-white mb-2">Follow & Support</h2>
-        <p class="text-gray-300">
-          Stay connected and watch our latest 4K 60fps walking tours on YouTube.
-        </p>
-      </div>
+          <div class="contact-item">
+            <span class="label">Content Focus</span>
+            <span class="value">4K 60FPS POV Walks & Binaural 3D Audio</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Mesaj Formu Kartı -->
+      <section class="info-card">
+        <h2 class="card-title">Send a Message</h2>
+        <form class="contact-form" action="#" method="POST">
+          <div class="form-group">
+            <label for="name">Your Name</label>
+            <input type="text" id="name" name="name" placeholder="John Doe" required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">Your Email</label>
+            <input type="email" id="email" name="email" placeholder="john@example.com" required />
+          </div>
+
+          <div class="form-group">
+            <label for="subject">Subject</label>
+            <input type="text" id="subject" name="subject" placeholder="Location Suggestion / Business Inquiry" required />
+          </div>
+
+          <div class="form-group">
+            <label for="message">Message</label>
+            <textarea id="message" name="message" rows="5" placeholder="Write your message here..." required></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary">Send Message</button>
+        </form>
+      </section>
     </div>
+
   </div>
 </BaseLayout>
+
+<style>
+  .contact-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    color: #e5e7eb;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .contact-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .contact-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .highlight {
+    color: #fbc02d;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .info-card {
+    background-color: #181818;
+    border: 1px solid #272727;
+    border-radius: 12px;
+    padding: 28px;
+    height: fit-content;
+  }
+
+  .card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .card-desc {
+    font-size: 0.95rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  /* İletişim Detayları */
+  .contact-details {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .contact-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .contact-item .label {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .contact-item .value {
+    font-size: 1rem;
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  .link {
+    color: #fbc02d;
+    text-decoration: none;
+  }
+
+  .link:hover {
+    text-decoration: underline;
+  }
+
+  /* Form Stilleri */
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+    color: #d1d5db;
+    font-weight: 500;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    background-color: #0f0f0f;
+    border: 1px solid #272727;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #fbc02d;
+  }
+
+  .btn-primary {
+    background-color: #fbc02d;
+    color: #0f0f0f;
+    font-weight: 600;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+    margin-top: 8px;
+  }
+
+  .btn-primary:hover {
+    background-color: #fdd835;
+  }
+
+  /* Mobil Uyum */
+  @media (max-width: 768px) {
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .contact-wrapper {
+      padding: 24px 16px;
+    }
+  }
+</style>

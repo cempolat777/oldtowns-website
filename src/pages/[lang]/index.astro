@@ -1,0 +1,20 @@
+---
+import MainPage from '../../components/MainPage.astro';
+import videos from '../../data/videos.json';
+
+export function getStaticPaths() {
+  return [
+    { params: { lang: 'tr' } },
+    { params: { lang: 'de' } },
+    { params: { lang: 'es' } },
+    { params: { lang: 'fr' } },
+    { params: { lang: 'it' } },
+  ];
+}
+
+const { lang } = Astro.params;
+---
+
+<MainPage videos={videos} lang={lang} />
+
+

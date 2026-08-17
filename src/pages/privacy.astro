@@ -2,38 +2,219 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 ---
 
-<BaseLayout 
-  title="Privacy Policy - Old Towns Walks" 
-  description="Privacy Policy for Old Towns Walks. Learn how we handle data and protect user privacy."
->
-  <div class="max-w-4xl mx-auto px-4 py-12 text-gray-200">
-    <h1 class="text-3xl md:text-4xl font-bold mb-6 text-white">Privacy Policy</h1>
-    <p class="text-sm text-gray-400 mb-8">Last updated: August 15, 2026</p>
+<BaseLayout title="Privacy Policy - Old Towns Walks" description="Privacy Policy for Old Towns Walks. Learn how we handle data and protect your privacy.">
+  <div class="privacy-wrapper">
+    
+    <!-- Başlık Bölümü -->
+    <header class="privacy-header">
+      <h1>Privacy <span class="highlight">Policy</span></h1>
+      <p class="subtitle">Last updated: August 17, 2026</p>
+    </header>
 
-    <div class="space-y-6 text-gray-300">
+    <!-- Giriş Kartı -->
+    <section class="info-card">
       <p>
-        At <strong>Old Towns Walks</strong> (accessible from <a href="https://oldtownswalks.com" class="text-yellow-500 hover:underline">oldtownswalks.com</a>), one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Old Towns Walks and how we use it.
+        At <strong>Old Towns Walks</strong>, accessible from <code>oldtownswalks.com</code>, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Old Towns Walks and how we use it.
       </p>
+      <p>
+        If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us.
+      </p>
+    </section>
 
-      <h2 class="text-2xl font-semibold text-white mt-8 mb-4">Log Files</h2>
+    <!-- Log Dosyaları -->
+    <section class="info-card">
+      <h2 class="card-title">Log Files</h2>
       <p>
-        Old Towns Walks follows a standard procedure of using log files. These files log visitors when they visit websites. The information collected by log files includes internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks. These are not linked to any information that is personally identifiable.
+        Old Towns Walks follows a standard procedure of using log files. These files log visitors when they visit websites. All hosting companies do this as part of hosting services' analytics.
       </p>
+      <p>
+        The information collected by log files includes internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks. These are not linked to any information that is personally identifiable.
+      </p>
+    </section>
 
-      <h2 class="text-2xl font-semibold text-white mt-8 mb-4">Cookies and Web Beacons</h2>
+    <!-- Çerezler (Cookies) -->
+    <section class="info-card">
+      <h2 class="card-title">Cookies and Web Beacons</h2>
       <p>
-        Like any other website, Old Towns Walks uses 'cookies'. These cookies are used to store information including visitors' preferences, and the pages on the website that the visitor accessed or visited. The information is used to optimize the users' experience by customizing our web page content based on visitors' browser type and/or other information.
+        Like any other website, Old Towns Walks uses 'cookies'. These cookies are used to store information including visitors' preferences, and the pages on the website that the visitor accessed or visited.
       </p>
+      <p>
+        The information is used to optimize the users' experience by customizing our web page content based on visitors' browser type and/or other information.
+      </p>
+    </section>
 
-      <h2 class="text-2xl font-semibold text-white mt-8 mb-4">Embedded Content From Other Websites</h2>
+    <!-- Google DoubleClick DART Cookie / Reklamlar -->
+    <section class="info-card">
+      <h2 class="card-title">Google DoubleClick DART Cookie</h2>
       <p>
-        Articles on this site may include embedded content (e.g. YouTube walking tour videos). Embedded content from other websites behaves in the exact same way as if the visitor has visited the other website. These websites may collect data about you, use cookies, embed additional third-party tracking, and monitor your interaction with that embedded content.
+        Google is one of a third-party vendor on our site. It also uses cookies, known as DART cookies, to serve ads to our site visitors based upon their visit to <code>oldtownswalks.com</code> and other sites on the internet.
       </p>
+      <p>
+        However, visitors may choose to decline the use of DART cookies by visiting the Google ad and content network Privacy Policy at the following URL: <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer" class="link">Google Ads Privacy Policy</a>.
+      </p>
+    </section>
 
-      <h2 class="text-2xl font-semibold text-white mt-8 mb-4">Contact Us</h2>
+    <!-- Üçüncü Taraf Gizlilik Politikaları -->
+    <section class="info-card">
+      <h2 class="card-title">Third Party Privacy Policies</h2>
       <p>
-        If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us at <strong>contact@oldtownswalks.com</strong>.
+        Old Towns Walks's Privacy Policy does not apply to other advertisers or websites. Thus, we are advising you to consult the respective Privacy Policies of these third-party ad servers for more detailed information.
       </p>
-    </div>
+      <p>
+        You can choose to disable cookies through your individual browser options. To know more detailed information about cookie management with specific web browsers, it can be found at the browsers' respective websites.
+      </p>
+    </section>
+
+    <!-- Çocuk Gizliliği -->
+    <section class="info-card">
+      <h2 class="card-title">Children's Information</h2>
+      <p>
+        Another part of our priority is adding protection for children while using the internet. We encourage parents and guardians to observe, participate in, and/or monitor and guide their online activity.
+      </p>
+      <p>
+        Old Towns Walks does not knowingly collect any Personal Identifiable Information from children under the age of 13.
+      </p>
+    </section>
+
+    <!-- İletişim Kartı -->
+    <section class="info-card contact-card">
+      <div>
+        <h2>Questions regarding Privacy?</h2>
+        <p>Reach out to us via our contact page for any questions.</p>
+      </div>
+      <a href="/contact" class="btn-primary">Contact Us</a>
+    </section>
+
   </div>
 </BaseLayout>
+
+<style>
+  .privacy-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    color: #e5e7eb;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .privacy-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .privacy-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .highlight {
+    color: #fbc02d;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .info-card {
+    background-color: #181818;
+    border: 1px solid #272727;
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+  }
+
+  .info-card p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #d1d5db;
+    margin-bottom: 16px;
+  }
+
+  .info-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  .info-card p strong {
+    color: #ffffff;
+  }
+
+  .info-card code {
+    background-color: #0f0f0f;
+    color: #fbc02d;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+
+  .card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+  }
+
+  .link {
+    color: #fbc02d;
+    text-decoration: underline;
+  }
+
+  .link:hover {
+    color: #fdd835;
+  }
+
+  .contact-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .contact-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+  }
+
+  .contact-card p {
+    font-size: 0.95rem;
+    color: #9ca3af;
+    margin: 0;
+  }
+
+  .btn-primary {
+    background-color: #fbc02d;
+    color: #0f0f0f;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background-color 0.2s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #fdd835;
+  }
+
+  @media (max-width: 640px) {
+    .privacy-wrapper {
+      padding: 24px 16px;
+    }
+    
+    .contact-card {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .btn-primary {
+      width: 100%;
+      text-align: center;
+    }
+  }
+</style>

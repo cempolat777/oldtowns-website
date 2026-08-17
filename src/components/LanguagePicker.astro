@@ -1,0 +1,82 @@
+---
+const languages = {
+  en: 'English',
+  tr: 'Türkçe',
+  de: 'Deutsch',
+  es: 'Español',
+  fr: 'Français',
+  it: 'Italiano',
+  nl: 'Nederlands',
+  pl: 'Polski',
+  pt: 'Português',
+  sv: 'Svenska',
+  ru: 'Русский',
+  ja: '日本語',
+  ko: '한국어',
+  zh: '中文',
+  hi: 'हिन्दी',
+  id: 'Bahasa Indonesia',
+  vi: 'Tiếng Việt',
+  ar: 'العربية'
+};
+
+const currentPath = Astro.url.pathname;
+const pathSegments = currentPath.split('/').filter(Boolean);
+const langKeys = Object.keys(languages);
+
+const currentLang = langKeys.includes(pathSegments[0]) ? pathSegments[0] : 'en';
+
+const cleanPath = langKeys.includes(pathSegments[0]) 
+  ? '/' + pathSegments.slice(1).join('/')
+  : currentPath;
+---
+
+<div class="lang-picker-container">
+  <select onchange="if(this.value) location.href = this.value;" class="lang-select">
+    {Object.entries(languages).map(([lang, label]) => {
+      let newPath = '';
+      
+      if (lang === 'en') {
+        newPath = cleanPath === '' ? '/' : cleanPath;
+      } else {
+        newPath = (cleanPath === '/' || cleanPath === '') 
+          ? `/${lang}/` 
+          : `/${lang}${cleanPath}`;
+      }
+
+      return (
+        <option value={newPath} selected={currentLang === lang}>
+          {label}
+        </option>
+      );
+    })}
+  </select>
+</div>
+
+<style>
+  .lang-picker-container {
+    display: inline-block;
+  }
+
+  .lang-select {
+    background-color: #181818;
+    color: #fbc02d;
+    border: 1px solid #272727;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .lang-select:hover {
+    border-color: #fbc02d;
+  }
+
+  .lang-select option {
+    background-color: #181818;
+    color: #ffffff;
+  }
+</style>
