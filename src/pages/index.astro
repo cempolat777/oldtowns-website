@@ -1,6 +1,29 @@
 ---
-import MainPage from '../components/MainPage.astro';
-import videos from '../data/videos.json';
+// src/pages/index.astro
 ---
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script is:inline>
+      (function() {
+        // Tarayıcı dilini al (tr, de, ja vb.)
+        const userLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+        let targetLang = 'en';
 
-<MainPage videos={videos} lang="en" />
+        if (userLang.startsWith('tr')) {
+          targetLang = 'tr';
+        } else if (userLang.startsWith('de')) {
+          targetLang = 'de';
+        } else if (userLang.startsWith('ja')) {
+          targetLang = 'ja';
+        }
+
+        // Kullanıcıyı tarayıcı diline göre ilgili klasöre uçur (/tr/, /de/, /en/)
+        window.location.replace('/' + targetLang + '/');
+      })();
+    </script>
+  </head>
+  <body>
+  </body>
+</html>
