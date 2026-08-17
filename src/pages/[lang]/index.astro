@@ -4,11 +4,24 @@ import videos from '../../data/videos.json';
 
 export function getStaticPaths() {
   return [
+    { params: { lang: 'en' } },
     { params: { lang: 'tr' } },
     { params: { lang: 'de' } },
     { params: { lang: 'es' } },
-    { params: { lang: 'fr' } },
     { params: { lang: 'it' } },
+    { params: { lang: 'fr' } },
+    { params: { lang: 'ja' } },
+    { params: { lang: 'pt' } },
+    { params: { lang: 'ru' } },
+    { params: { lang: 'zh' } },
+    { params: { lang: 'ko' } },
+    { params: { lang: 'ar' } },
+    { params: { lang: 'hi' } },
+    { params: { lang: 'nl' } },
+    { params: { lang: 'pl' } },
+    { params: { lang: 'sv' } },
+    { params: { lang: 'uk' } },
+    { params: { lang: 'el' } }
   ];
 }
 
@@ -16,5 +29,3 @@ const { lang } = Astro.params;
 ---
 
 <MainPage videos={videos} lang={lang} />
-
-
