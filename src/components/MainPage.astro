@@ -605,12 +605,12 @@ const videoSchema = {
 
       <aside class="sidebar">
 
-        <a href="/" class="nav-link active">
+        <a href={`/${lang}/`} class="nav-link active">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
-          <span>Home</span>
+          <span>{t['nav.home'] || 'Home'}</span>
         </a>
 
         <a href="/map" class="nav-link">
@@ -619,7 +619,7 @@ const videoSchema = {
             <line x1="2" y1="12" x2="22" y2="12"/>
             <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
           </svg>
-          <span>World Map</span>
+          <span>{t['nav.map'] || 'World Map'}</span>
         </a>
 
         <a href="/hotels" class="nav-link">
@@ -630,7 +630,7 @@ const videoSchema = {
             <path d="M9 14h6"/>
             <path d="M9 18h6"/>
           </svg>
-          <span>Hotels</span>
+          <span>{t['nav.hotels'] || 'Hotels'}</span>
         </a>
 
         <a href="/photos" class="nav-link">
@@ -638,7 +638,7 @@ const videoSchema = {
             <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
             <circle cx="12" cy="13" r="4"/>
           </svg>
-          <span>World Photos</span>
+          <span>{t['nav.photos'] || 'World Photos'}</span>
         </a>
 
         <a href="/historic" class="nav-link">
@@ -648,7 +648,7 @@ const videoSchema = {
             <path d="M6 18V11M10 18V11M14 18V11M18 18V11"/>
             <polygon points="12 2 4 7 20 7 12 2"/>
           </svg>
-          <span>Historic & Boutique</span>
+          <span>{t['nav.historic'] || 'Historic & Boutique'}</span>
         </a>
 
         <hr class="sidebar-divider" />
@@ -671,17 +671,17 @@ const videoSchema = {
 
         <a href="/about" class="nav-link">
           <span class="material-symbols-outlined">info</span>
-          <span>About</span>
+          <span>{t['nav.about'] || 'About'}</span>
         </a>
 
         <a href="/privacy" class="nav-link">
           <span class="material-symbols-outlined">policy</span>
-          <span>Privacy</span>
+          <span>{t['nav.privacy'] || 'Privacy Policy'}</span>
         </a>
 
         <a href="/contact" class="nav-link">
           <span class="material-symbols-outlined">mail</span>
-          <span>Contact</span>
+          <span>{t['nav.contact'] || 'Contact'}</span>
         </a>
 
         <!-- REKLAM 1: SOL SIDEBAR STICKY AD SLOT -->
@@ -795,9 +795,9 @@ const videoSchema = {
 
     <nav class="mobile-bottom-nav">
 
-      <a href="/" class="mobile-nav-item active">
+      <a href={`/${lang}/`} class="mobile-nav-item active">
         <span class="material-symbols-outlined">home</span>
-        <span>Home</span>
+        <span>{t['nav.home'] || 'Home'}</span>
       </a>
 
       <a href="#" class="mobile-nav-item">
