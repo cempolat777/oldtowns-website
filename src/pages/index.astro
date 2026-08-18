@@ -7,19 +7,26 @@
     <meta charset="UTF-8" />
     <script is:inline>
       (function() {
-        // Tarayıcı dilini al (tr, de, ja vb.)
+        // 1. Önce kullanıcının önceden seçtiği bir dil var mı bak
+        const savedLang = localStorage.getItem('preferredLang');
+        
+        if (savedLang) {
+          window.location.replace('/' + savedLang + '/');
+          return;
+        }
+
+        // 2. Seçtiği dil yoksa tarayıcı dilini kontrol et
         const userLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
         let targetLang = 'en';
 
-        if (userLang.startsWith('tr')) {
-          targetLang = 'tr';
-        } else if (userLang.startsWith('de')) {
-          targetLang = 'de';
-        } else if (userLang.startsWith('ja')) {
-          targetLang = 'ja';
+        // Desteklediğin diller listesi
+        const supportedLangs = ['tr', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'sv', 'ru', 'ja', 'ko', 'zh', 'hi', 'id', 'vi', 'ar'];
+        
+        const langCode = userLang.split('-')[0];
+        if (supportedLangs.includes(langCode)) {
+          targetLang = langCode;
         }
 
-        // Kullanıcıyı tarayıcı diline göre ilgili klasöre uçur (/tr/, /de/, /en/)
         window.location.replace('/' + targetLang + '/');
       })();
     </script>

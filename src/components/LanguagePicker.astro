@@ -1,11 +1,11 @@
 ---
 const languages = {
   en: 'English',
-  tr: 'Türkçe',
   de: 'Deutsch',
   es: 'Español',
   fr: 'Français',
   it: 'Italiano',
+  tr: 'Türkçe',
   nl: 'Nederlands',
   pl: 'Polski',
   pt: 'Português',
@@ -26,32 +26,48 @@ const langKeys = Object.keys(languages);
 
 const currentLang = langKeys.includes(pathSegments[0]) ? pathSegments[0] : 'en';
 
-// Mevcut URL'den dil ekini temize çekiyoruz
-const rawCleanPath = langKeys.includes(pathSegments[0]) 
+const cleanPath = langKeys.includes(pathSegments[0]) 
   ? '/' + pathSegments.slice(1).join('/')
   : currentPath;
-
-// Yolun düzgün formatlanması (sonuna takılan gereksiz eğik çizgileri yönetmek için)
-const cleanPath = rawCleanPath.endsWith('/') && rawCleanPath.length > 1 
-  ? rawCleanPath.slice(0, -1) 
-  : rawCleanPath;
 ---
 
 <div class="lang-picker-container">
-  <select onchange="if(this.value) location.href = this.value;" class="lang-select">
+  <select id="lang-select-element" class="lang-select">
     {Object.entries(languages).map(([lang, label]) => {
-      // Artık 'en' dahil tüm diller kendi klasörüne (ör. /en/, /tr/) yönlendiriliyor
-      const baseClean = (cleanPath === '/' || cleanPath === '') ? '' : cleanPath;
-      const newPath = `/${lang}${baseClean}/`;
+      // İngilizce dahil tüm dilleri kendi klasör koduna (/en/, /tr/, /de/) yönlendiriyoruz
+      const targetLang = lang;
+      const newPath = (cleanPath === '/' || cleanPath === '') 
+        ? `/${targetLang}/` 
+        : `/${targetLang}${cleanPath}`;
 
       return (
-        <option value={newPath} selected={currentLang === lang}>
+        <option value={newPath} data-lang={lang} selected={currentLang === lang}>
           {label}
         </option>
       );
     })}
   </select>
 </div>
+
+<script>
+  const selectElement = document.getElementById('lang-select-element') as HTMLSelectElement;
+  if (selectElement) {
+    selectElement.addEventListener('change', (e) => {
+      const target = e.target as HTMLSelectElement;
+      const selectedOption = target.options[target.selectedIndex];
+      const selectedLang = selectedOption.getAttribute('data-lang');
+      
+      if (selectedLang) {
+        // Seçilen dili hafızaya kaydet
+        localStorage.setItem('preferredLang', selectedLang);
+      }
+      
+      if (target.value) {
+        location.href = target.value;
+      }
+    });
+  }
+</script>
 
 <style>
   .lang-picker-container {
