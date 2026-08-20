@@ -1,0 +1,84 @@
+---
+interface Props {
+  video: {
+    id: string;
+    city: string;
+    country: string;
+    category: string;
+    originalTitle: string;
+  };
+  currentLang: string;
+}
+
+const { video, currentLang } = Astro.props;
+
+// 18 dilde otonom başlık üretici
+const categoryMap: Record<string, Record<string, string>> = {
+  'walking-tours': { tr: 'Yürüyüş Turu', en: 'Walking Tour', de: 'Spaziergang Tour' },
+  'drone-aerial': { tr: 'Hava & Drone Çekimi', en: 'Drone & Aerial View', de: 'Drohnenansicht' },
+  'night-rain': { tr: 'Gece & Yağmur Yürüyüşü', en: 'Night & Rain Walk', de: 'Nacht & Regen Spaziergang' },
+  'street-food': { tr: 'Sokak Lezzetleri Turu', en: 'Street Food Tour', de: 'Street Food Tour' }
+};
+
+const catName = categoryMap[video.category]?.[currentLang] || categoryMap[video.category]?.['en'] || 'Walking Tour';
+const displayTitle = `${video.city}, ${video.country} 4K ${catName}`;
+---
+
+<div class="video-card">
+  <div class="video-embed">
+    <iframe
+      src={`https://www.youtube-nocookie.com/embed/${video.id}`}
+      title={displayTitle}
+      loading="lazy"
+      allowfullscreen
+    ></iframe>
+  </div>
+
+  <!-- Sitede görünecek dil odaklı otonom başlık -->
+  <h3 class="video-title">{displayTitle}</h3>
+
+  <!-- Google Botları İçin Görünmez Otonom Schema (SEO) -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    "name": displayTitle,
+    "description": `${displayTitle} - ${video.originalTitle}`,
+    "thumbnailUrl": `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`,
+    "embedUrl": `https://www.youtube.com/embed/${video.id}`
+  })} />
+</div>
+
+<style>
+  .video-card {
+    background: #181818;
+    border: 1px solid #272727;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+  .video-card:hover {
+    border-color: #fbc02d;
+    transform: translateY(-2px);
+  }
+  .video-embed {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+    height: 0;
+  }
+  .video-embed iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+  .video-title {
+    color: #ffffff;
+    font-size: 0.9rem;
+    padding: 12px;
+    margin: 0;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+</style>

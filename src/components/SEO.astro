@@ -1,0 +1,71 @@
+---
+interface Props {
+  video: {
+    id: string;
+    title: string;
+    description: string;
+    thumbnail?: string;
+    publishedAt?: string;
+    city?: string;
+    country?: string;
+    duration?: string;
+  };
+  currentLang?: string;
+}
+
+const { video, currentLang = 'en' } = Astro.props;
+const siteUrl = 'https://oldtownswalks.com';
+
+// Google VideoObject Schema Structure
+const videoSchema = {
+  "@context": "https://schema.org",
+  "@type": "VideoObject",
+  "name": video.title,
+  "description": video.description || `${video.title} - 4K 60fps walking tour.`,
+  "thumbnailUrl": [
+    video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`
+  ],
+  "uploadDate": video.publishedAt || "2026-01-01T08:00:00+00:00",
+  "duration": video.duration || "PT1H00M00S",
+  "contentUrl": `https://www.youtube.com/watch?v=${video.id}`,
+  "embedUrl": `https://www.youtube-nocookie.com/embed/${video.id}`,
+  "isFamilyFriendly": true
+};
+
+// Google BreadcrumbList Schema Structure
+const breadcrumbSchema = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {
+      "@type": "ListItem",
+      "position": 1,
+      "name": "Home",
+      "item": `${siteUrl}/${currentLang}/`
+    },
+    ...(video.city ? [{
+      "@type": "ListItem",
+      "position": 2,
+      "name": video.city,
+      "item": `${siteUrl}/${currentLang}/cities/${video.city.toLowerCase()}`
+    }] : []),
+    {
+      "@type": "ListItem",
+      "position": video.city ? 3 : 2,
+      "name": video.title,
+      "item": `${siteUrl}/${currentLang}/walks/${video.id}`
+    }
+  ]
+};
+---
+
+<!-- Open Graph / Meta Tags -->
+<meta property="og:type" content="video.other" />
+<meta property="og:title" content={video.title} />
+<meta property="og:description" content={video.description} />
+<meta property="og:image" content={video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`} />
+<meta name="twitter:card" content="summary_large_image" />
+
+<!-- Structured Data Scripts -->
+<script type="application/ld+json" set:html={JSON.stringify(videoSchema)} />
+<script type="application/ld+json" set:html={JSON.stringify(breadcrumbSchema)} />
