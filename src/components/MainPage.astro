@@ -1,6 +1,7 @@
 ---
 import LanguagePicker from './LanguagePicker.astro';
 import { ui } from '../i18n/ui';
+import { getPageSeo, getVideoCardTitle, getVideoSchema } from '../lib/videoSeo';
 
 // Dışarıdan gelecek verileri (props) tanımlıyoruz
 interface Props {
@@ -13,6 +14,7 @@ const { videos = [], lang = 'en' } = Astro.props;
 // Dil çevirisi için ui.ts dosyasından ilgili dili çekiyoruz
 const translations = ui as Record<string, Record<string, string>>;
 const t = translations[lang] || translations.en || translations.tr;
+const pageSeo = getPageSeo(lang);
 
 const categories = [
   { id: 'All', label: t['cat.all'] || 'All' },
@@ -28,17 +30,7 @@ const categories = [
 
 const videoSchema = {
   "@context": "https://schema.org",
-  "@graph": videos.map((walk) => ({
-    "@type": "VideoObject",
-    "name": walk.title,
-    "description": `${walk.title} - High quality 4K 60fps POV walking tour.`,
-    "thumbnailUrl": [
-      `https://img.youtube.com/vi/${walk.id}/maxresdefault.jpg`
-    ],
-    "uploadDate": "2026-01-01T08:00:00+00:00",
-    "contentUrl": `https://www.youtube.com/watch?v=${walk.id}`,
-    "embedUrl": `https://www.youtube.com/embed/${walk.id}`
-  }))
+  "@graph": videos.map((video) => getVideoSchema(video, lang))
 };
 ---
 
@@ -48,11 +40,11 @@ const videoSchema = {
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Old Towns Walks - Explore World Cities in 4K</title>
+    <title>{pageSeo.title}</title>
 
     <meta
       name="description"
-      content="Explore old towns, historical cities, and breathtaking walking tours in 4K 60fps."
+      content={pageSeo.description}
     />
 
     <!-- Google Fonts & Material Icons -->
@@ -746,7 +738,7 @@ const videoSchema = {
 
                     <img
                       src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
-                      alt={video.title}
+                      alt={getVideoCardTitle(video, lang)}
                       class="video-poster"
                       loading="lazy"
                     />
@@ -759,7 +751,7 @@ const videoSchema = {
                     <div class="video-info">
 
                       <h3 class="video-title">
-                        {video.title}
+                        {getVideoCardTitle(video, lang)}
                       </h3>
 
                       <div class="channel-name">

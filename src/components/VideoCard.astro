@@ -2,26 +2,112 @@
 interface Props {
   video: {
     id: string;
-    city: string;
-    country: string;
-    category: string;
-    originalTitle: string;
+    city?: string;
+    country?: string;
+    category?: string;
+    originalTitle?: string;
+    title?: string;
+    thumbnail?: string;
   };
-  currentLang: string;
+  currentLang?: string;
 }
 
-const { video, currentLang } = Astro.props;
+const { video, currentLang = 'en' } = Astro.props;
 
-// 18 dilde otonom başlık üretici
+// Autonomous Category Names in 18 Languages
 const categoryMap: Record<string, Record<string, string>> = {
-  'walking-tours': { tr: 'Yürüyüş Turu', en: 'Walking Tour', de: 'Spaziergang Tour' },
-  'drone-aerial': { tr: 'Hava & Drone Çekimi', en: 'Drone & Aerial View', de: 'Drohnenansicht' },
-  'night-rain': { tr: 'Gece & Yağmur Yürüyüşü', en: 'Night & Rain Walk', de: 'Nacht & Regen Spaziergang' },
-  'street-food': { tr: 'Sokak Lezzetleri Turu', en: 'Street Food Tour', de: 'Street Food Tour' }
+  'walking-tours': {
+    tr: 'Yürüyüş Turu',
+    en: 'Walking Tour',
+    de: 'Spaziergang Tour',
+    es: 'Paseo Urbano',
+    fr: 'Visite à Pied',
+    it: 'Passeggiata Virtuale',
+    nl: 'Wandeling Tour',
+    pl: 'Spacer Po Mieście',
+    pt: 'Passeio A Pé',
+    sv: 'Stadsvandring',
+    ru: 'Прогулка по городу',
+    ja: '散策ツアー',
+    ko: '워킹 투어',
+    zh: '徒步漫步',
+    hi: 'वॉकिंग टूर',
+    id: 'Tur Jalan Kaki',
+    vi: 'Đi Bộ Khám Phá',
+    ar: 'جولة مشي'
+  },
+  'drone-aerial': {
+    tr: 'Hava & Drone Çekimi',
+    en: 'Drone & Aerial View',
+    de: 'Drohnenansicht',
+    es: 'Vista Aérea y Drone',
+    fr: 'Vue Aérienne et Drone',
+    it: 'Vista Aerea e Drone',
+    nl: 'Luchtfoto & Drone',
+    pl: 'Widok z Drona',
+    pt: 'Vista Aérea e Drone',
+    sv: 'Drönarvy',
+    ru: 'Вид с дрона',
+    ja: 'ドローン空撮',
+    ko: '드론 및 항공 뷰',
+    zh: '航拍无人机视角',
+    hi: 'ड्रोन व्यू',
+    id: 'Tampilan Udara & Drone',
+    vi: 'Góc Nhìn Flycam',
+    ar: 'مشهد جوي وبطائرة درون'
+  },
+  'night-rain': {
+    tr: 'Gece & Yağmur Yürüyüşü',
+    en: 'Night & Rain Walk',
+    de: 'Nacht & Regen Spaziergang',
+    es: 'Paseo Nocturno y Lluvia',
+    fr: 'Marche de Nuit et Pluie',
+    it: 'Passeggiata Notturna e Pioggia',
+    nl: 'Nacht & Regen Wandeling',
+    pl: 'Nocny Spacer w Deszczu',
+    pt: 'Caminhada Noturna e Chuva',
+    sv: 'Natt & Regnpromenad',
+    ru: 'Ночная прогулка под дождем',
+    ja: '夜と雨の散策',
+    ko: '야경 및 빗속 산책',
+    zh: '夜间雨景漫步',
+    hi: 'नाइट एंड रेन वॉक',
+    id: 'Jalan Malam & Hujan',
+    vi: 'Đi Bộ Đêm & Mưa',
+    ar: 'جولة ليليّة ومطيرة'
+  },
+  'street-food': {
+    tr: 'Sokak Lezzetleri Turu',
+    en: 'Street Food Tour',
+    de: 'Street Food Tour',
+    es: 'Tour de Comida Callejera',
+    fr: 'Tour de Cuisine de Rue',
+    it: 'Tour del Cibo di Strada',
+    nl: 'Street Food Tour',
+    pl: 'Wycieczka Kulinarna',
+    pt: 'Tour de Comida de Rua',
+    sv: 'Gatumatsrundtur',
+    ru: 'Уличная еда тур',
+    ja: '食べ歩きストリートフード',
+    ko: '길거리 음식 투어',
+    zh: '街头美食之旅',
+    hi: '스트리트 푸드 투어',
+    id: 'Tur Kuliner Jalanan',
+    vi: 'Ẩm Thực Đường Phố',
+    ar: 'جولة أطعمة الشوارع'
+  }
 };
 
-const catName = categoryMap[video.category]?.[currentLang] || categoryMap[video.category]?.['en'] || 'Walking Tour';
-const displayTitle = `${video.city}, ${video.country} 4K ${catName}`;
+// Safe fallback for Location and Category
+const city = video.city || 'Old Town';
+const country = video.country ? `, ${video.country}` : '';
+const catKey = video.category || 'walking-tours';
+const catName = categoryMap[catKey]?.[currentLang] || categoryMap[catKey]?.['en'] || 'Walking Tour';
+
+// Autonomous Generated Title
+const displayTitle = `${city}${country} 4K ${catName}`;
+const rawTitle = video.originalTitle || video.title || displayTitle;
+const thumbnailUrl = video.thumbnail || `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
 ---
 
 <div class="video-card">
@@ -34,16 +120,16 @@ const displayTitle = `${video.city}, ${video.country} 4K ${catName}`;
     ></iframe>
   </div>
 
-  <!-- Sitede görünecek dil odaklı otonom başlık -->
+  <!-- Autonomous Title Generated Based on Selected Language -->
   <h3 class="video-title">{displayTitle}</h3>
 
-  <!-- Google Botları İçin Görünmez Otonom Schema (SEO) -->
+  <!-- Autonomous Schema for Google Crawlers (SEO) -->
   <script type="application/ld+json" set:html={JSON.stringify({
     "@context": "https://schema.org",
     "@type": "VideoObject",
     "name": displayTitle,
-    "description": `${displayTitle} - ${video.originalTitle}`,
-    "thumbnailUrl": `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`,
+    "description": `${displayTitle} - ${rawTitle}`,
+    "thumbnailUrl": thumbnailUrl,
     "embedUrl": `https://www.youtube.com/embed/${video.id}`
   })} />
 </div>

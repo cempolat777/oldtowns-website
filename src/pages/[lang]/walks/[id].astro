@@ -1,0 +1,75 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { languages, ui, defaultLang } from '../../../i18n/ui';
+import videos from '../../../data/videos.json';
+
+interface Video {
+  id: string;
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  category?: string;
+  channel?: string;
+  channelTitle?: string;
+  channelId?: string;
+  badge?: string;
+  publishedAt?: string;
+  city?: string;
+  country?: string;
+}
+
+export async function getStaticPaths() {
+  const paths: Array<{ params: { lang: string; id: string }; props: { video: Video } }> = [];
+  
+  Object.keys(languages).forEach((lang) => {
+    (videos as unknown as Video[]).forEach((video) => {
+      paths.push({
+        params: { lang, id: video.id },
+        props: { video },
+      });
+    });
+  });
+
+  return paths;
+}
+
+const { lang } = Astro.params;
+const video = Astro.props.video as Video;
+
+const currentLang = (lang && lang in languages ? lang : defaultLang) as keyof typeof ui;
+const t = (key: string) => 
+  ui[currentLang]?.[key as keyof typeof ui[typeof defaultLang]] || 
+  ui[defaultLang][key as keyof typeof ui[typeof defaultLang]] || 
+  key;
+---
+
+<BaseLayout title={video.title}>
+  <main class="container mx-auto px-4 py-8">
+    <div class="max-w-4xl mx-auto">
+      <a href={`/${currentLang}`} class="inline-block mb-4 text-blue-600 hover:underline">
+        ← {t('nav.home')}
+      </a>
+      
+      <h1 class="text-3xl font-bold mb-4">{video.title}</h1>
+      
+      <div class="aspect-video w-full mb-6 rounded-lg overflow-hidden shadow-lg">
+        <iframe
+          class="w-full h-full"
+          src={`https://www.youtube.com/embed/${video.id}`}
+          title={video.title}
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>
+      </div>
+
+      {(video.city || video.country || video.category) && (
+        <div class="bg-gray-100 p-4 rounded-lg flex gap-4 text-sm text-gray-700">
+          {video.city && <span><strong>Şehir:</strong> {video.city}</span>}
+          {video.country && <span><strong>Ülke:</strong> {video.country}</span>}
+          {video.category && <span><strong>Kategori:</strong> {video.category}</span>}
+        </div>
+      )}
+    </div>
+  </main>
+</BaseLayout>
