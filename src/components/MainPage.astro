@@ -435,6 +435,15 @@ const videoSchema = {
         overflow: hidden;
       }
 
+      .video-title-link {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .video-title-link:hover {
+        text-decoration: underline;
+      }
+
       .channel-name {
         font-size: 13px;
         color: #aaaaaa;
@@ -751,7 +760,9 @@ const videoSchema = {
                     <div class="video-info">
 
                       <h3 class="video-title">
-                        {getVideoCardTitle(video, lang)}
+                        <a href={`/${lang}/walks/${video.id}`} class="video-title-link">
+                          {getVideoCardTitle(video, lang)}
+                        </a>
                       </h3>
 
                       <div class="channel-name">

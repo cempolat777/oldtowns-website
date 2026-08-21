@@ -121,6 +121,9 @@ const {
         background: #fbbf24;
         transform: translateY(-1px);
       }
+      .site-main {
+        padding-top: 72px;
+      }
       footer {
         background: #070a0f;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -128,6 +131,25 @@ const {
         text-align: center;
         color: #64748b;
         font-size: 13px;
+      }
+      @media (max-width: 700px) {
+        .nav-container {
+          height: 64px;
+          padding: 0 14px;
+        }
+        .site-main {
+          padding-top: 64px;
+        }
+        .logo {
+          font-size: 17px;
+          letter-spacing: 2px;
+        }
+        .badge {
+          display: none;
+        }
+        .nav-btn {
+          display: none;
+        }
       }
     </style>
 
@@ -153,18 +175,20 @@ const {
       </div>
     </header>
 
-    <main style="padding-top: 72px;">
+    <main class="site-main">
       <slot />
     </main>
 
-    <footer class="bg-gray-900 border-t border-gray-800 py-8 mt-16 relative z-10">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-gray-400 text-sm">
-        <div class="flex flex-wrap justify-center gap-6 mb-4">
-          <a href="/about" class="hover:text-white transition-colors">About Us</a>
-          <a href="/privacy" class="hover:text-white transition-colors">Privacy Policy</a>
-          <a href="/contact" class="hover:text-white transition-colors">Contact</a>
+    <footer>
+      <div>
+        <div>
+          <a href="/about">About Us</a>
+          <span> · </span>
+          <a href="/privacy">Privacy Policy</a>
+          <span> · </span>
+          <a href="/contact">Contact</a>
         </div>
-        <p>&copy; {new Date().getFullYear()} Old Towns Walks. All rights reserved.</p>
+        <p style="margin-top:12px;">&copy; {new Date().getFullYear()} Old Towns Walks. All rights reserved.</p>
       </div>
     </footer>
 
