@@ -1,8 +1,13 @@
 ---
 import BaseLayout from '../../../layouts/BaseLayout.astro';
-import { languages, ui, defaultLang } from '../../../i18n/ui';
+import { languages, defaultLang } from '../../../i18n/ui';
 import videos from '../../../data/videos.json';
-import { getVideoCardTitle, getVideoSeoDescription, getVideoSchema, getCategoryName } from '../../../lib/videoSeo';
+
+import {
+  getVideoCardTitle,
+  getVideoSchema,
+  getCategoryName
+} from '../../../lib/videoSeo';
 
 interface Video {
   id: string;
@@ -20,13 +25,21 @@ interface Video {
 }
 
 export async function getStaticPaths() {
-  const paths: Array<{ params: { lang: string; id: string }; props: { video: Video } }> = [];
+  const paths: Array<{
+    params: { lang: string; id: string };
+    props: { video: Video };
+  }> = [];
 
   Object.keys(languages).forEach((lang) => {
     (videos as unknown as Video[]).forEach((video) => {
       paths.push({
-        params: { lang, id: video.id },
-        props: { video },
+        params: {
+          lang,
+          id: video.id
+        },
+        props: {
+          video
+        }
       });
     });
   });
@@ -37,69 +50,405 @@ export async function getStaticPaths() {
 const { lang } = Astro.params;
 const video = Astro.props.video as Video;
 
-const currentLang = (lang && lang in languages ? lang : defaultLang) as keyof typeof ui;
+const currentLang =
+  lang && lang in languages
+    ? lang
+    : defaultLang;
 
-const seoTitle = getVideoCardTitle(video, currentLang);
-const seoDescription = getVideoSeoDescription(video, currentLang);
-const videoSchema = getVideoSchema(video, currentLang);
-const categoryLabel = getCategoryName(video.category, currentLang);
+const seoTitle =
+  getVideoCardTitle(video, currentLang);
+
+const videoSchema =
+  getVideoSchema(video, currentLang);
+
+const categoryLabel =
+  getCategoryName(video.category, currentLang);
+
+const locationLabel =
+  seoTitle.includes('|')
+    ? seoTitle.split('|')[0].trim()
+    : video.city || video.country || '';
+
+const sourceName =
+  video.channelTitle ||
+  video.channel ||
+  'YouTube';
+
+const relatedVideos =
+  (videos as unknown as Video[])
+    .filter((item) =>
+      item.id !== video.id &&
+      item.category === video.category
+    )
+    .slice(0, 30);
 
 const labels: Record<string, Record<string, string>> = {
   back: {
-    en: 'Back to Home', tr: 'Ana Sayfaya Dön', de: 'Zur Startseite', es: 'Volver al Inicio',
-    it: 'Torna alla Home', fr: "Retour à l'accueil", ja: 'ホームに戻る', pt: 'Voltar ao Início',
-    ru: 'На главную', zh: '返回首页', ko: '홈으로', ar: 'العودة للرئيسية', hi: 'होम पर वापस',
-    nl: 'Terug naar Home', pl: 'Powrót na stronę główną', sv: 'Till startsidan',
-    id: 'Kembali ke Beranda', vi: 'Về Trang Chủ'
+    en: 'Back',
+    tr: 'Geri',
+    de: 'Zurück',
+    es: 'Volver',
+    it: 'Indietro',
+    fr: 'Retour',
+    ja: '戻る',
+    pt: 'Voltar',
+    ru: 'Назад',
+    zh: '返回',
+    ko: '뒤로',
+    ar: 'رجوع',
+    hi: 'वापस',
+    nl: 'Terug',
+    pl: 'Wstecz',
+    sv: 'Tillbaka',
+    id: 'Kembali',
+    vi: 'Quay lại'
   },
+
   about: {
-    en: 'About this walk', tr: 'Bu yürüyüş hakkında', de: 'Über diesen Rundgang', es: 'Sobre este recorrido',
-    it: 'Informazioni su questo percorso', fr: 'À propos de cette balade', ja: 'この散策について',
-    pt: 'Sobre este passeio', ru: 'Об этой прогулке', zh: '关于这次步行', ko: '이 도보 여행 소개',
-    ar: 'حول هذه الجولة', hi: 'इस वॉक के बारे में', nl: 'Over deze wandeling',
-    pl: 'O tym spacerze', sv: 'Om denna promenad', id: 'Tentang perjalanan ini', vi: 'Về chuyến đi bộ này'
+    en: 'About this walk',
+    tr: 'Bu tur hakkında',
+    de: 'Über diese Tour',
+    es: 'Sobre este recorrido',
+    it: 'Informazioni su questo tour',
+    fr: 'À propos de cette visite',
+    ja: 'このツアーについて',
+    pt: 'Sobre este passeio',
+    ru: 'Об этом туре',
+    zh: '关于本次游览',
+    ko: '이 투어 소개',
+    ar: 'حول هذه الجولة',
+    hi: 'इस टूर के बारे में',
+    nl: 'Over deze tour',
+    pl: 'O tej wycieczce',
+    sv: 'Om denna tur',
+    id: 'Tentang tur ini',
+    vi: 'Về chuyến đi này'
   },
-  city: {
-    en: 'City', tr: 'Şehir', de: 'Stadt', es: 'Ciudad', it: 'Città', fr: 'Ville', ja: '都市',
-    pt: 'Cidade', ru: 'Город', zh: '城市', ko: '도시', ar: 'المدينة', hi: 'शहर',
-    nl: 'Stad', pl: 'Miasto', sv: 'Stad', id: 'Kota', vi: 'Thành phố'
+
+  location: {
+    en: 'Location',
+    tr: 'Konum',
+    de: 'Ort',
+    es: 'Ubicación',
+    it: 'Luogo',
+    fr: 'Lieu',
+    ja: '場所',
+    pt: 'Localização',
+    ru: 'Место',
+    zh: '地点',
+    ko: '위치',
+    ar: 'الموقع',
+    hi: 'स्थान',
+    nl: 'Locatie',
+    pl: 'Lokalizacja',
+    sv: 'Plats',
+    id: 'Lokasi',
+    vi: 'Địa điểm'
   },
-  country: {
-    en: 'Country', tr: 'Ülke', de: 'Land', es: 'País', it: 'Paese', fr: 'Pays', ja: '国',
-    pt: 'País', ru: 'Страна', zh: '国家', ko: '국가', ar: 'الدولة', hi: 'देश',
-    nl: 'Land', pl: 'Kraj', sv: 'Land', id: 'Negara', vi: 'Quốc gia'
-  },
+
   category: {
-    en: 'Category', tr: 'Kategori', de: 'Kategorie', es: 'Categoría', it: 'Categoria', fr: 'Catégorie',
-    ja: 'カテゴリー', pt: 'Categoria', ru: 'Категория', zh: '分类', ko: '카테고리', ar: 'الفئة',
-    hi: 'श्रेणी', nl: 'Categorie', pl: 'Kategoria', sv: 'Kategori', id: 'Kategori', vi: 'Danh mục'
+    en: 'Category',
+    tr: 'Kategori',
+    de: 'Kategorie',
+    es: 'Categoría',
+    it: 'Categoria',
+    fr: 'Catégorie',
+    ja: 'カテゴリー',
+    pt: 'Categoria',
+    ru: 'Категория',
+    zh: '分类',
+    ko: '카테고리',
+    ar: 'الفئة',
+    hi: 'श्रेणी',
+    nl: 'Categorie',
+    pl: 'Kategoria',
+    sv: 'Kategori',
+    id: 'Kategori',
+    vi: 'Danh mục'
   },
+
   quality: {
-    en: 'Quality', tr: 'Kalite', de: 'Qualität', es: 'Calidad', it: 'Qualità', fr: 'Qualité',
-    ja: '画質', pt: 'Qualidade', ru: 'Качество', zh: '画质', ko: '화질', ar: 'الجودة',
-    hi: 'गुणवत्ता', nl: 'Kwaliteit', pl: 'Jakość', sv: 'Kvalitet', id: 'Kualitas', vi: 'Chất lượng'
+    en: 'Quality',
+    tr: 'Kalite',
+    de: 'Qualität',
+    es: 'Calidad',
+    it: 'Qualità',
+    fr: 'Qualité',
+    ja: '画質',
+    pt: 'Qualidade',
+    ru: 'Качество',
+    zh: '画质',
+    ko: '화질',
+    ar: 'الجودة',
+    hi: 'गुणवत्ता',
+    nl: 'Kwaliteit',
+    pl: 'Jakość',
+    sv: 'Kvalitet',
+    id: 'Kualitas',
+    vi: 'Chất lượng'
   },
+
   channel: {
-    en: 'Source channel', tr: 'Kaynak kanal', de: 'Quellkanal', es: 'Canal de origen', it: 'Canale sorgente',
-    fr: 'Chaîne source', ja: '配信元チャンネル', pt: 'Canal de origem', ru: 'Канал-источник',
-    zh: '来源频道', ko: '원본 채널', ar: 'القناة المصدر', hi: 'स्रोत चैनल', nl: 'Bronkanaal',
-    pl: 'Kanał źródłowy', sv: 'Källkanal', id: 'Kanal sumber', vi: 'Kênh nguồn'
+    en: 'Source',
+    tr: 'Kaynak',
+    de: 'Quelle',
+    es: 'Fuente',
+    it: 'Fonte',
+    fr: 'Source',
+    ja: 'ソース',
+    pt: 'Fonte',
+    ru: 'Источник',
+    zh: '来源',
+    ko: '출처',
+    ar: 'المصدر',
+    hi: 'स्रोत',
+    nl: 'Bron',
+    pl: 'Źródło',
+    sv: 'Källa',
+    id: 'Sumber',
+    vi: 'Nguồn'
+  },
+
+  related: {
+    en: 'Related Videos',
+    tr: 'Benzer Videolar',
+    de: 'Ähnliche Videos',
+    es: 'Vídeos Relacionados',
+    it: 'Video Correlati',
+    fr: 'Vidéos Associées',
+    ja: '関連動画',
+    pt: 'Vídeos Relacionados',
+    ru: 'Похожие видео',
+    zh: '相关视频',
+    ko: '관련 동영상',
+    ar: 'فيديوهات ذات صلة',
+    hi: 'संबंधित वीडियो',
+    nl: 'Gerelateerde Video’s',
+    pl: 'Powiązane Filmy',
+    sv: 'Relaterade Videor',
+    id: 'Video Terkait',
+    vi: 'Video Liên Quan'
+  },
+
+  map: {
+    en: 'Map & Route',
+    tr: 'Harita ve Rota',
+    de: 'Karte & Route',
+    es: 'Mapa y Ruta',
+    it: 'Mappa e Percorso',
+    fr: 'Carte & Itinéraire',
+    ja: '地図・ルート',
+    pt: 'Mapa & Rota',
+    ru: 'Карта и Маршрут',
+    zh: '地图与路线',
+    ko: '지도 & 경로',
+    ar: 'الخريطة والمسار',
+    hi: 'मानचित्र और मार्ग',
+    nl: 'Kaart & Route',
+    pl: 'Mapa i Trasa',
+    sv: 'Karta & Rutt',
+    id: 'Peta & Rute',
+    vi: 'Bản đồ & Tuyến đường'
+  },
+
+  hotels: {
+    en: 'Nearby Hotels',
+    tr: 'Yakındaki Oteller',
+    de: 'Hotels in der Nähe',
+    es: 'Hoteles Cercanos',
+    it: 'Hotel nelle Vicinanze',
+    fr: 'Hôtels à Proximité',
+    ja: '周辺ホテル',
+    pt: 'Hotéis Próximos',
+    ru: 'Отели Рядом',
+    zh: '附近酒店',
+    ko: '주변 호텔',
+    ar: 'فنادق قريبة',
+    hi: 'आस-पास के होटल',
+    nl: 'Hotels in de Buurt',
+    pl: 'Hotele w Pobliżu',
+    sv: 'Hotell i Närheten',
+    id: 'Hotel Terdekat',
+    vi: 'Khách sạn Gần đây'
+  },
+
+  planned: {
+    en: 'Planned section',
+    tr: 'Planlı alan',
+    de: 'Geplanter Bereich',
+    es: 'Sección planificada',
+    it: 'Sezione pianificata',
+    fr: 'Section prévue',
+    ja: '準備中',
+    pt: 'Seção planejada',
+    ru: 'Раздел готовится',
+    zh: '规划中的区域',
+    ko: '준비 중인 영역',
+    ar: 'قسم مخطط',
+    hi: 'नियोजित अनुभाग',
+    nl: 'Gepland onderdeel',
+    pl: 'Planowana sekcja',
+    sv: 'Planerad sektion',
+    id: 'Bagian direncanakan',
+    vi: 'Khu vực dự kiến'
   }
 };
 
-const l = currentLang as string;
-const label = (key: keyof typeof labels) => labels[key]?.[l] || labels[key]?.en || key;
+const label = (key: string) =>
+  labels[key]?.[currentLang] ||
+  labels[key]?.en ||
+  key;
+
+const descriptions: Record<string, string[]> = {
+  tr: [
+    `${locationLabel} bölgesini bu etkileyici 4K ${categoryLabel.toLocaleLowerCase('tr-TR')} deneyimiyle keşfedin. Tur, sokak atmosferini, kentsel ortamı ve günlük yaşamı gerçekçi bir bakış açısıyla sergiliyor.`,
+    `Old Towns Walks bu içeriği bölgeyi sanal olarak keşfetmek, seyahat fikirleri edinmek ve benzer videolar bulmak isteyen ziyaretçiler için düzenler. Video kaynağı: ${sourceName}.`
+  ],
+
+  en: [
+    `Explore ${locationLabel} through this immersive 4K ${categoryLabel.toLowerCase()} experience. The video offers a street-level view of the local atmosphere, urban surroundings and everyday life.`,
+    `Old Towns Walks organizes this content for viewers who want to explore the area virtually, discover travel ideas and find related experiences. Video source: ${sourceName}.`
+  ],
+
+  de: [
+    `Entdecke ${locationLabel} mit diesem immersiven 4K-Erlebnis. Die Tour zeigt die Straßenatmosphäre, die urbane Umgebung und das tägliche Leben aus einer realistischen Perspektive.`,
+    `Old Towns Walks ordnet dieses Video für Besucher ein, die die Region virtuell erkunden, Reiseideen entdecken und ähnliche Videos finden möchten. Videoquelle: ${sourceName}.`
+  ],
+
+  es: [
+    `Descubre ${locationLabel} mediante esta experiencia inmersiva en 4K. El recorrido muestra el ambiente de las calles, el entorno urbano y la vida cotidiana desde una perspectiva peatonal.`,
+    `Old Towns Walks organiza este contenido para quienes desean explorar la zona virtualmente, descubrir ideas de viaje y encontrar vídeos relacionados. Fuente: ${sourceName}.`
+  ],
+
+  it: [
+    `Scopri ${locationLabel} attraverso questa esperienza immersiva in 4K. Il percorso mostra l'atmosfera delle strade, l'ambiente urbano e la vita quotidiana da una prospettiva autentica.`,
+    `Old Towns Walks organizza questo contenuto per chi desidera esplorare virtualmente la zona, trovare idee di viaggio e scoprire video correlati. Fonte: ${sourceName}.`
+  ],
+
+  fr: [
+    `Découvrez ${locationLabel} grâce à cette expérience immersive en 4K. La visite présente l'ambiance des rues, l'environnement urbain et la vie quotidienne depuis une perspective réelle.`,
+    `Old Towns Walks organise ce contenu pour les visiteurs souhaitant explorer la région virtuellement, trouver des idées de voyage et découvrir des vidéos associées. Source : ${sourceName}.`
+  ],
+
+  ja: [
+    `${locationLabel}を4K映像で探索してください。街路の雰囲気、都市の景観、日常の様子をリアルな視点から楽しめます。`,
+    `Old Towns Walksでは、地域をバーチャルに探索し、旅行のアイデアや関連動画を見つけられるよう、このコンテンツを整理しています。動画提供元: ${sourceName}。`
+  ],
+
+  pt: [
+    `Explore ${locationLabel} através desta experiência imersiva em 4K. O passeio mostra a atmosfera das ruas, o ambiente urbano e a vida cotidiana.`,
+    `Old Towns Walks organiza este conteúdo para quem deseja explorar a região virtualmente, encontrar ideias de viagem e descobrir vídeos relacionados. Fonte: ${sourceName}.`
+  ],
+
+  ru: [
+    `Исследуйте ${locationLabel} в формате 4K. Видео показывает атмосферу улиц, городское окружение и повседневную жизнь.`,
+    `Old Towns Walks организует этот материал для тех, кто хочет виртуально познакомиться с районом и найти похожие видео. Источник: ${sourceName}.`
+  ],
+
+  zh: [
+    `通过这段4K视频探索${locationLabel}。内容展示当地街道氛围、城市环境和日常生活。`,
+    `Old Towns Walks 整理此内容，帮助用户虚拟探索该地区并发现相关视频。视频来源：${sourceName}。`
+  ],
+
+  ko: [
+    `4K 영상으로 ${locationLabel}을 탐험해 보세요. 거리 분위기와 도시 환경, 일상의 모습을 실제 시점에서 경험할 수 있습니다.`,
+    `Old Towns Walks는 지역을 가상으로 둘러보고 관련 영상을 찾을 수 있도록 이 콘텐츠를 구성합니다. 영상 출처: ${sourceName}.`
+  ],
+
+  ar: [
+    `استكشف ${locationLabel} من خلال تجربة غامرة بدقة 4K. تعرض الجولة أجواء الشوارع والمشهد الحضري والحياة اليومية.`,
+    `ينظم Old Towns Walks هذا المحتوى للزوار الذين يرغبون في استكشاف المنطقة افتراضيًا والعثور على فيديوهات مشابهة. المصدر: ${sourceName}.`
+  ],
+
+  hi: [
+    `${locationLabel} को इस 4K अनुभव के माध्यम से देखें। यह वीडियो सड़क के माहौल, शहरी परिवेश और रोज़मर्रा की जिंदगी को वास्तविक दृष्टिकोण से दिखाता है।`,
+    `Old Towns Walks इस सामग्री को क्षेत्र को वर्चुअली देखने और संबंधित वीडियो खोजने वाले दर्शकों के लिए व्यवस्थित करता है। स्रोत: ${sourceName}.`
+  ],
+
+  nl: [
+    `Ontdek ${locationLabel} met deze meeslepende 4K-ervaring. De video toont de sfeer van de straten, de stedelijke omgeving en het dagelijkse leven.`,
+    `Old Towns Walks organiseert deze content voor bezoekers die het gebied virtueel willen ontdekken en vergelijkbare video's willen vinden. Bron: ${sourceName}.`
+  ],
+
+  pl: [
+    `Odkryj ${locationLabel} dzięki temu doświadczeniu w jakości 4K. Film pokazuje atmosferę ulic, miejskie otoczenie i codzienne życie.`,
+    `Old Towns Walks porządkuje ten materiał dla osób, które chcą wirtualnie odkrywać okolicę i znaleźć podobne filmy. Źródło: ${sourceName}.`
+  ],
+
+  sv: [
+    `Upptäck ${locationLabel} genom denna uppslukande 4K-upplevelse. Videon visar gatulivet, stadsmiljön och vardagen.`,
+    `Old Towns Walks organiserar innehållet för besökare som vill utforska området virtuellt och hitta liknande videor. Källa: ${sourceName}.`
+  ],
+
+  id: [
+    `Jelajahi ${locationLabel} melalui pengalaman 4K yang imersif ini. Video menampilkan suasana jalan, lingkungan kota, dan kehidupan sehari-hari.`,
+    `Old Towns Walks mengatur konten ini bagi pengunjung yang ingin menjelajahi kawasan secara virtual dan menemukan video terkait. Sumber: ${sourceName}.`
+  ],
+
+  vi: [
+    `Khám phá ${locationLabel} qua trải nghiệm 4K sống động này. Video cho thấy bầu không khí đường phố, không gian đô thị và cuộc sống hằng ngày.`,
+    `Old Towns Walks sắp xếp nội dung này cho những người muốn khám phá khu vực trực tuyến và tìm các video liên quan. Nguồn: ${sourceName}.`
+  ]
+};
+
+const pageDescription =
+  descriptions[currentLang] ||
+  descriptions.en;
+
+const metaDescription =
+  pageDescription.join(' ').slice(0, 160);
 ---
 
-<BaseLayout title={seoTitle}>
-  <main class="walk-page">
-    <div class="walk-shell">
-      <a href={`/${currentLang}/`} class="back-link">← {label('back')}</a>
+<BaseLayout
+  title={seoTitle}
+  description={metaDescription}
+>
+  <div class="walk-page">
 
-      <article class="walk-card">
-        <header class="walk-header">
-          <h1>{seoTitle}</h1>
-        </header>
+    <div class="page-top">
+      <a
+        href={`/${currentLang}/`}
+        class="back-link"
+      >
+        ← {label('back')}
+      </a>
+
+      <h1>{seoTitle}</h1>
+    </div>
+
+    <div class="discovery-layout">
+
+      <!-- SOL SÜTUN -->
+      <aside class="left-rail">
+
+        <section class="side-module">
+          <div class="module-icon">⌖</div>
+
+          <div>
+            <h2>{label('map')}</h2>
+            <p>{label('planned')}</p>
+          </div>
+        </section>
+
+        <section class="side-module">
+          <div class="module-icon">⌂</div>
+
+          <div>
+            <h2>{label('hotels')}</h2>
+            <p>{label('planned')}</p>
+          </div>
+        </section>
+
+        <!-- REKLAM İÇİN BOŞ ALAN -->
+        <section
+          class="ad-module"
+          aria-label="Advertisement"
+        ></section>
+
+      </aside>
+
+      <!-- ORTA ANA ALAN -->
+      <section class="video-column">
 
         <div class="video-frame">
           <iframe
@@ -111,50 +460,131 @@ const label = (key: keyof typeof labels) => labels[key]?.[l] || labels[key]?.en 
           ></iframe>
         </div>
 
-        <section class="meta-row" aria-label="Video information">
-          {video.city && (
-            <div class="meta-item">
-              <span class="meta-label">{label('city')}</span>
-              <span class="meta-value">{video.city}</span>
-            </div>
-          )}
+        <div class="meta-row">
 
-          {video.country && (
+          {locationLabel && (
             <div class="meta-item">
-              <span class="meta-label">{label('country')}</span>
-              <span class="meta-value">{video.country}</span>
+              <span class="meta-label">
+                {label('location')}
+              </span>
+
+              <span class="meta-value">
+                {locationLabel}
+              </span>
             </div>
           )}
 
           {video.category && (
             <div class="meta-item">
-              <span class="meta-label">{label('category')}</span>
-              <span class="meta-value">{categoryLabel}</span>
+              <span class="meta-label">
+                {label('category')}
+              </span>
+
+              <span class="meta-value">
+                {categoryLabel}
+              </span>
             </div>
           )}
 
           {video.badge && (
             <div class="meta-item">
-              <span class="meta-label">{label('quality')}</span>
-              <span class="meta-value">{video.badge}</span>
+              <span class="meta-label">
+                {label('quality')}
+              </span>
+
+              <span class="meta-value">
+                {video.badge}
+              </span>
             </div>
           )}
 
           {(video.channelTitle || video.channel) && (
-            <div class="meta-item meta-channel">
-              <span class="meta-label">{label('channel')}</span>
-              <span class="meta-value">{video.channelTitle || video.channel}</span>
+            <div class="meta-item">
+              <span class="meta-label">
+                {label('channel')}
+              </span>
+
+              <span class="meta-value">
+                {sourceName}
+              </span>
             </div>
           )}
-        </section>
+
+        </div>
 
         <section class="description-card">
           <h2>{label('about')}</h2>
-          <p>{seoDescription}</p>
+
+          <div class="description-content">
+            {pageDescription.map((paragraph: string) => (
+              <p>{paragraph}</p>
+            ))}
+          </div>
         </section>
-      </article>
+
+      </section>
+
+      <!-- SAĞ İLGİLİ VİDEOLAR -->
+      <aside class="related-rail">
+
+        <div class="related-heading">
+          <div>
+            <h2>{label('related')}</h2>
+            <p>{categoryLabel}</p>
+          </div>
+
+          <span class="related-count">
+            {relatedVideos.length}
+          </span>
+        </div>
+
+        <div class="related-scroll">
+
+          {relatedVideos.map((item) => (
+            <a
+              href={`/${currentLang}/walks/${item.id}`}
+              class="related-card"
+            >
+              <div class="related-thumb">
+
+                <img
+                  src={
+                    item.thumbnail ||
+                    `https://i.ytimg.com/vi/${item.id}/hqdefault.jpg`
+                  }
+                  alt={getVideoCardTitle(item, currentLang)}
+                  loading="lazy"
+                />
+
+                {item.badge && (
+                  <span class="related-badge">
+                    {item.badge}
+                  </span>
+                )}
+
+              </div>
+
+              <div class="related-info">
+
+                <h3>
+                  {getVideoCardTitle(item, currentLang)}
+                </h3>
+
+                <p>
+                  {item.channelTitle || item.channel}
+                </p>
+
+              </div>
+            </a>
+          ))}
+
+        </div>
+
+      </aside>
+
     </div>
-  </main>
+
+  </div>
 
   <script
     type="application/ld+json"
@@ -164,156 +594,590 @@ const label = (key: keyof typeof labels) => labels[key]?.[l] || labels[key]?.en 
 
 <style>
   .walk-page {
-    min-height: calc(100vh - 70px);
+    min-height: 100vh;
     background: #0d1117;
     color: #f5f7fa;
-    padding: 84px 24px 64px;
+    padding: 24px 16px 60px;
   }
 
-  .walk-shell {
-    width: min(1380px, 100%);
-    margin: 0 auto;
+  .page-top {
+    width: min(1660px, calc(100% - 24px));
+    margin: 0 auto 16px;
   }
 
   .back-link {
     display: inline-flex;
-    align-items: center;
-    margin-bottom: 18px;
-    color: #aeb8c6;
-    text-decoration: none;
-    font-size: 14px;
+    margin-bottom: 10px;
+    color: #8993a1;
+    font-size: 12px;
     font-weight: 600;
+    transition: color .2s ease;
   }
 
   .back-link:hover {
     color: #ffffff;
   }
 
-  .walk-header {
-    margin-bottom: 18px;
+  .page-top h1 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: clamp(21px, 1.45vw, 26px);
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
   }
 
-  .walk-header h1 {
+  .discovery-layout {
+    width: min(1660px, calc(100% - 24px));
+    margin: 0 auto;
+
+    display: grid;
+
+    grid-template-columns:
+      260px
+      minmax(700px, 900px)
+      390px;
+
+    justify-content: center;
+
+    gap: 20px;
+
+    align-items: start;
+  }
+
+  /* SOL TARAF */
+
+  .left-rail {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+
+    position: sticky;
+    top: 94px;
+  }
+
+  .side-module {
+    min-height: 118px;
+
+    padding: 18px;
+
+    display: flex;
+    gap: 13px;
+    align-items: flex-start;
+
+    background: #121821;
+
+    border: 1px solid #232b36;
+
+    border-radius: 13px;
+  }
+
+  .module-icon {
+    width: 34px;
+    height: 34px;
+
+    flex: 0 0 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: #1b2430;
+
+    color: #dce4ee;
+
+    font-size: 18px;
+  }
+
+  .side-module h2 {
+    margin: 1px 0 7px;
+
+    color: #eef2f7;
+
+    font-size: 14px;
+
+    font-weight: 700;
+  }
+
+  .side-module p {
     margin: 0;
-    max-width: 1000px;
-    font-size: clamp(26px, 3vw, 42px);
-    line-height: 1.15;
-    letter-spacing: -0.02em;
-    color: #ffffff;
+
+    color: #727e8d;
+
+    font-size: 12px;
+
+    line-height: 1.45;
+  }
+
+  .ad-module {
+    min-height: 220px;
+
+    border: 1px dashed #303946;
+
+    border-radius: 13px;
+
+    background: transparent;
+  }
+
+  /* ORTA VIDEO */
+
+  .video-column {
+    min-width: 0;
   }
 
   .video-frame {
     position: relative;
+
     width: 100%;
+
     aspect-ratio: 16 / 9;
-    background: #000000;
-    border-radius: 16px;
+
     overflow: hidden;
-    border: 1px solid #242b35;
-    box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28);
+
+    background: #000000;
+
+    border: 1px solid #242c36;
+
+    border-radius: 13px;
+
+    box-shadow:
+      0 15px 45px rgba(0, 0, 0, .22);
   }
 
   .video-frame iframe {
     position: absolute;
+
     inset: 0;
+
     width: 100%;
+
     height: 100%;
+
     border: 0;
   }
 
   .meta-row {
     display: flex;
+
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 18px;
+
+    gap: 8px;
+
+    margin-top: 13px;
   }
 
   .meta-item {
+    min-height: 34px;
+
     display: flex;
+
     align-items: center;
+
     gap: 7px;
-    min-height: 38px;
-    padding: 8px 12px;
-    border: 1px solid #252d38;
-    background: #151b23;
-    border-radius: 10px;
+
+    padding: 7px 10px;
+
+    background: #141a22;
+
+    border: 1px solid #252d37;
+
+    border-radius: 8px;
   }
 
   .meta-label {
-    color: #7f8a99;
-    font-size: 12px;
-    font-weight: 700;
+    color: #778291;
+
+    font-size: 9px;
+
+    font-weight: 800;
+
+    letter-spacing: .07em;
+
     text-transform: uppercase;
-    letter-spacing: 0.04em;
   }
 
   .meta-value {
-    color: #e9edf2;
-    font-size: 13px;
+    color: #e5e9ef;
+
+    font-size: 11px;
+
     font-weight: 600;
   }
 
-  .meta-channel {
-    margin-left: auto;
-  }
-
   .description-card {
-    margin-top: 22px;
-    padding: 24px;
+    margin-top: 15px;
+
+    padding: 20px 22px;
+
     background: #121821;
-    border: 1px solid #252d38;
-    border-radius: 14px;
+
+    border: 1px solid #232b36;
+
+    border-radius: 13px;
   }
 
   .description-card h2 {
-    margin: 0 0 10px;
-    color: #ffffff;
-    font-size: 20px;
+    margin: 0 0 12px;
+
+    color: #f3f6fa;
+
+    font-size: 17px;
+
+    font-weight: 700;
   }
 
-  .description-card p {
+  .description-content p {
     margin: 0;
-    color: #c5ccd6;
-    font-size: 15px;
+
+    color: #adb6c2;
+
+    font-size: 13px;
+
     line-height: 1.75;
   }
 
-  @media (max-width: 760px) {
-    .walk-page {
-      padding: 74px 12px 44px;
+  .description-content p + p {
+    margin-top: 10px;
+  }
+
+  /* SAĞ İLGİLİ VİDEOLAR */
+
+  .related-rail {
+    overflow: hidden;
+
+    background: #10161e;
+
+    border: 1px solid #232b36;
+
+    border-radius: 13px;
+
+    position: sticky;
+
+    top: 94px;
+  }
+
+  .related-heading {
+    min-height: 68px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 14px 15px;
+
+    border-bottom: 1px solid #232b36;
+
+    background: #121922;
+  }
+
+  .related-heading h2 {
+    margin: 0;
+
+    color: #f3f6fa;
+
+    font-size: 15px;
+
+    font-weight: 700;
+  }
+
+  .related-heading p {
+    margin: 3px 0 0;
+
+    color: #738090;
+
+    font-size: 11px;
+  }
+
+  .related-count {
+    min-width: 28px;
+
+    height: 28px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    background: #1d2530;
+
+    border-radius: 7px;
+
+    color: #9ca7b5;
+
+    font-size: 11px;
+
+    font-weight: 700;
+  }
+
+  .related-scroll {
+    max-height: calc(100vh - 190px);
+
+    overflow-y: auto;
+
+    padding: 8px;
+  }
+
+  .related-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .related-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .related-scroll::-webkit-scrollbar-thumb {
+    background: #343d49;
+
+    border-radius: 10px;
+  }
+
+  .related-card {
+    display: grid;
+
+    grid-template-columns:
+      150px
+      minmax(0, 1fr);
+
+    gap: 11px;
+
+    padding: 8px;
+
+    border-radius: 10px;
+
+    transition:
+      background .18s ease,
+      transform .18s ease;
+  }
+
+  .related-card:hover {
+    background: #1a212b;
+  }
+
+  .related-thumb {
+    position: relative;
+
+    width: 150px;
+
+    aspect-ratio: 16 / 9;
+
+    overflow: hidden;
+
+    background: #222222;
+
+    border-radius: 8px;
+  }
+
+  .related-thumb img {
+    position: absolute;
+
+    inset: 0;
+
+    width: 100%;
+
+    height: 100%;
+
+    object-fit: cover;
+  }
+
+  .related-badge {
+    position: absolute;
+
+    right: 4px;
+
+    bottom: 4px;
+
+    padding: 2px 4px;
+
+    background: rgba(0, 0, 0, .78);
+
+    border-radius: 3px;
+
+    color: #ffffff;
+
+    font-size: 8px;
+
+    font-weight: 700;
+  }
+
+  .related-info {
+    min-width: 0;
+  }
+
+  .related-info h3 {
+    margin: 2px 0 6px;
+
+    display: -webkit-box;
+
+    overflow: hidden;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 2;
+
+    color: #e8edf3;
+
+    font-size: 12px;
+
+    font-weight: 650;
+
+    line-height: 1.4;
+  }
+
+  .related-info p {
+    margin: 0;
+
+    display: -webkit-box;
+
+    overflow: hidden;
+
+    -webkit-box-orient: vertical;
+
+    -webkit-line-clamp: 1;
+
+    color: #747f8e;
+
+    font-size: 10px;
+
+    line-height: 1.4;
+  }
+
+  /* DAHA KÜÇÜK LAPTOP */
+
+  @media (max-width: 1450px) {
+    .discovery-layout {
+      grid-template-columns:
+        minmax(0, 1fr)
+        330px;
+
+      grid-template-areas:
+        "video related"
+        "left related";
     }
 
-    .walk-header h1 {
-      font-size: 25px;
-      line-height: 1.2;
+    .video-column {
+      grid-area: video;
+    }
+
+    .left-rail {
+      grid-area: left;
+
+      position: static;
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+      margin-top: 2px;
+    }
+
+    .ad-module {
+      grid-column: 1 / -1;
+
+      min-height: 120px;
+    }
+
+    .related-rail {
+      grid-area: related;
+    }
+  }
+
+  /* TABLET */
+
+  @media (max-width: 950px) {
+    .discovery-layout {
+      display: flex;
+
+      flex-direction: column;
+    }
+
+    .video-column,
+    .left-rail,
+    .related-rail {
+      width: 100%;
+    }
+
+    .left-rail {
+      order: 2;
+
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    }
+
+    .related-rail {
+      order: 3;
+
+      position: static;
+    }
+
+    .related-scroll {
+      max-height: 520px;
+    }
+  }
+
+  /* MOBİL */
+
+  @media (max-width: 650px) {
+    .walk-page {
+      padding: 15px 10px 40px;
+    }
+
+    .page-top,
+    .discovery-layout {
+      width: 100%;
+    }
+
+    .page-top {
+      margin-bottom: 12px;
+    }
+
+    .page-top h1 {
+      font-size: 19px;
+    }
+
+    .discovery-layout {
+      gap: 14px;
     }
 
     .video-frame {
-      border-radius: 10px;
-    }
-
-    .meta-row {
-      gap: 8px;
-      margin-top: 14px;
+      border-radius: 9px;
     }
 
     .meta-item {
       width: 100%;
+
       justify-content: space-between;
     }
 
-    .meta-channel {
-      margin-left: 0;
-    }
-
     .description-card {
-      padding: 18px;
-      margin-top: 16px;
+      padding: 17px;
     }
 
-    .description-card p {
-      font-size: 14px;
-      line-height: 1.7;
+    .left-rail {
+      display: flex;
+
+      flex-direction: column;
+    }
+
+    .ad-module {
+      min-height: 100px;
+    }
+
+    .related-card {
+      grid-template-columns:
+        140px
+        minmax(0, 1fr);
+    }
+
+    .related-thumb {
+      width: 140px;
     }
   }
 </style>
