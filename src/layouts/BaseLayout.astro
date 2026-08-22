@@ -21,9 +21,13 @@ const {
     <meta name="generator" content={Astro.generator} />
 
     <title>{title}</title>
+
     <!-- SEO & Open Graph Meta Tags -->
     <meta name="description" content={description} />
-    <meta name="keywords" content="walking tour, 4k walking tour, old towns, binaural audio, city walk, izmir walking tour, dusseldorf walk, travel 4k" />
+    <meta
+      name="keywords"
+      content="walking tour, 4k walking tour, old towns, binaural audio, city walk, izmir walking tour, dusseldorf walk, travel 4k"
+    />
     <meta name="author" content="Old Towns Walks" />
     <link rel="canonical" href={Astro.url.href} />
 
@@ -32,18 +36,27 @@ const {
     <meta property="og:url" content={Astro.url.href} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
-    <meta property="og:image" content="https://oldtownswalks.com/favicon-v3.png" />
+    <meta
+      property="og:image"
+      content="https://oldtownswalks.com/favicon-v3.png"
+    />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
     <meta property="twitter:url" content={Astro.url.href} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
-    <meta property="twitter:image" content="https://oldtownswalks.com/favicon-v3.png" />
+    <meta
+      property="twitter:image"
+      content="https://oldtownswalks.com/favicon-v3.png"
+    />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap"
+      rel="stylesheet"
+    />
 
     <style is:global>
       * {
@@ -51,16 +64,19 @@ const {
         margin: 0;
         padding: 0;
       }
+
       body {
         background-color: #0b0f17;
         color: #f1f5f9;
         font-family: 'Plus Jakarta Sans', sans-serif;
         -webkit-font-smoothing: antialiased;
       }
+
       a {
         text-decoration: none;
         color: inherit;
       }
+
       header {
         position: fixed;
         top: 0;
@@ -71,6 +87,7 @@ const {
         backdrop-filter: blur(12px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
       }
+
       .nav-container {
         max-width: 1200px;
         margin: 0 auto;
@@ -80,11 +97,13 @@ const {
         align-items: center;
         justify-content: space-between;
       }
+
       .nav-actions {
         display: flex;
         align-items: center;
         gap: 16px;
       }
+
       .logo {
         font-family: 'Playfair Display', serif;
         font-size: 22px;
@@ -95,6 +114,7 @@ const {
         align-items: center;
         gap: 10px;
       }
+
       .badge {
         font-size: 10px;
         font-weight: 700;
@@ -105,25 +125,11 @@ const {
         color: #f59e0b;
         border: 1px solid rgba(245, 158, 11, 0.3);
       }
-      .nav-btn {
-        background: #f59e0b;
-        color: #0f172a;
-        font-weight: 700;
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        padding: 10px 22px;
-        border-radius: 50px;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
-      }
-      .nav-btn:hover {
-        background: #fbbf24;
-        transform: translateY(-1px);
-      }
+
       .site-main {
         padding-top: 72px;
       }
+
       footer {
         background: #070a0f;
         border-top: 1px solid rgba(255, 255, 255, 0.08);
@@ -132,29 +138,34 @@ const {
         color: #64748b;
         font-size: 13px;
       }
+
       @media (max-width: 700px) {
         .nav-container {
           height: 64px;
           padding: 0 14px;
         }
+
         .site-main {
           padding-top: 64px;
         }
+
         .logo {
           font-size: 17px;
           letter-spacing: 2px;
         }
+
         .badge {
-          display: none;
-        }
-        .nav-btn {
           display: none;
         }
       }
     </style>
 
     <!-- Google Analytics (GA4) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z4B6GBNNE8"></script>
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-Z4B6GBNNE8"
+    ></script>
+
     <script is:inline>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
@@ -162,15 +173,16 @@ const {
       gtag('config', 'G-Z4B6GBNNE8');
     </script>
   </head>
+
   <body>
     <header>
       <div class="nav-container">
         <a href="/" class="logo">
           OLD TOWNS <span class="badge">POV TV</span>
         </a>
+
         <div class="nav-actions">
           <LanguagePicker />
-          <a href="#featured" class="nav-btn">Watch Latest Tour</a>
         </div>
       </div>
     </header>
@@ -188,7 +200,10 @@ const {
           <span> · </span>
           <a href="/contact">Contact</a>
         </div>
-        <p style="margin-top:12px;">&copy; {new Date().getFullYear()} Old Towns Walks. All rights reserved.</p>
+
+        <p style="margin-top:12px;">
+          &copy; {new Date().getFullYear()} Old Towns Walks. All rights reserved.
+        </p>
       </div>
     </footer>
 
