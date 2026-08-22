@@ -380,6 +380,7 @@ const videoSchema = {
       }
 
       .thumbnail-wrapper {
+        display: block;
         position: relative;
         width: 100%;
         aspect-ratio: 16 / 9;
@@ -740,9 +741,11 @@ const videoSchema = {
                   data-category={video.category || 'Walking Tours'}
                 >
 
-                  <div
+                  <a
+                    href={`/${lang}/walks/${video.id}`}
                     class="thumbnail-wrapper"
                     data-video-id={video.id}
+                    aria-label={getVideoCardTitle(video, lang)}
                   >
 
                     <img
@@ -752,7 +755,7 @@ const videoSchema = {
                       loading="lazy"
                     />
 
-                  </div>
+                  </a>
 
 
                   <div class="video-details">
