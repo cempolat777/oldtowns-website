@@ -1,0 +1,1648 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, defaultLang } from '../../i18n/ui';
+import videos from '../../data/videos.json';
+
+interface Video {
+  id: string;
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  category?: string;
+  channel?: string;
+  channelTitle?: string;
+  badge?: string;
+  publishedAt?: string;
+  city?: string;
+  country?: string;
+}
+
+interface MapPoint {
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+  videoCount: number;
+  categories: string[];
+  thumbnail: string;
+  cityUrl: string;
+  countryUrl: string;
+}
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const { lang } = Astro.params;
+
+const currentLang =
+  lang && lang in languages
+    ? lang
+    : defaultLang;
+
+function createSlug(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function normalizeKey(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+const coordinateIndex: Record<string, [number, number]> = {
+  'tokyo': [35.6762, 139.6503],
+  'kyoto': [35.0116, 135.7681],
+  'osaka': [34.6937, 135.5023],
+  'yokohama': [35.4437, 139.6380],
+  'nara': [34.6851, 135.8048],
+  'sapporo': [43.0618, 141.3545],
+  'fukuoka': [33.5902, 130.4017],
+  'hiroshima': [34.3853, 132.4553],
+  'nagoya': [35.1815, 136.9066],
+  'kobe': [34.6901, 135.1955],
+  'istanbul': [41.0082, 28.9784],
+  'izmir': [38.4237, 27.1428],
+  'ankara': [39.9334, 32.8597],
+  'antalya': [36.8969, 30.7133],
+  'bursa': [40.1950, 29.0600],
+  'london': [51.5072, -0.1276],
+  'edinburgh': [55.9533, -3.1883],
+  'manchester': [53.4808, -2.2426],
+  'liverpool': [53.4084, -2.9916],
+  'paris': [48.8566, 2.3522],
+  'lyon': [45.7640, 4.8357],
+  'nice': [43.7102, 7.2620],
+  'marseille': [43.2965, 5.3698],
+  'rome': [41.9028, 12.4964],
+  'roma': [41.9028, 12.4964],
+  'milan': [45.4642, 9.1900],
+  'venice': [45.4408, 12.3155],
+  'florence': [43.7696, 11.2558],
+  'naples': [40.8518, 14.2681],
+  'bologna': [44.4949, 11.3426],
+  'barcelona': [41.3874, 2.1686],
+  'madrid': [40.4168, -3.7038],
+  'seville': [37.3891, -5.9845],
+  'sevilla': [37.3891, -5.9845],
+  'valencia': [39.4699, -0.3763],
+  'lisbon': [38.7223, -9.1393],
+  'lisboa': [38.7223, -9.1393],
+  'porto': [41.1579, -8.6291],
+  'amsterdam': [52.3676, 4.9041],
+  'rotterdam': [51.9244, 4.4777],
+  'the hague': [52.0705, 4.3007],
+  'den haag': [52.0705, 4.3007],
+  'brussels': [50.8503, 4.3517],
+  'bruges': [51.2093, 3.2247],
+  'berlin': [52.5200, 13.4050],
+  'munich': [48.1351, 11.5820],
+  'munchen': [48.1351, 11.5820],
+  'hamburg': [53.5511, 9.9937],
+  'frankfurt': [50.1109, 8.6821],
+  'cologne': [50.9375, 6.9603],
+  'koln': [50.9375, 6.9603],
+  'dusseldorf': [51.2277, 6.7735],
+  'vienna': [48.2082, 16.3738],
+  'wien': [48.2082, 16.3738],
+  'salzburg': [47.8095, 13.0550],
+  'zurich': [47.3769, 8.5417],
+  'geneva': [46.2044, 6.1432],
+  'lucerne': [47.0502, 8.3093],
+  'prague': [50.0755, 14.4378],
+  'praha': [50.0755, 14.4378],
+  'budapest': [47.4979, 19.0402],
+  'warsaw': [52.2297, 21.0122],
+  'krakow': [50.0647, 19.9450],
+  'gdansk': [54.3520, 18.6466],
+  'stockholm': [59.3293, 18.0686],
+  'copenhagen': [55.6761, 12.5683],
+  'oslo': [59.9139, 10.7522],
+  'helsinki': [60.1699, 24.9384],
+  'reykjavik': [64.1466, -21.9426],
+  'athens': [37.9838, 23.7275],
+  'thessaloniki': [40.6401, 22.9444],
+  'new york': [40.7128, -74.0060],
+  'new york city': [40.7128, -74.0060],
+  'los angeles': [34.0522, -118.2437],
+  'san francisco': [37.7749, -122.4194],
+  'chicago': [41.8781, -87.6298],
+  'miami': [25.7617, -80.1918],
+  'boston': [42.3601, -71.0589],
+  'washington': [38.9072, -77.0369],
+  'washington dc': [38.9072, -77.0369],
+  'seattle': [47.6062, -122.3321],
+  'las vegas': [36.1699, -115.1398],
+  'toronto': [43.6532, -79.3832],
+  'vancouver': [49.2827, -123.1207],
+  'montreal': [45.5017, -73.5673],
+  'quebec city': [46.8139, -71.2080],
+  'mexico city': [19.4326, -99.1332],
+  'buenos aires': [-34.6037, -58.3816],
+  'rio de janeiro': [-22.9068, -43.1729],
+  'sao paulo': [-23.5505, -46.6333],
+  'santiago': [-33.4489, -70.6693],
+  'lima': [-12.0464, -77.0428],
+  'bogota': [4.7110, -74.0721],
+  'dubai': [25.2048, 55.2708],
+  'abu dhabi': [24.4539, 54.3773],
+  'doha': [25.2854, 51.5310],
+  'jerusalem': [31.7683, 35.2137],
+  'tel aviv': [32.0853, 34.7818],
+  'cairo': [30.0444, 31.2357],
+  'marrakech': [31.6295, -7.9811],
+  'cape town': [-33.9249, 18.4241],
+  'johannesburg': [-26.2041, 28.0473],
+  'singapore': [1.3521, 103.8198],
+  'hong kong': [22.3193, 114.1694],
+  'seoul': [37.5665, 126.9780],
+  'busan': [35.1796, 129.0756],
+  'taipei': [25.0330, 121.5654],
+  'bangkok': [13.7563, 100.5018],
+  'chiang mai': [18.7883, 98.9853],
+  'phuket': [7.8804, 98.3923],
+  'hanoi': [21.0278, 105.8342],
+  'ho chi minh city': [10.8231, 106.6297],
+  'saigon': [10.8231, 106.6297],
+  'kuala lumpur': [3.1390, 101.6869],
+  'jakarta': [-6.2088, 106.8456],
+  'denpasar': [-8.6705, 115.2126],
+  'sydney': [-33.8688, 151.2093],
+  'melbourne': [-37.8136, 144.9631],
+  'brisbane': [-27.4698, 153.0251],
+  'perth': [-31.9523, 115.8613],
+  'auckland': [-36.8509, 174.7645]
+};
+
+const labels: Record<string, Record<string, string>> = {
+  title: {
+    en: 'World Map',
+    tr: 'Dünya Haritası',
+    de: 'Weltkarte',
+    es: 'Mapa Mundial',
+    it: 'Mappa del Mondo',
+    fr: 'Carte du Monde',
+    ja: '世界地図',
+    pt: 'Mapa Mundial',
+    ru: 'Карта мира',
+    zh: '世界地图',
+    ko: '세계 지도',
+    ar: 'خريطة العالم',
+    hi: 'विश्व मानचित्र',
+    nl: 'Wereldkaart',
+    pl: 'Mapa Świata',
+    sv: 'Världskarta',
+    id: 'Peta Dunia',
+    vi: 'Bản Đồ Thế Giới'
+  },
+  subtitle: {
+    en: 'Explore walking tours by city and country',
+    tr: 'Yürüyüş turlarını şehir ve ülkeye göre keşfet',
+    de: 'Entdecke Spaziergänge nach Stadt und Land',
+    es: 'Explora recorridos a pie por ciudad y país',
+    it: 'Esplora i tour a piedi per città e paese',
+    fr: 'Explorez les visites à pied par ville et pays',
+    ja: '都市と国から街歩きツアーを探索',
+    pt: 'Explore passeios a pé por cidade e país',
+    ru: 'Исследуйте прогулочные туры по городам и странам',
+    zh: '按城市和国家探索步行之旅',
+    ko: '도시와 국가별 워킹 투어 탐색',
+    ar: 'استكشف جولات المشي حسب المدينة والدولة',
+    hi: 'शहर और देश के अनुसार वॉकिंग टूर खोजें',
+    nl: 'Ontdek wandelingen per stad en land',
+    pl: 'Odkrywaj spacery według miasta i kraju',
+    sv: 'Utforska promenader efter stad och land',
+    id: 'Jelajahi tur jalan kaki berdasarkan kota dan negara',
+    vi: 'Khám phá tour đi bộ theo thành phố và quốc gia'
+  },
+  intro: {
+    en: 'Navigate the world through real walking videos. Select a destination on the map to open its city hub and discover available tours.',
+    tr: 'Dünyayı gerçek yürüyüş videolarıyla keşfet. Haritadan bir destinasyon seç, şehir merkezini aç ve mevcut turları incele.',
+    de: 'Navigiere mit echten Spaziergangsvideos durch die Welt. Wähle ein Ziel auf der Karte und öffne die Stadtseite mit verfügbaren Touren.',
+    es: 'Recorre el mundo mediante videos reales a pie. Selecciona un destino en el mapa y abre su centro urbano para descubrir los recorridos disponibles.',
+    it: 'Esplora il mondo attraverso veri video a piedi. Seleziona una destinazione sulla mappa e apri il centro della città per scoprire i tour disponibili.',
+    fr: 'Parcourez le monde grâce à de vraies vidéos à pied. Sélectionnez une destination sur la carte pour ouvrir sa page et découvrir les visites disponibles.',
+    ja: 'リアルな街歩き動画で世界を探索。地図から目的地を選び、都市ページで利用可能なツアーを確認できます。',
+    pt: 'Explore o mundo através de vídeos reais a pé. Escolha um destino no mapa e abra o centro da cidade para descobrir os passeios disponíveis.',
+    ru: 'Исследуйте мир через реальные прогулочные видео. Выберите направление на карте и откройте страницу города с доступными турами.',
+    zh: '通过真实步行视频探索世界。选择地图上的目的地，进入城市中心页并发现可观看的行程。',
+    ko: '실제 도보 영상으로 세계를 탐험하세요. 지도에서 목적지를 선택해 도시 허브와 이용 가능한 투어를 확인할 수 있습니다.',
+    ar: 'استكشف العالم من خلال فيديوهات مشي حقيقية. اختر وجهة على الخريطة وافتح صفحة المدينة لاكتشاف الجولات المتاحة.',
+    hi: 'वास्तविक वॉकिंग वीडियो के माध्यम से दुनिया देखें। मानचित्र पर गंतव्य चुनें और उपलब्ध टूर देखने के लिए शहर का पेज खोलें।',
+    nl: 'Ontdek de wereld via echte wandelvideo’s. Kies een bestemming op de kaart en open de stadspagina om beschikbare tours te bekijken.',
+    pl: 'Odkrywaj świat dzięki prawdziwym filmom spacerowym. Wybierz miejsce na mapie i otwórz stronę miasta, aby zobaczyć dostępne trasy.',
+    sv: 'Utforska världen genom riktiga promenadvideor. Välj en destination på kartan och öppna stadssidan för att se tillgängliga turer.',
+    id: 'Jelajahi dunia melalui video jalan kaki nyata. Pilih destinasi di peta dan buka halaman kota untuk melihat tur yang tersedia.',
+    vi: 'Khám phá thế giới qua các video đi bộ thực tế. Chọn điểm đến trên bản đồ và mở trang thành phố để xem các tour hiện có.'
+  },
+  cities: {
+    en: 'Cities',
+    tr: 'Şehir',
+    de: 'Städte',
+    es: 'Ciudades',
+    it: 'Città',
+    fr: 'Villes',
+    ja: '都市',
+    pt: 'Cidades',
+    ru: 'Города',
+    zh: '城市',
+    ko: '도시',
+    ar: 'المدن',
+    hi: 'शहर',
+    nl: 'Steden',
+    pl: 'Miasta',
+    sv: 'Städer',
+    id: 'Kota',
+    vi: 'Thành Phố'
+  },
+  countries: {
+    en: 'Countries',
+    tr: 'Ülke',
+    de: 'Länder',
+    es: 'Países',
+    it: 'Paesi',
+    fr: 'Pays',
+    ja: '国',
+    pt: 'Países',
+    ru: 'Страны',
+    zh: '国家',
+    ko: '국가',
+    ar: 'الدول',
+    hi: 'देश',
+    nl: 'Landen',
+    pl: 'Kraje',
+    sv: 'Länder',
+    id: 'Negara',
+    vi: 'Quốc Gia'
+  },
+  videos: {
+    en: 'Videos',
+    tr: 'Video',
+    de: 'Videos',
+    es: 'Videos',
+    it: 'Video',
+    fr: 'Vidéos',
+    ja: '動画',
+    pt: 'Vídeos',
+    ru: 'Видео',
+    zh: '视频',
+    ko: '영상',
+    ar: 'فيديو',
+    hi: 'वीडियो',
+    nl: 'Video’s',
+    pl: 'Filmy',
+    sv: 'Videor',
+    id: 'Video',
+    vi: 'Video'
+  },
+  search: {
+    en: 'Search city or country',
+    tr: 'Şehir veya ülke ara',
+    de: 'Stadt oder Land suchen',
+    es: 'Buscar ciudad o país',
+    it: 'Cerca città o paese',
+    fr: 'Rechercher une ville ou un pays',
+    ja: '都市または国を検索',
+    pt: 'Buscar cidade ou país',
+    ru: 'Поиск города или страны',
+    zh: '搜索城市或国家',
+    ko: '도시 또는 국가 검색',
+    ar: 'ابحث عن مدينة أو دولة',
+    hi: 'शहर या देश खोजें',
+    nl: 'Zoek stad of land',
+    pl: 'Szukaj miasta lub kraju',
+    sv: 'Sök stad eller land',
+    id: 'Cari kota atau negara',
+    vi: 'Tìm thành phố hoặc quốc gia'
+  },
+  allCountries: {
+    en: 'All countries',
+    tr: 'Tüm ülkeler',
+    de: 'Alle Länder',
+    es: 'Todos los países',
+    it: 'Tutti i paesi',
+    fr: 'Tous les pays',
+    ja: 'すべての国',
+    pt: 'Todos os países',
+    ru: 'Все страны',
+    zh: '所有国家',
+    ko: '모든 국가',
+    ar: 'كل الدول',
+    hi: 'सभी देश',
+    nl: 'Alle landen',
+    pl: 'Wszystkie kraje',
+    sv: 'Alla länder',
+    id: 'Semua negara',
+    vi: 'Tất cả quốc gia'
+  },
+  destinations: {
+    en: 'Destinations',
+    tr: 'Destinasyonlar',
+    de: 'Reiseziele',
+    es: 'Destinos',
+    it: 'Destinazioni',
+    fr: 'Destinations',
+    ja: '目的地',
+    pt: 'Destinos',
+    ru: 'Направления',
+    zh: '目的地',
+    ko: '목적지',
+    ar: 'الوجهات',
+    hi: 'गंतव्य',
+    nl: 'Bestemmingen',
+    pl: 'Miejsca',
+    sv: 'Destinationer',
+    id: 'Destinasi',
+    vi: 'Điểm Đến'
+  },
+  openCity: {
+    en: 'Open city',
+    tr: 'Şehri aç',
+    de: 'Stadt öffnen',
+    es: 'Abrir ciudad',
+    it: 'Apri città',
+    fr: 'Ouvrir la ville',
+    ja: '都市を開く',
+    pt: 'Abrir cidade',
+    ru: 'Открыть город',
+    zh: '打开城市',
+    ko: '도시 열기',
+    ar: 'افتح المدينة',
+    hi: 'शहर खोलें',
+    nl: 'Open stad',
+    pl: 'Otwórz miasto',
+    sv: 'Öppna stad',
+    id: 'Buka kota',
+    vi: 'Mở thành phố'
+  },
+  home: {
+    en: 'Home',
+    tr: 'Ana Sayfa',
+    de: 'Startseite',
+    es: 'Inicio',
+    it: 'Home',
+    fr: 'Accueil',
+    ja: 'ホーム',
+    pt: 'Início',
+    ru: 'Главная',
+    zh: '首页',
+    ko: '홈',
+    ar: 'الرئيسية',
+    hi: 'होम',
+    nl: 'Home',
+    pl: 'Strona Główna',
+    sv: 'Hem',
+    id: 'Beranda',
+    vi: 'Trang Chủ'
+  },
+  mapNote: {
+    en: 'Map locations are shown for destinations with known coordinates.',
+    tr: 'Haritada koordinatı bilinen destinasyonlar gösterilir.',
+    de: 'Auf der Karte werden Ziele mit bekannten Koordinaten angezeigt.',
+    es: 'El mapa muestra destinos con coordenadas conocidas.',
+    it: 'La mappa mostra le destinazioni con coordinate note.',
+    fr: 'La carte affiche les destinations dont les coordonnées sont connues.',
+    ja: '座標が確認できる目的地を地図上に表示しています。',
+    pt: 'O mapa mostra destinos com coordenadas conhecidas.',
+    ru: 'На карте показаны направления с известными координатами.',
+    zh: '地图显示已知坐标的目的地。',
+    ko: '좌표가 확인된 목적지만 지도에 표시됩니다.',
+    ar: 'تعرض الخريطة الوجهات ذات الإحداثيات المعروفة.',
+    hi: 'मानचित्र पर ज्ञात निर्देशांक वाले गंतव्य दिखाए जाते हैं।',
+    nl: 'De kaart toont bestemmingen met bekende coördinaten.',
+    pl: 'Mapa pokazuje miejsca o znanych współrzędnych.',
+    sv: 'Kartan visar destinationer med kända koordinater.',
+    id: 'Peta menampilkan destinasi dengan koordinat yang diketahui.',
+    vi: 'Bản đồ hiển thị các điểm đến có tọa độ đã biết.'
+  }
+};
+
+function label(key: string) {
+  return labels[key]?.[currentLang] || labels[key]?.en || key;
+}
+
+const allVideos = videos as Video[];
+
+const cityGroups = new Map<
+  string,
+  {
+    city: string;
+    country: string;
+    videos: Video[];
+  }
+>();
+
+for (const video of allVideos) {
+  if (!video.city) continue;
+
+  const key = `${normalizeKey(video.city)}|${normalizeKey(video.country || '')}`;
+
+  if (!cityGroups.has(key)) {
+    cityGroups.set(key, {
+      city: video.city,
+      country: video.country || '',
+      videos: []
+    });
+  }
+
+  cityGroups.get(key)?.videos.push(video);
+}
+
+const mapPoints: MapPoint[] = [];
+const unmappedCities: Array<{
+  city: string;
+  country: string;
+  videoCount: number;
+  cityUrl: string;
+}> = [];
+
+for (const group of cityGroups.values()) {
+  const cityKey = normalizeKey(group.city);
+  const coordinates = coordinateIndex[cityKey];
+
+  const heroVideo =
+    group.videos.find((video) => video.thumbnail) ||
+    group.videos[0];
+
+  const thumbnail =
+    heroVideo?.thumbnail ||
+    (heroVideo
+      ? `https://i.ytimg.com/vi/${heroVideo.id}/hqdefault.jpg`
+      : '');
+
+  const cityUrl =
+    `/${currentLang}/cities/${createSlug(group.city)}`;
+
+  const countryUrl =
+    group.country
+      ? `/${currentLang}/countries/${createSlug(group.country)}`
+      : '';
+
+  const categories = Array.from(
+    new Set(
+      group.videos
+        .map((video) => video.category)
+        .filter((category): category is string => Boolean(category))
+    )
+  );
+
+  if (coordinates) {
+    mapPoints.push({
+      city: group.city,
+      country: group.country,
+      lat: coordinates[0],
+      lng: coordinates[1],
+      videoCount: group.videos.length,
+      categories,
+      thumbnail,
+      cityUrl,
+      countryUrl
+    });
+  } else {
+    unmappedCities.push({
+      city: group.city,
+      country: group.country,
+      videoCount: group.videos.length,
+      cityUrl
+    });
+  }
+}
+
+mapPoints.sort(
+  (a, b) =>
+    b.videoCount - a.videoCount ||
+    a.city.localeCompare(b.city)
+);
+
+unmappedCities.sort(
+  (a, b) =>
+    b.videoCount - a.videoCount ||
+    a.city.localeCompare(b.city)
+);
+
+const countries = Array.from(
+  new Set(
+    mapPoints
+      .map((point) => point.country)
+      .filter(Boolean)
+  )
+).sort((a, b) => a.localeCompare(b));
+
+const countryCount = new Set(
+  allVideos
+    .map((video) => video.country)
+    .filter(Boolean)
+).size;
+
+const cityCount = cityGroups.size;
+const videoCount = allVideos.length;
+
+const pageTitle =
+  `${label('title')} | Old Towns Walks`;
+
+const pageDescription =
+  label('intro');
+
+const pageUrl = Astro.url.href;
+
+const mapSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': `${pageUrl}#world-map`,
+      url: pageUrl,
+      name: pageTitle,
+      description: pageDescription,
+      inLanguage: currentLang,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'Old Towns Walks',
+        url: Astro.url.origin
+      },
+      mainEntity: {
+        '@type': 'ItemList',
+        itemListElement: mapPoints.map((point, index) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: point.city,
+          url: new URL(point.cityUrl, Astro.url.origin).href
+        }))
+      }
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: label('home'),
+          item: new URL(`/${currentLang}/`, Astro.url.origin).href
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: label('title'),
+          item: pageUrl
+        }
+      ]
+    }
+  ]
+};
+
+const clientLabels = {
+  openCity: label('openCity'),
+  videos: label('videos'),
+  allCountries: label('allCountries')
+};
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+>
+  <main class="map-page">
+    <div class="map-shell">
+
+      <nav
+        class="breadcrumbs"
+        aria-label="Breadcrumb"
+      >
+        <a href={`/${currentLang}/`}>
+          {label('home')}
+        </a>
+
+        <span>/</span>
+
+        <span aria-current="page">
+          {label('title')}
+        </span>
+      </nav>
+
+      <section class="map-hero">
+        <div>
+          <span class="eyebrow">
+            Old Towns Walks
+          </span>
+
+          <h1>{label('title')}</h1>
+
+          <p>{label('subtitle')}</p>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat">
+            <strong>{cityCount}</strong>
+            <span>{label('cities')}</span>
+          </div>
+
+          <div class="stat">
+            <strong>{countryCount}</strong>
+            <span>{label('countries')}</span>
+          </div>
+
+          <div class="stat">
+            <strong>{videoCount}</strong>
+            <span>{label('videos')}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="intro-card">
+        <p>{label('intro')}</p>
+      </section>
+
+      <section class="map-layout">
+
+        <div class="map-panel">
+          <div class="map-toolbar">
+
+            <div class="search-box">
+              <span aria-hidden="true">⌕</span>
+
+              <input
+                id="mapSearch"
+                type="search"
+                placeholder={label('search')}
+                autocomplete="off"
+              />
+            </div>
+
+            <select
+              id="countryFilter"
+              aria-label={label('countries')}
+            >
+              <option value="">
+                {label('allCountries')}
+              </option>
+
+              {countries.map((country) => (
+                <option value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+
+          </div>
+
+          <div
+            id="worldMap"
+            class="world-map"
+            aria-label={label('title')}
+          ></div>
+
+          <div class="map-footer">
+            <span>
+              {mapPoints.length} {label('destinations')}
+            </span>
+
+            <span>
+              {label('mapNote')}
+            </span>
+          </div>
+        </div>
+
+        <aside class="destination-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">
+                {label('explore')}
+              </span>
+
+              <h2>{label('destinations')}</h2>
+            </div>
+
+            <span
+              id="visibleDestinationCount"
+              class="destination-count"
+            >
+              {mapPoints.length}
+            </span>
+          </div>
+
+          <div
+            id="destinationList"
+            class="destination-list"
+          >
+            {mapPoints.map((point) => (
+              <a
+                href={point.cityUrl}
+                class="destination-card"
+                data-destination-card
+                data-city={point.city.toLowerCase()}
+                data-country={point.country.toLowerCase()}
+              >
+                <div class="destination-thumb">
+                  {point.thumbnail ? (
+                    <img
+                      src={point.thumbnail}
+                      alt={point.city}
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div class="destination-placeholder">
+                      {point.city.slice(0, 1)}
+                    </div>
+                  )}
+                </div>
+
+                <div class="destination-info">
+                  <h3>{point.city}</h3>
+
+                  {point.country && (
+                    <p>{point.country}</p>
+                  )}
+
+                  <span>
+                    {point.videoCount} {label('videos')}
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </aside>
+
+      </section>
+
+      {unmappedCities.length > 0 && (
+        <section class="more-destinations">
+          <div class="section-heading">
+            <span class="section-kicker">
+              {label('destinations')}
+            </span>
+
+            <h2>{label('cities')}</h2>
+          </div>
+
+          <div class="more-grid">
+            {unmappedCities.map((item) => (
+              <a
+                href={item.cityUrl}
+                class="more-card"
+              >
+                <div>
+                  <strong>{item.city}</strong>
+
+                  {item.country && (
+                    <span>{item.country}</span>
+                  )}
+                </div>
+
+                <em>
+                  {item.videoCount} {label('videos')}
+                </em>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+    </div>
+  </main>
+
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify(mapSchema)}
+  />
+
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""
+  ></script>
+
+  <script
+    is:inline
+    define:vars={{
+      mapPoints,
+      currentLang,
+      clientLabels
+    }}
+  >
+    const mapElement = document.getElementById('worldMap');
+
+    if (mapElement && window.L) {
+      const map = L.map(mapElement, {
+        worldCopyJump: true,
+        minZoom: 2,
+        zoomControl: true
+      }).setView([24, 8], 2);
+
+      L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+          maxZoom: 19,
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }
+      ).addTo(map);
+
+      const markerLayer = L.layerGroup().addTo(map);
+      const markerRecords = [];
+
+      const escapeHtml = (value) =>
+        String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+
+      const createPopup = (point) => {
+        const city = escapeHtml(point.city);
+        const country = escapeHtml(point.country);
+        const cityUrl = escapeHtml(point.cityUrl);
+        const countryUrl = escapeHtml(point.countryUrl);
+        const thumbnail = escapeHtml(point.thumbnail);
+
+        const image = thumbnail
+          ? `<img src="${thumbnail}" alt="${city}" class="map-popup-image" />`
+          : '';
+
+        const countryLine = country
+          ? countryUrl
+            ? `<a href="${countryUrl}" class="map-popup-country">${country}</a>`
+            : `<span class="map-popup-country">${country}</span>`
+          : '';
+
+        return `
+          <div class="map-popup-card">
+            ${image}
+            <div class="map-popup-body">
+              <strong>${city}</strong>
+              ${countryLine}
+              <span>${point.videoCount} ${escapeHtml(clientLabels.videos)}</span>
+              <a href="${cityUrl}" class="map-popup-button">
+                ${escapeHtml(clientLabels.openCity)} →
+              </a>
+            </div>
+          </div>
+        `;
+      };
+
+      mapPoints.forEach((point) => {
+        const radius = Math.min(
+          13,
+          5 + Math.log2(Math.max(1, point.videoCount)) * 1.7
+        );
+
+        const marker = L.circleMarker(
+          [point.lat, point.lng],
+          {
+            radius,
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.78
+          }
+        );
+
+        marker.bindPopup(
+          createPopup(point),
+          {
+            maxWidth: 280,
+            minWidth: 220
+          }
+        );
+
+        marker.on('click', () => {
+          map.flyTo(
+            [point.lat, point.lng],
+            Math.max(map.getZoom(), 5),
+            {
+              duration: 0.7
+            }
+          );
+        });
+
+        marker.addTo(markerLayer);
+
+        markerRecords.push({
+          marker,
+          point
+        });
+      });
+
+      const searchInput =
+        document.getElementById('mapSearch');
+
+      const countrySelect =
+        document.getElementById('countryFilter');
+
+      const destinationCards =
+        Array.from(
+          document.querySelectorAll(
+            '[data-destination-card]'
+          )
+        );
+
+      const visibleCount =
+        document.getElementById(
+          'visibleDestinationCount'
+        );
+
+      const updateFilters = () => {
+        const searchTerm =
+          String(searchInput?.value || '')
+            .toLowerCase()
+            .trim();
+
+        const selectedCountry =
+          String(countrySelect?.value || '')
+            .toLowerCase()
+            .trim();
+
+        markerLayer.clearLayers();
+
+        let shown = 0;
+        const visibleMarkers = [];
+
+        markerRecords.forEach((record) => {
+          const city =
+            String(record.point.city || '')
+              .toLowerCase();
+
+          const country =
+            String(record.point.country || '')
+              .toLowerCase();
+
+          const matchesSearch =
+            !searchTerm ||
+            city.includes(searchTerm) ||
+            country.includes(searchTerm);
+
+          const matchesCountry =
+            !selectedCountry ||
+            country === selectedCountry;
+
+          if (matchesSearch && matchesCountry) {
+            record.marker.addTo(markerLayer);
+            visibleMarkers.push(record.marker);
+            shown += 1;
+          }
+        });
+
+        destinationCards.forEach((card) => {
+          const city =
+            String(card.dataset.city || '');
+
+          const country =
+            String(card.dataset.country || '');
+
+          const matchesSearch =
+            !searchTerm ||
+            city.includes(searchTerm) ||
+            country.includes(searchTerm);
+
+          const matchesCountry =
+            !selectedCountry ||
+            country === selectedCountry;
+
+          card.classList.toggle(
+            'is-hidden',
+            !(matchesSearch && matchesCountry)
+          );
+        });
+
+        if (visibleCount) {
+          visibleCount.textContent =
+            String(shown);
+        }
+
+        if (visibleMarkers.length === 1) {
+          const marker = visibleMarkers[0];
+          map.flyTo(
+            marker.getLatLng(),
+            6,
+            {
+              duration: 0.7
+            }
+          );
+        } else if (visibleMarkers.length > 1) {
+          const group =
+            L.featureGroup(visibleMarkers);
+
+          map.fitBounds(
+            group.getBounds().pad(0.18),
+            {
+              maxZoom: 5,
+              animate: true
+            }
+          );
+        }
+      };
+
+      searchInput?.addEventListener(
+        'input',
+        updateFilters
+      );
+
+      countrySelect?.addEventListener(
+        'change',
+        updateFilters
+      );
+
+      destinationCards.forEach((card) => {
+        card.addEventListener(
+          'mouseenter',
+          () => {
+            const city =
+              String(card.dataset.city || '');
+
+            const country =
+              String(card.dataset.country || '');
+
+            const record =
+              markerRecords.find((item) => {
+                return (
+                  String(item.point.city || '')
+                    .toLowerCase() === city &&
+                  String(item.point.country || '')
+                    .toLowerCase() === country
+                );
+              });
+
+            if (record) {
+              record.marker.openPopup();
+            }
+          }
+        );
+      });
+
+      window.addEventListener(
+        'resize',
+        () => {
+          map.invalidateSize();
+        }
+      );
+    }
+  </script>
+</BaseLayout>
+
+<style is:global>
+  @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+
+  .map-page {
+    min-height: 100vh;
+    padding: 98px 24px 72px;
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba(215, 182, 117, 0.06),
+        transparent 28%
+      ),
+      #0b0f17;
+    color: #f1f5f9;
+  }
+
+  .map-shell {
+    width: min(1500px, 100%);
+    margin: 0 auto;
+  }
+
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    color: #778291;
+    font-size: 12px;
+  }
+
+  .breadcrumbs a {
+    color: #aab4c3;
+    transition: color 0.2s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: #ffffff;
+  }
+
+  .map-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 36px;
+    padding: 34px 36px;
+    background:
+      linear-gradient(
+        135deg,
+        #151d29,
+        #101720
+      );
+    border: 1px solid #24303d;
+    border-radius: 18px;
+  }
+
+  .eyebrow,
+  .section-kicker {
+    display: block;
+    color: #d7b675;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .map-hero h1 {
+    margin: 8px 0 0;
+    color: #ffffff;
+    font-size: clamp(40px, 5vw, 68px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .map-hero p {
+    margin: 12px 0 0;
+    color: #aeb8c6;
+    font-size: 15px;
+  }
+
+  .hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .stat {
+    min-width: 105px;
+    padding: 12px 14px;
+    background: #0f151e;
+    border: 1px solid #26313d;
+    border-radius: 10px;
+  }
+
+  .stat strong {
+    display: block;
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .stat span {
+    display: block;
+    margin-top: 6px;
+    color: #7f8a99;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .intro-card {
+    margin-top: 16px;
+    padding: 18px 20px;
+    background: #111821;
+    border: 1px solid #222c38;
+    border-radius: 12px;
+  }
+
+  .intro-card p {
+    margin: 0;
+    color: #aeb8c6;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .map-layout {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      340px;
+    gap: 16px;
+    margin-top: 18px;
+    align-items: stretch;
+  }
+
+  .map-panel,
+  .destination-panel {
+    overflow: hidden;
+    background: #10161e;
+    border: 1px solid #232d39;
+    border-radius: 15px;
+  }
+
+  .map-toolbar {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: #121922;
+    border-bottom: 1px solid #232d39;
+  }
+
+  .search-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    padding: 0 12px;
+    background: #0e141c;
+    border: 1px solid #283340;
+    border-radius: 9px;
+  }
+
+  .search-box span {
+    color: #7d8998;
+    font-size: 18px;
+  }
+
+  .search-box input {
+    width: 100%;
+    height: 40px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #f2f5f8;
+    font: inherit;
+    font-size: 13px;
+  }
+
+  .search-box input::placeholder {
+    color: #677383;
+  }
+
+  #countryFilter {
+    width: 220px;
+    height: 42px;
+    padding: 0 11px;
+    border: 1px solid #283340;
+    border-radius: 9px;
+    outline: 0;
+    background: #0e141c;
+    color: #dce3eb;
+    font: inherit;
+    font-size: 12px;
+  }
+
+  .world-map {
+    width: 100%;
+    height: 660px;
+    background: #111820;
+  }
+
+  .leaflet-container {
+    font-family:
+      'Plus Jakarta Sans',
+      sans-serif;
+    background: #111820;
+  }
+
+  .leaflet-control-zoom a {
+    background: #111821 !important;
+    color: #dfe6ee !important;
+    border-color: #2c3744 !important;
+  }
+
+  .leaflet-control-attribution {
+    background: rgba(
+      10,
+      14,
+      20,
+      0.78
+    ) !important;
+    color: #8995a4 !important;
+  }
+
+  .leaflet-control-attribution a {
+    color: #d7b675 !important;
+  }
+
+  .leaflet-popup-content-wrapper,
+  .leaflet-popup-tip {
+    background: #111821;
+    color: #e8edf3;
+  }
+
+  .leaflet-popup-content-wrapper {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #2a3542;
+    border-radius: 12px;
+    box-shadow:
+      0 18px 45px
+      rgba(0, 0, 0, 0.38);
+  }
+
+  .leaflet-popup-content {
+    margin: 0;
+    width: 250px !important;
+  }
+
+  .map-popup-card {
+    overflow: hidden;
+  }
+
+  .map-popup-image {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background: #1a222c;
+  }
+
+  .map-popup-body {
+    padding: 12px;
+  }
+
+  .map-popup-body strong {
+    display: block;
+    color: #ffffff;
+    font-size: 15px;
+  }
+
+  .map-popup-country {
+    display: inline-block;
+    margin-top: 4px;
+    color: #d7b675 !important;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .map-popup-body span {
+    display: block;
+    margin-top: 6px;
+    color: #8d99a8;
+    font-size: 11px;
+  }
+
+  .map-popup-button {
+    display: block;
+    margin-top: 10px;
+    padding: 8px 10px;
+    border-radius: 7px;
+    background: #d7b675;
+    color: #11161d !important;
+    font-size: 11px;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  .map-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 44px;
+    padding: 9px 13px;
+    color: #738091;
+    background: #111821;
+    border-top: 1px solid #232d39;
+    font-size: 10px;
+  }
+
+  .destination-panel {
+    display: flex;
+    flex-direction: column;
+    height: 758px;
+  }
+
+  .panel-heading {
+    min-height: 76px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    padding: 14px 15px;
+    background: #121922;
+    border-bottom: 1px solid #232d39;
+  }
+
+  .panel-heading h2,
+  .section-heading h2 {
+    margin: 5px 0 0;
+    color: #ffffff;
+    font-size: 18px;
+  }
+
+  .destination-count {
+    min-width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: #1c2530;
+    color: #d7b675;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .destination-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .destination-list::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .destination-list::-webkit-scrollbar-thumb {
+    background: #35404d;
+    border-radius: 10px;
+  }
+
+  .destination-card {
+    display: grid;
+    grid-template-columns:
+      104px
+      minmax(0, 1fr);
+    gap: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    transition: background 0.18s ease;
+  }
+
+  .destination-card:hover {
+    background: #19212b;
+  }
+
+  .destination-card.is-hidden {
+    display: none;
+  }
+
+  .destination-thumb {
+    width: 104px;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 8px;
+    background: #1a222c;
+  }
+
+  .destination-thumb img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+
+  .destination-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #d7b675;
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  .destination-info {
+    min-width: 0;
+  }
+
+  .destination-info h3 {
+    margin: 1px 0 0;
+    overflow: hidden;
+    color: #ecf1f6;
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .destination-info p {
+    margin: 4px 0 0;
+    overflow: hidden;
+    color: #8995a4;
+    font-size: 10px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .destination-info span {
+    display: block;
+    margin-top: 5px;
+    color: #d7b675;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .more-destinations {
+    margin-top: 38px;
+  }
+
+  .section-heading {
+    margin-bottom: 16px;
+  }
+
+  .more-grid {
+    display: grid;
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .more-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 68px;
+    padding: 13px 14px;
+    border: 1px solid #242f3b;
+    border-radius: 11px;
+    background: #121922;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .more-card:hover {
+    border-color:
+      rgba(215, 182, 117, 0.4);
+    background: #17202a;
+  }
+
+  .more-card strong {
+    display: block;
+    color: #edf1f5;
+    font-size: 12px;
+  }
+
+  .more-card span {
+    display: block;
+    margin-top: 4px;
+    color: #7e8998;
+    font-size: 10px;
+  }
+
+  .more-card em {
+    color: #d7b675;
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 1100px) {
+    .map-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .destination-panel {
+      height: auto;
+      max-height: 560px;
+    }
+
+    .destination-list {
+      display: grid;
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    }
+
+    .more-grid {
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    .map-page {
+      padding: 86px 12px 48px;
+    }
+
+    .map-hero {
+      align-items: flex-start;
+      flex-direction: column;
+      padding: 24px 20px;
+    }
+
+    .hero-stats {
+      justify-content: flex-start;
+    }
+
+    .map-toolbar {
+      flex-direction: column;
+    }
+
+    #countryFilter {
+      width: 100%;
+    }
+
+    .world-map {
+      height: 520px;
+    }
+
+    .map-footer {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .destination-list,
+    .more-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
