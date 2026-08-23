@@ -16,9 +16,31 @@ const translations = ui as Record<string, Record<string, string>>;
 const t = translations[lang] || translations.en || translations.tr;
 const pageSeo = getPageSeo(lang);
 
+const beachCategoryLabels: Record<string, string> = {
+  en: 'Beach Walks',
+  tr: 'Plaj Yürüyüşleri',
+  de: 'Strandspaziergänge',
+  es: 'Paseos por la Playa',
+  it: 'Passeggiate in Spiaggia',
+  fr: 'Balades sur la Plage',
+  ja: 'ビーチウォーク',
+  pt: 'Caminhadas na Praia',
+  ru: 'Прогулки по пляжу',
+  zh: '海滩漫步',
+  ko: '해변 산책',
+  ar: 'جولات الشاطئ',
+  hi: 'समुद्र तट की सैर',
+  nl: 'Strandwandelingen',
+  pl: 'Spacery po Plaży',
+  sv: 'Strandpromenader',
+  id: 'Jalan-jalan di Pantai',
+  vi: 'Đi Bộ Trên Bãi Biển'
+};
+
 const categories = [
   { id: 'All', label: t['cat.all'] || 'All' },
   { id: 'Walking Tours', label: t['cat.walkingTours'] || 'Walking Tours' },
+  { id: 'Beach Walking Tours', label: t['cat.beachWalkingTours'] || beachCategoryLabels[lang] || 'Beach Walks' },
   { id: 'Drone & Aerial', label: t['cat.droneAerial'] || 'Drone & Aerial' },
   { id: 'POV Rides', label: t['cat.povRides'] || 'POV Rides' },
   { id: 'Night & Rain', label: t['cat.nightRain'] || 'Night & Rain' },
@@ -151,20 +173,26 @@ const videoSchema = {
       }
 
       .logo-box-1 {
-        background-color: #1a1a1a;
-        color: #ffffff;
+        background-color: #0f0f0f;
+        color: #f5b400;
         padding: 4px 8px;
+        border: 1px solid rgba(245, 180, 0, 0.35);
+        border-right: none;
       }
 
       .logo-box-2 {
-        background-color: #ffffff;
+        background-color: #f5b400;
         color: #0f0f0f;
         padding: 4px 8px;
+        border: 1px solid #f5b400;
       }
 
       /* Search Bar */
 
       .nav-center {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
         display: flex;
         align-items: center;
         width: 45%;
@@ -513,7 +541,10 @@ const videoSchema = {
         }
 
         .nav-center {
+          position: static;
+          transform: none;
           width: 50%;
+          margin-left: auto;
         }
 
         .content-area {
@@ -749,7 +780,7 @@ const videoSchema = {
 
           <div class="video-grid">
 
-            {videos.map((video, index) => (
+            {videos.map((video) => (
 
               <div class="video-card-wrapper">
 
@@ -805,11 +836,6 @@ const videoSchema = {
 
                 </div>
 
-
-                {(index + 1) % 5 === 0 && (
-                  <div class="ad-card-slot"></div>
-                )}
-
               </div>
 
             ))}
@@ -858,7 +884,7 @@ const videoSchema = {
 
         const chips = document.querySelectorAll('.chip');
         const videoCards = document.querySelectorAll('.video-card');
-        const adSlots = document.querySelectorAll('.ad-card-slot');
+        const videoGrid = document.querySelector('.video-grid');
         const searchInput = document.getElementById('searchInput');
 
         if (!chips.length && !videoCards.length) return;
@@ -914,29 +940,36 @@ const videoSchema = {
           });
 
 
-          // Filtreleme yapıldığında boş reklam alanlarını gizle
+          // Her 5 görünür videodan sonra 1 reklam alanı oluştur.
+          // Böylece Tümü veya herhangi bir kategori seçildiğinde
+          // reklamlar sadece o anda görünen videolara göre yeniden dizilir.
+          if (videoGrid) {
 
-          adSlots.forEach(ad => {
+            videoGrid
+              .querySelectorAll('.ad-card-slot')
+              .forEach(ad => ad.remove());
 
-            if (currentCategory === 'All' && !searchTerm) {
+            const visibleCards = Array.from(videoCards).filter(card =>
+              card.style.display !== 'none'
+            );
 
-              ad.style.setProperty(
-                'display',
-                'block',
-                'important'
-              );
+            visibleCards.forEach((card, index) => {
 
-            } else {
+              if ((index + 1) % 5 !== 0) return;
 
-              ad.style.setProperty(
-                'display',
-                'none',
-                'important'
-              );
+              const wrapper = card.closest('.video-card-wrapper');
 
-            }
+              if (!wrapper) return;
 
-          });
+              const adSlot = document.createElement('div');
+              adSlot.className = 'ad-card-slot';
+              adSlot.setAttribute('aria-hidden', 'true');
+
+              wrapper.insertAdjacentElement('afterend', adSlot);
+
+            });
+
+          }
 
         }
 
@@ -971,6 +1004,10 @@ const videoSchema = {
           );
 
         }
+
+
+        // İlk açılışta da 5 video + 1 reklam düzenini kur.
+        filterVideos();
 
 
         // Hover Video Preview
