@@ -2,7 +2,10 @@
 import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { languages, defaultLang } from '../../../i18n/ui';
 import videos from '../../../data/videos.json';
-import { getVideoCardTitle } from '../../../lib/videoSeo';
+import {
+  getVideoCardTitle,
+  getCategoryName
+} from '../../../lib/videoSeo';
 
 interface Video {
   id: string;
@@ -18,8 +21,17 @@ interface Video {
   country?: string;
 }
 
+function createSlug(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export function getStaticPaths() {
-  function createSlug(value: string) {
+  function pathSlug(value: string) {
     return value
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -41,8 +53,7 @@ export function getStaticPaths() {
   for (const video of allVideos) {
     if (!video.country) continue;
 
-    const slug = createSlug(video.country);
-
+    const slug = pathSlug(video.country);
     if (!slug) continue;
 
     if (!countryMap.has(slug)) {
@@ -120,8 +131,7 @@ const labels: Record<string, Record<string, string>> = {
     id: 'Jelajahi',
     vi: 'Khám Phá'
   },
-
-  walks: {
+  walkingTours: {
     en: 'Walking Tours',
     tr: 'Yürüyüş Turları',
     de: 'Stadtrundgänge',
@@ -141,28 +151,46 @@ const labels: Record<string, Record<string, string>> = {
     id: 'Tur Jalan Kaki',
     vi: 'Tour Đi Bộ'
   },
-
-  videos: {
-    en: 'videos',
-    tr: 'video',
-    de: 'Videos',
-    es: 'videos',
-    it: 'video',
-    fr: 'vidéos',
-    ja: '本の動画',
-    pt: 'vídeos',
-    ru: 'видео',
-    zh: '个视频',
-    ko: '개 영상',
-    ar: 'فيديو',
-    hi: 'वीडियो',
-    nl: 'video’s',
-    pl: 'filmów',
-    sv: 'videor',
-    id: 'video',
-    vi: 'video'
+  allVideos: {
+    en: 'All Videos',
+    tr: 'Tüm Videolar',
+    de: 'Alle Videos',
+    es: 'Todos los Videos',
+    it: 'Tutti i Video',
+    fr: 'Toutes les Vidéos',
+    ja: 'すべての動画',
+    pt: 'Todos os Vídeos',
+    ru: 'Все видео',
+    zh: '全部视频',
+    ko: '전체 영상',
+    ar: 'كل الفيديوهات',
+    hi: 'सभी वीडियो',
+    nl: 'Alle Video’s',
+    pl: 'Wszystkie Filmy',
+    sv: 'Alla Videor',
+    id: 'Semua Video',
+    vi: 'Tất Cả Video'
   },
-
+  categories: {
+    en: 'Categories',
+    tr: 'Kategoriler',
+    de: 'Kategorien',
+    es: 'Categorías',
+    it: 'Categorie',
+    fr: 'Catégories',
+    ja: 'カテゴリー',
+    pt: 'Categorias',
+    ru: 'Категории',
+    zh: '分类',
+    ko: '카테고리',
+    ar: 'الفئات',
+    hi: 'श्रेणियाँ',
+    nl: 'Categorieën',
+    pl: 'Kategorie',
+    sv: 'Kategorier',
+    id: 'Kategori',
+    vi: 'Danh Mục'
+  },
   cities: {
     en: 'Cities',
     tr: 'Şehirler',
@@ -183,290 +211,939 @@ const labels: Record<string, Record<string, string>> = {
     id: 'Kota',
     vi: 'Thành Phố'
   },
-
-  home: {
-    en: 'Back to Home',
-    tr: 'Ana Sayfaya Dön',
-    de: 'Zur Startseite',
-    es: 'Volver al Inicio',
-    it: 'Torna alla Home',
-    fr: "Retour à l'accueil",
-    ja: 'ホームに戻る',
-    pt: 'Voltar ao Início',
-    ru: 'На главную',
-    zh: '返回首页',
-    ko: '홈으로',
-    ar: 'العودة للرئيسية',
-    hi: 'होम पर वापस',
-    nl: 'Terug naar Home',
-    pl: 'Powrót do strony głównej',
-    sv: 'Till startsidan',
-    id: 'Kembali ke Beranda',
-    vi: 'Về Trang Chủ'
+  videos: {
+    en: 'Videos',
+    tr: 'Video',
+    de: 'Videos',
+    es: 'Videos',
+    it: 'Video',
+    fr: 'Vidéos',
+    ja: '動画',
+    pt: 'Vídeos',
+    ru: 'Видео',
+    zh: '视频',
+    ko: '영상',
+    ar: 'فيديو',
+    hi: 'वीडियो',
+    nl: 'Video’s',
+    pl: 'Filmy',
+    sv: 'Videor',
+    id: 'Video',
+    vi: 'Video'
+  },
+  countryHub: {
+    en: 'Country Discovery Hub',
+    tr: 'Ülke Keşif Merkezi',
+    de: 'Länder-Entdeckungszentrum',
+    es: 'Centro de Descubrimiento del País',
+    it: 'Centro di Esplorazione del Paese',
+    fr: 'Centre de Découverte du Pays',
+    ja: '国別探索ハブ',
+    pt: 'Centro de Descoberta do País',
+    ru: 'Центр знакомства со страной',
+    zh: '国家探索中心',
+    ko: '국가 탐색 허브',
+    ar: 'مركز استكشاف الدولة',
+    hi: 'देश खोज केंद्र',
+    nl: 'Landontdekkingshub',
+    pl: 'Centrum Odkrywania Kraju',
+    sv: 'Landets Upptäcktsnav',
+    id: 'Pusat Jelajah Negara',
+    vi: 'Trung Tâm Khám Phá Quốc Gia'
+  },
+  aboutCountry: {
+    en: 'Explore real cities, streets and travel experiences',
+    tr: 'Gerçek şehirleri, sokakları ve seyahat deneyimlerini keşfet',
+    de: 'Entdecke echte Städte, Straßen und Reiseerlebnisse',
+    es: 'Explora ciudades, calles y experiencias de viaje reales',
+    it: 'Esplora città, strade ed esperienze di viaggio reali',
+    fr: 'Explorez de vraies villes, rues et expériences de voyage',
+    ja: 'リアルな都市・街路・旅行体験を探索',
+    pt: 'Explore cidades, ruas e experiências de viagem reais',
+    ru: 'Исследуйте реальные города, улицы и путешествия',
+    zh: '探索真实城市、街道与旅行体验',
+    ko: '실제 도시, 거리와 여행 경험을 탐험하세요',
+    ar: 'استكشف المدن والشوارع وتجارب السفر الحقيقية',
+    hi: 'वास्तविक शहरों, सड़कों और यात्रा अनुभवों को देखें',
+    nl: 'Ontdek echte steden, straten en reiservaringen',
+    pl: 'Odkrywaj prawdziwe miasta, ulice i doświadczenia podróżnicze',
+    sv: 'Utforska riktiga städer, gator och reseupplevelser',
+    id: 'Jelajahi kota, jalan, dan pengalaman perjalanan nyata',
+    vi: 'Khám phá các thành phố, đường phố và trải nghiệm du lịch thực tế'
+  },
+  backHome: {
+    en: 'Home',
+    tr: 'Ana Sayfa',
+    de: 'Startseite',
+    es: 'Inicio',
+    it: 'Home',
+    fr: 'Accueil',
+    ja: 'ホーム',
+    pt: 'Início',
+    ru: 'Главная',
+    zh: '首页',
+    ko: '홈',
+    ar: 'الرئيسية',
+    hi: 'होम',
+    nl: 'Home',
+    pl: 'Strona Główna',
+    sv: 'Hem',
+    id: 'Beranda',
+    vi: 'Trang Chủ'
+  },
+  topCities: {
+    en: 'Explore Cities',
+    tr: 'Şehirleri Keşfet',
+    de: 'Städte Entdecken',
+    es: 'Explorar Ciudades',
+    it: 'Esplora le Città',
+    fr: 'Explorer les Villes',
+    ja: '都市を探索',
+    pt: 'Explorar Cidades',
+    ru: 'Исследовать города',
+    zh: '探索城市',
+    ko: '도시 탐색',
+    ar: 'استكشف المدن',
+    hi: 'शहरों को देखें',
+    nl: 'Ontdek Steden',
+    pl: 'Odkrywaj Miasta',
+    sv: 'Utforska Städer',
+    id: 'Jelajahi Kota',
+    vi: 'Khám Phá Thành Phố'
   }
 };
 
+const summaryTemplates: Record<
+  string,
+  (country: string, videoCount: number, cityCount: number, categoryCount: number) => string
+> = {
+  en: (country, videoCount, cityCount, categoryCount) =>
+    `Explore ${country} through ${videoCount} real walking and travel videos covering ${cityCount} cities and ${categoryCount} categories. Discover street-level views, different urban atmospheres and local travel experiences, then continue into individual city hubs and video tours.`,
+  tr: (country, videoCount, cityCount, categoryCount) =>
+    `${country} için ${cityCount} şehir ve ${categoryCount} kategoride ${videoCount} gerçek yürüyüş ve seyahat videosunu keşfedin. Sokak seviyesindeki görüntülere, farklı şehir atmosferlerine ve yerel seyahat deneyimlerine göz atın; ardından şehir merkezlerine ve bireysel video turlarına geçin.`,
+  de: (country, videoCount, cityCount, categoryCount) =>
+    `Entdecke ${country} mit ${videoCount} echten Spaziergangs- und Reisevideos aus ${cityCount} Städten und ${categoryCount} Kategorien. Erkunde Straßenansichten, unterschiedliche Stadtatmosphären und lokale Reiseerlebnisse und wechsle anschließend zu einzelnen Stadtseiten und Videotouren.`,
+  es: (country, videoCount, cityCount, categoryCount) =>
+    `Explora ${country} mediante ${videoCount} videos reales de caminatas y viajes que cubren ${cityCount} ciudades y ${categoryCount} categorías. Descubre calles, ambientes urbanos y experiencias locales, y continúa hacia los centros de ciudad y recorridos individuales.`,
+  it: (country, videoCount, cityCount, categoryCount) =>
+    `Esplora ${country} attraverso ${videoCount} video reali di passeggiate e viaggi in ${cityCount} città e ${categoryCount} categorie. Scopri strade, atmosfere urbane ed esperienze locali, quindi passa alle pagine delle singole città e ai tour video.`,
+  fr: (country, videoCount, cityCount, categoryCount) =>
+    `Explorez ${country} à travers ${videoCount} vidéos réelles de promenades et de voyage couvrant ${cityCount} villes et ${categoryCount} catégories. Découvrez des rues, des ambiances urbaines et des expériences locales, puis accédez aux pages de villes et aux visites individuelles.`,
+  ja: (country, videoCount, cityCount, categoryCount) =>
+    `${country}を、${cityCount}都市・${categoryCount}カテゴリー・${videoCount}本のリアルな街歩き／旅行動画で探索できます。街路風景や都市の雰囲気、現地の旅行体験を比較し、各都市ページや個別ツアーへ進めます。`,
+  pt: (country, videoCount, cityCount, categoryCount) =>
+    `Explore ${country} através de ${videoCount} vídeos reais de caminhadas e viagens em ${cityCount} cidades e ${categoryCount} categorias. Descubra ruas, diferentes atmosferas urbanas e experiências locais e continue para as páginas de cidades e passeios individuais.`,
+  ru: (country, videoCount, cityCount, categoryCount) =>
+    `Исследуйте ${country} через ${videoCount} реальных прогулочных и туристических видео из ${cityCount} городов и ${categoryCount} категорий. Смотрите улицы, сравнивайте городскую атмосферу и переходите к отдельным страницам городов и видеомаршрутам.`,
+  zh: (country, videoCount, cityCount, categoryCount) =>
+    `通过 ${cityCount} 个城市、${categoryCount} 个分类中的 ${videoCount} 个真实步行与旅行视频探索${country}。浏览街道实景、不同城市氛围与当地旅行体验，并继续进入城市中心页和单个视频。`,
+  ko: (country, videoCount, cityCount, categoryCount) =>
+    `${country}을 ${cityCount}개 도시, ${categoryCount}개 카테고리의 ${videoCount}개 실제 도보 및 여행 영상으로 탐험하세요. 거리 풍경과 다양한 도시 분위기, 현지 여행 경험을 살펴보고 각 도시 페이지와 개별 투어로 이동할 수 있습니다.`,
+  ar: (country, videoCount, cityCount, categoryCount) =>
+    `استكشف ${country} عبر ${videoCount} فيديو حقيقي للمشي والسفر يغطي ${cityCount} مدينة و${categoryCount} فئات. شاهد الشوارع والأجواء الحضرية وتجارب السفر المحلية، ثم انتقل إلى صفحات المدن والجولات الفردية.`,
+  hi: (country, videoCount, cityCount, categoryCount) =>
+    `${country} को ${cityCount} शहरों और ${categoryCount} श्रेणियों में ${videoCount} वास्तविक वॉकिंग और ट्रैवल वीडियो के माध्यम से देखें। सड़क-स्तर के दृश्य, अलग-अलग शहरी माहौल और स्थानीय यात्रा अनुभव देखें, फिर शहर पेज और अलग-अलग टूर खोलें।`,
+  nl: (country, videoCount, cityCount, categoryCount) =>
+    `Ontdek ${country} via ${videoCount} echte wandel- en reisvideo’s uit ${cityCount} steden en ${categoryCount} categorieën. Bekijk straatbeelden, verschillende stedelijke sferen en lokale reiservaringen en ga daarna verder naar stadspagina’s en afzonderlijke tours.`,
+  pl: (country, videoCount, cityCount, categoryCount) =>
+    `Odkrywaj ${country} dzięki ${videoCount} prawdziwym filmom spacerowym i podróżniczym z ${cityCount} miast w ${categoryCount} kategoriach. Zobacz ulice, różne miejskie atmosfery i lokalne doświadczenia, a następnie przejdź do stron miast i poszczególnych tras.`,
+  sv: (country, videoCount, cityCount, categoryCount) =>
+    `Utforska ${country} genom ${videoCount} verkliga promenad- och resevideor från ${cityCount} städer i ${categoryCount} kategorier. Se gator, olika stadsmiljöer och lokala reseupplevelser och fortsätt sedan till stadssidor och enskilda turer.`,
+  id: (country, videoCount, cityCount, categoryCount) =>
+    `Jelajahi ${country} melalui ${videoCount} video jalan kaki dan perjalanan nyata dari ${cityCount} kota dalam ${categoryCount} kategori. Lihat suasana jalan, berbagai karakter kota, dan pengalaman perjalanan lokal, lalu lanjutkan ke halaman kota dan tur individual.`,
+  vi: (country, videoCount, cityCount, categoryCount) =>
+    `Khám phá ${country} qua ${videoCount} video đi bộ và du lịch thực tế tại ${cityCount} thành phố thuộc ${categoryCount} danh mục. Xem khung cảnh đường phố, nhiều bầu không khí đô thị và trải nghiệm địa phương, sau đó chuyển đến trang thành phố và từng tour riêng.`
+};
+
 function label(key: string) {
-  return (
-    labels[key]?.[currentLang] ||
-    labels[key]?.en ||
-    key
+  return labels[key]?.[currentLang] || labels[key]?.en || key;
+}
+
+const cityMap = new Map<
+  string,
+  {
+    name: string;
+    videos: Video[];
+  }
+>();
+
+for (const video of countryVideos) {
+  if (!video.city) continue;
+
+  const slug = createSlug(video.city);
+
+  if (!cityMap.has(slug)) {
+    cityMap.set(slug, {
+      name: video.city,
+      videos: []
+    });
+  }
+
+  cityMap.get(slug)?.videos.push(video);
+}
+
+const cities = Array.from(cityMap.entries())
+  .map(([slug, city]) => {
+    const heroVideo =
+      city.videos.find((video) => video.thumbnail) ||
+      city.videos[0];
+
+    return {
+      slug,
+      name: city.name,
+      count: city.videos.length,
+      thumbnail:
+        heroVideo?.thumbnail ||
+        (heroVideo
+          ? `https://i.ytimg.com/vi/${heroVideo.id}/hqdefault.jpg`
+          : '')
+    };
+  })
+  .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+
+const categoryMap = new Map<string, Video[]>();
+
+for (const video of countryVideos) {
+  const category = video.category || 'Walking Tours';
+
+  if (!categoryMap.has(category)) {
+    categoryMap.set(category, []);
+  }
+
+  categoryMap.get(category)?.push(video);
+}
+
+const categories = Array.from(categoryMap.entries())
+  .map(([name, items]) => ({
+    name,
+    label: getCategoryName(name, currentLang),
+    count: items.length
+  }))
+  .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+
+const videoCount = countryVideos.length;
+const cityCount = cities.length;
+const categoryCount = categories.length;
+
+const countrySummary =
+  summaryTemplates[currentLang]?.(
+    countryName,
+    videoCount,
+    cityCount,
+    categoryCount
+  ) ||
+  summaryTemplates.en(
+    countryName,
+    videoCount,
+    cityCount,
+    categoryCount
   );
-}
 
-function createCitySlug(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-}
+const heroVideo =
+  countryVideos.find((video) => video.thumbnail) ||
+  countryVideos[0];
 
-const cities = Array.from(
-  new Set(
-    countryVideos
-      .map((video) => video.city)
-      .filter((city): city is string => Boolean(city))
-  )
-).sort((a, b) => a.localeCompare(b));
+const heroImage =
+  heroVideo?.thumbnail ||
+  (heroVideo
+    ? `https://i.ytimg.com/vi/${heroVideo.id}/maxresdefault.jpg`
+    : '');
 
 const pageTitle =
-  `${countryName} | ${label('walks')} 4K`;
+  `${countryName} | ${label('walkingTours')} 4K`;
 
-const pageDescription =
-  `${label('explore')} ${countryName} through immersive 4K walking tours, real city streets and travel videos.`;
+const metaDescription =
+  countrySummary.slice(0, 160);
+
+const pageUrl = Astro.url.href;
+
+const itemListSchema = {
+  '@type': 'ItemList',
+  itemListElement: countryVideos.map((video, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    url: new URL(
+      `/${currentLang}/walks/${video.id}`,
+      Astro.url.origin
+    ).href,
+    name: getVideoCardTitle(video, currentLang)
+  }))
+};
+
+const cityItemListSchema = {
+  '@type': 'ItemList',
+  itemListElement: cities.map((city, index) => ({
+    '@type': 'ListItem',
+    position: index + 1,
+    url: new URL(
+      `/${currentLang}/cities/${city.slug}`,
+      Astro.url.origin
+    ).href,
+    name: city.name
+  }))
+};
+
+const pageSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': `${pageUrl}#collection`,
+      url: pageUrl,
+      name: pageTitle,
+      description: countrySummary,
+      inLanguage: currentLang,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'Old Towns Walks',
+        url: Astro.url.origin
+      },
+      about: {
+        '@type': 'Country',
+        name: countryName
+      },
+      mainEntity: itemListSchema,
+      hasPart: cityItemListSchema
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: label('backHome'),
+          item: new URL(
+            `/${currentLang}/`,
+            Astro.url.origin
+          ).href
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: countryName,
+          item: pageUrl
+        }
+      ]
+    }
+  ]
+};
 ---
 
 <BaseLayout
   title={pageTitle}
-  description={pageDescription}
+  description={metaDescription}
 >
   <main class="country-page">
     <div class="country-shell">
 
-      <a
-        href={`/${currentLang}/`}
-        class="back-link"
+      <nav
+        class="breadcrumbs"
+        aria-label="Breadcrumb"
       >
-        ← {label('home')}
-      </a>
+        <a href={`/${currentLang}/`}>
+          {label('backHome')}
+        </a>
 
-      <section class="country-hero">
-        <div class="country-heading">
+        <span>/</span>
+
+        <span aria-current="page">
+          {countryName}
+        </span>
+      </nav>
+
+      <section
+        class:list={[
+          'country-hero',
+          heroImage && 'has-image'
+        ]}
+        style={
+          heroImage
+            ? `--hero-image: url("${heroImage}")`
+            : undefined
+        }
+      >
+        <div class="hero-overlay"></div>
+
+        <div class="hero-content">
           <span class="eyebrow">
-            {label('explore')}
+            {label('countryHub')}
           </span>
 
           <h1>{countryName}</h1>
+
+          <p class="hero-intro">
+            {label('aboutCountry')}
+          </p>
+
+          <div class="hero-stats">
+            <div class="stat">
+              <strong>{videoCount}</strong>
+              <span>{label('videos')}</span>
+            </div>
+
+            <div class="stat">
+              <strong>{cityCount}</strong>
+              <span>{label('cities')}</span>
+            </div>
+
+            <div class="stat">
+              <strong>{categoryCount}</strong>
+              <span>{label('categories')}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="country-summary">
+        <div>
+          <span class="section-kicker">
+            {label('explore')}
+          </span>
+
+          <h2>
+            {countryName} {label('walkingTours')}
+          </h2>
         </div>
 
-        <div class="video-count">
-          <strong>{countryVideos.length}</strong>
-          <span>{label('videos')}</span>
-        </div>
+        <p>{countrySummary}</p>
       </section>
 
       {cities.length > 0 && (
         <section class="cities-section">
-          <h2>{label('cities')}</h2>
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">
+                {label('topCities')}
+              </span>
 
-          <div class="city-links">
+              <h2>{countryName}</h2>
+            </div>
+          </div>
+
+          <div class="city-grid">
             {cities.map((city) => (
               <a
-                href={`/${currentLang}/cities/${createCitySlug(city)}`}
-                class="city-link"
+                href={`/${currentLang}/cities/${city.slug}`}
+                class="city-card"
               >
-                {city}
+                <div class="city-image">
+                  {city.thumbnail && (
+                    <img
+                      src={city.thumbnail}
+                      alt={city.name}
+                      loading="lazy"
+                    />
+                  )}
+
+                  <div class="city-shade"></div>
+                </div>
+
+                <div class="city-info">
+                  <h3>{city.name}</h3>
+
+                  <span>
+                    {city.count} {label('videos')}
+                  </span>
+                </div>
               </a>
             ))}
           </div>
         </section>
       )}
 
-      <section class="section-heading">
-        <h2>
-          {countryName} {label('walks')}
-        </h2>
-      </section>
+      {categories.length > 0 && (
+        <section class="category-overview">
+          <div class="section-title-row">
+            <div>
+              <span class="section-kicker">
+                {label('categories')}
+              </span>
 
-      <div class="video-grid">
-        {countryVideos.map((video) => (
-          <article class="video-card">
-
-            <a
-              href={`/${currentLang}/walks/${video.id}`}
-              class="thumbnail"
-            >
-              <img
-                src={
-                  video.thumbnail ||
-                  `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`
-                }
-                alt={getVideoCardTitle(video, currentLang)}
-                loading="lazy"
-              />
-
-              {video.badge && (
-                <span class="badge">
-                  {video.badge}
-                </span>
-              )}
-            </a>
-
-            <div class="video-info">
-              <h3>
-                <a href={`/${currentLang}/walks/${video.id}`}>
-                  {getVideoCardTitle(video, currentLang)}
-                </a>
-              </h3>
-
-              {video.city && (
-                <a
-                  href={`/${currentLang}/cities/${createCitySlug(video.city)}`}
-                  class="city-name"
-                >
-                  {video.city}
-                </a>
-              )}
-
-              {(video.channelTitle || video.channel) && (
-                <p class="channel">
-                  {video.channelTitle || video.channel}
-                </p>
-              )}
+              <h2>
+                {label('explore')} {countryName}
+              </h2>
             </div>
+          </div>
 
-          </article>
-        ))}
-      </div>
+          <div class="category-grid">
+            {categories.map((category) => (
+              <button
+                type="button"
+                class="category-card"
+                data-category-target={category.name}
+              >
+                <span class="category-name">
+                  {category.label}
+                </span>
+
+                <span class="category-count">
+                  {category.count}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section class="videos-section">
+        <div class="section-title-row">
+          <div>
+            <span class="section-kicker">
+              {label('allVideos')}
+            </span>
+
+            <h2>{countryName}</h2>
+          </div>
+
+          <button
+            type="button"
+            class="reset-filter"
+            data-category-target="All"
+          >
+            {label('allVideos')} · {videoCount}
+          </button>
+        </div>
+
+        <div class="video-grid">
+          {countryVideos.map((video) => (
+            <article
+              class="video-card"
+              data-video-card
+              data-category={video.category || 'Walking Tours'}
+            >
+              <a
+                href={`/${currentLang}/walks/${video.id}`}
+                class="thumbnail"
+              >
+                <img
+                  src={
+                    video.thumbnail ||
+                    `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`
+                  }
+                  alt={getVideoCardTitle(video, currentLang)}
+                  loading="lazy"
+                />
+
+                <div class="thumbnail-shade"></div>
+
+                {video.badge && (
+                  <span class="badge">
+                    {video.badge}
+                  </span>
+                )}
+
+                <span class="category-badge">
+                  {getCategoryName(
+                    video.category || 'Walking Tours',
+                    currentLang
+                  )}
+                </span>
+              </a>
+
+              <div class="video-info">
+                <h3>
+                  <a href={`/${currentLang}/walks/${video.id}`}>
+                    {getVideoCardTitle(video, currentLang)}
+                  </a>
+                </h3>
+
+                {video.city && (
+                  <a
+                    href={`/${currentLang}/cities/${createSlug(video.city)}`}
+                    class="city-link"
+                  >
+                    {video.city}
+                  </a>
+                )}
+
+                {(video.channelTitle || video.channel) && (
+                  <p class="channel">
+                    {video.channelTitle || video.channel}
+                  </p>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
     </div>
   </main>
+
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify(pageSchema)}
+  />
+
+  <script is:inline>
+    const buttons = document.querySelectorAll('[data-category-target]');
+    const cards = document.querySelectorAll('[data-video-card]');
+
+    buttons.forEach((button) => {
+      button.addEventListener('click', () => {
+        const target = button.getAttribute('data-category-target');
+
+        buttons.forEach((item) => {
+          item.classList.remove('is-active');
+        });
+
+        button.classList.add('is-active');
+
+        cards.forEach((card) => {
+          const category = card.getAttribute('data-category');
+          const shouldShow =
+            target === 'All' ||
+            category === target;
+
+          card.classList.toggle('is-hidden', !shouldShow);
+        });
+
+        const videosSection = document.querySelector('.videos-section');
+
+        if (videosSection) {
+          videosSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  </script>
 </BaseLayout>
 
 <style>
   .country-page {
     min-height: 100vh;
-    background: #0b0f17;
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba(215, 182, 117, 0.06),
+        transparent 30%
+      ),
+      #0b0f17;
     color: #f1f5f9;
-    padding: 104px 24px 72px;
+    padding: 98px 24px 72px;
   }
 
   .country-shell {
-    width: min(1400px, 100%);
+    width: min(1420px, 100%);
     margin: 0 auto;
   }
 
-  .back-link {
-    display: inline-block;
-    margin-bottom: 24px;
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    color: #778291;
+    font-size: 12px;
+  }
+
+  .breadcrumbs a {
     color: #aab4c3;
-    font-size: 14px;
-    font-weight: 600;
     transition: color 0.2s ease;
   }
 
-  .back-link:hover {
+  .breadcrumbs a:hover {
     color: #ffffff;
   }
 
   .country-hero {
+    position: relative;
+    min-height: 380px;
+    overflow: hidden;
     display: flex;
     align-items: flex-end;
-    justify-content: space-between;
-    gap: 32px;
-    padding: 32px 0 36px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    background:
+      linear-gradient(
+        135deg,
+        #151d29,
+        #0e141d
+      );
   }
 
-  .eyebrow {
+  .country-hero.has-image {
+    background-image:
+      linear-gradient(
+        90deg,
+        rgba(5, 8, 13, 0.96) 0%,
+        rgba(5, 8, 13, 0.84) 42%,
+        rgba(5, 8, 13, 0.32) 100%
+      ),
+      var(--hero-image);
+    background-size: cover;
+    background-position: center;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.03),
+        rgba(0, 0, 0, 0.2)
+      );
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    width: min(760px, 100%);
+    padding: 44px;
+  }
+
+  .eyebrow,
+  .section-kicker {
     display: block;
-    margin-bottom: 10px;
     color: #d7b675;
-    font-size: 13px;
-    font-weight: 700;
+    font-size: 11px;
+    font-weight: 800;
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
 
-  .country-heading h1 {
-    margin: 0;
-    font-size: clamp(36px, 6vw, 72px);
-    line-height: 1;
-    letter-spacing: -0.04em;
+  .hero-content h1 {
+    margin: 10px 0 0;
     color: #ffffff;
+    font-size: clamp(46px, 7vw, 86px);
+    line-height: 0.96;
+    letter-spacing: -0.05em;
   }
 
-  .video-count {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    color: #aab4c3;
-    white-space: nowrap;
+  .hero-intro {
+    max-width: 640px;
+    margin: 18px 0 0;
+    color: #c4ccd6;
+    font-size: 15px;
+    line-height: 1.65;
   }
 
-  .video-count strong {
-    color: #ffffff;
-    font-size: 28px;
-  }
-
-  .video-count span {
-    font-size: 14px;
-  }
-
-  .cities-section {
-    padding: 36px 0 8px;
-  }
-
-  .cities-section h2 {
-    margin: 0 0 18px;
-    font-size: 22px;
-    color: #ffffff;
-  }
-
-  .city-links {
+  .hero-stats {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
+    margin-top: 24px;
   }
 
-  .city-link {
-    padding: 9px 14px;
-    border-radius: 999px;
-    background: #151b26;
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    color: #dce3ec;
+  .stat {
+    min-width: 108px;
+    padding: 11px 14px;
+    background: rgba(10, 15, 22, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    backdrop-filter: blur(8px);
+  }
+
+  .stat strong {
+    display: block;
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .stat span {
+    display: block;
+    margin-top: 6px;
+    color: #8f9baa;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .country-summary {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.65fr) minmax(0, 1.35fr);
+    gap: 44px;
+    margin-top: 26px;
+    padding: 30px 32px;
+    background: #111821;
+    border: 1px solid #222c38;
+    border-radius: 16px;
+  }
+
+  .country-summary h2,
+  .section-title-row h2 {
+    margin: 7px 0 0;
+    color: #ffffff;
+    font-size: 24px;
+    line-height: 1.2;
+  }
+
+  .country-summary p {
+    margin: 0;
+    color: #aeb8c6;
     font-size: 14px;
-    font-weight: 600;
+    line-height: 1.8;
+  }
+
+  .cities-section,
+  .category-overview,
+  .videos-section {
+    margin-top: 42px;
+  }
+
+  .section-title-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+  }
+
+  .city-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .city-card {
+    overflow: hidden;
+    background: #121923;
+    border: 1px solid #222c38;
+    border-radius: 14px;
+    transition:
+      transform 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  .city-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(215, 182, 117, 0.45);
+  }
+
+  .city-image {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    background: #151c26;
+  }
+
+  .city-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.25s ease;
+  }
+
+  .city-card:hover .city-image img {
+    transform: scale(1.025);
+  }
+
+  .city-shade {
+    position: absolute;
+    inset: auto 0 0;
+    height: 50%;
+    background:
+      linear-gradient(
+        transparent,
+        rgba(0, 0, 0, 0.62)
+      );
+  }
+
+  .city-info {
+    padding: 13px 14px 15px;
+  }
+
+  .city-info h3 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 15px;
+    font-weight: 750;
+  }
+
+  .city-info span {
+    display: block;
+    margin-top: 5px;
+    color: #7f8a99;
+    font-size: 11px;
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .category-card,
+  .reset-filter {
+    border: 1px solid #25303d;
+    background: #131a23;
+    color: #e7ebf0;
+    cursor: pointer;
     transition:
       background 0.2s ease,
-      color 0.2s ease;
+      border-color 0.2s ease,
+      transform 0.2s ease;
   }
 
-  .city-link:hover {
-    background: #202838;
+  .category-card {
+    min-height: 72px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 12px;
+    text-align: left;
+  }
+
+  .category-card:hover,
+  .category-card.is-active {
+    background: #19222d;
+    border-color: rgba(215, 182, 117, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .category-name {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .category-count {
+    min-width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #0d131b;
+    border-radius: 7px;
     color: #d7b675;
+    font-size: 11px;
+    font-weight: 800;
   }
 
-  .section-heading {
-    margin: 38px 0 22px;
+  .reset-filter {
+    padding: 9px 12px;
+    border-radius: 9px;
+    font-size: 12px;
+    font-weight: 700;
   }
 
-  .section-heading h2 {
-    margin: 0;
-    font-size: 24px;
-    color: #ffffff;
+  .reset-filter:hover,
+  .reset-filter.is-active {
+    border-color: rgba(215, 182, 117, 0.45);
+    color: #f2d49b;
   }
 
   .video-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 30px 22px;
+    gap: 30px 20px;
   }
 
   .video-card {
     min-width: 0;
+  }
+
+  .video-card.is-hidden {
+    display: none;
   }
 
   .thumbnail {
@@ -477,6 +1154,7 @@ const pageDescription =
     overflow: hidden;
     border-radius: 12px;
     background: #111827;
+    border: 1px solid #222b36;
   }
 
   .thumbnail img {
@@ -491,71 +1169,135 @@ const pageDescription =
     transform: scale(1.025);
   }
 
+  .thumbnail-shade {
+    position: absolute;
+    inset: auto 0 0;
+    height: 45%;
+    background:
+      linear-gradient(
+        transparent,
+        rgba(0, 0, 0, 0.64)
+      );
+    pointer-events: none;
+  }
+
   .badge {
     position: absolute;
-    right: 10px;
-    bottom: 10px;
-    padding: 5px 8px;
+    right: 9px;
+    bottom: 9px;
+    padding: 4px 7px;
     border-radius: 5px;
     background: rgba(0, 0, 0, 0.82);
     color: #ffffff;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .category-badge {
+    position: absolute;
+    left: 9px;
+    bottom: 9px;
+    max-width: calc(100% - 90px);
+    overflow: hidden;
+    padding: 4px 7px;
+    border-radius: 5px;
+    background: rgba(11, 15, 23, 0.82);
+    color: #d7b675;
+    font-size: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 
   .video-info {
-    padding-top: 12px;
+    padding-top: 11px;
   }
 
   .video-info h3 {
     margin: 0;
-    font-size: 16px;
-    line-height: 1.4;
-    font-weight: 700;
     color: #f8fafc;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.45;
   }
 
   .video-info h3 a:hover {
     color: #d7b675;
   }
 
-  .city-name {
+  .city-link {
     display: inline-block;
-    margin-top: 7px;
+    margin-top: 6px;
     color: #d7b675;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .city-link:hover {
+    color: #ffffff;
   }
 
   .channel {
-    margin-top: 5px;
-    color: #8f9baa;
-    font-size: 13px;
+    margin: 5px 0 0;
+    color: #7f8a99;
+    font-size: 12px;
   }
 
-  @media (max-width: 1000px) {
+  @media (max-width: 1160px) {
+    .city-grid,
+    .category-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .video-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  @media (max-width: 640px) {
+  @media (max-width: 760px) {
     .country-page {
-      padding: 92px 16px 50px;
+      padding: 86px 14px 50px;
     }
 
     .country-hero {
+      min-height: 340px;
+    }
+
+    .country-hero.has-image {
+      background-image:
+        linear-gradient(
+          180deg,
+          rgba(5, 8, 13, 0.28) 0%,
+          rgba(5, 8, 13, 0.92) 70%
+        ),
+        var(--hero-image);
+      background-position: center;
+    }
+
+    .hero-content {
+      padding: 26px 22px;
+    }
+
+    .hero-content h1 {
+      font-size: clamp(40px, 14vw, 62px);
+    }
+
+    .country-summary {
+      grid-template-columns: 1fr;
+      gap: 14px;
+      padding: 22px;
+    }
+
+    .section-title-row {
       align-items: flex-start;
       flex-direction: column;
-      gap: 20px;
+      gap: 12px;
     }
 
+    .city-grid,
+    .category-grid,
     .video-grid {
       grid-template-columns: 1fr;
-    }
-
-    .section-heading {
-      margin-top: 30px;
     }
   }
 </style>
