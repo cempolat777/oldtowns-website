@@ -25,6 +25,14 @@ const categoryNames: Record<string, Record<string, string>> = {
     hi:'पैदल यात्रा', nl:'Stadswandeling', pl:'Spacer po Mieście', sv:'Stadsvandring',
     id:'Tur Jalan Kaki', vi:'Tour Đi Bộ'
   },
+  'Beach Walking Tours': {
+    en:'Beach Walking Tour', tr:'Plaj Yürüyüş Turu', de:'Strandspaziergang',
+    es:'Paseo por la Playa', it:'Passeggiata in Spiaggia', fr:'Balade sur la Plage',
+    ja:'ビーチウォーク', pt:'Caminhada na Praia', ru:'Прогулка по пляжу',
+    zh:'海滩漫步', ko:'해변 산책', ar:'جولة مشي على الشاطئ',
+    hi:'समुद्र तट की सैर', nl:'Strandwandeling', pl:'Spacer po Plaży',
+    sv:'Strandpromenad', id:'Jalan-jalan di Pantai', vi:'Đi Bộ Trên Bãi Biển'
+  },
   'Night & Rain': {
     en:'Night & Rain Walk', tr:'Gece & Yağmur Yürüyüşü', de:'Nacht- & Regenspaziergang',
     es:'Paseo Nocturno y con Lluvia', it:'Passeggiata Notturna e sotto la Pioggia',
@@ -214,6 +222,7 @@ function detectFeature(title: string, category?: string) {
     return 'drone';
   }
 
+  if (category === 'Beach Walking Tours') return 'beach';
   if (category === 'Street Food') return 'food';
   if (category === 'Nature Trails') return 'nature';
   if (category === 'Museums & Culture') return 'culture';
@@ -242,6 +251,27 @@ const featureNames: Record<string, Record<string, string>> = {
     sv:'Stadsvandring',
     id:'Tur Jalan Kaki',
     vi:'Tour Đi Bộ'
+  },
+
+  beach: {
+    en:'Beach Walking Tour',
+    tr:'Plaj Yürüyüş Turu',
+    de:'Strandspaziergang',
+    es:'Paseo por la Playa',
+    it:'Passeggiata in Spiaggia',
+    fr:'Balade sur la Plage',
+    ja:'ビーチウォーク',
+    pt:'Caminhada na Praia',
+    ru:'Прогулка по пляжу',
+    zh:'海滩漫步',
+    ko:'해변 산책',
+    ar:'جولة مشي على الشاطئ',
+    hi:'समुद्र तट की सैर',
+    nl:'Strandwandeling',
+    pl:'Spacer po Plaży',
+    sv:'Strandpromenad',
+    id:'Jalan-jalan di Pantai',
+    vi:'Đi Bộ Trên Bãi Biển'
   },
 
   night: {
