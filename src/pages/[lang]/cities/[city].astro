@@ -1,0 +1,474 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import { languages, defaultLang } from '../../../i18n/ui';
+import videos from '../../../data/videos.json';
+import { getVideoCardTitle } from '../../../lib/videoSeo';
+
+interface Video {
+  id: string;
+  title: string;
+  description?: string;
+  thumbnail?: string;
+  category?: string;
+  channel?: string;
+  channelTitle?: string;
+  badge?: string;
+  publishedAt?: string;
+  city?: string;
+  country?: string;
+}
+
+export function getStaticPaths() {
+  function createSlug(value: string) {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+
+  const allVideos = videos as Video[];
+
+  const cityMap = new Map<
+    string,
+    {
+      city: string;
+      country: string;
+      videos: Video[];
+    }
+  >();
+
+  for (const video of allVideos) {
+    if (!video.city) continue;
+
+    const slug = createSlug(video.city);
+
+    if (!slug) continue;
+
+    if (!cityMap.has(slug)) {
+      cityMap.set(slug, {
+        city: video.city,
+        country: video.country || '',
+        videos: []
+      });
+    }
+
+    cityMap.get(slug)?.videos.push(video);
+  }
+
+  const paths: Array<{
+    params: {
+      lang: string;
+      city: string;
+    };
+    props: {
+      cityName: string;
+      countryName: string;
+      cityVideos: Video[];
+    };
+  }> = [];
+
+  for (const lang of Object.keys(languages)) {
+    for (const [slug, cityData] of cityMap) {
+      paths.push({
+        params: {
+          lang,
+          city: slug
+        },
+        props: {
+          cityName: cityData.city,
+          countryName: cityData.country,
+          cityVideos: cityData.videos
+        }
+      });
+    }
+  }
+
+  return paths;
+}
+
+const { lang } = Astro.params;
+
+const currentLang =
+  lang && lang in languages
+    ? lang
+    : defaultLang;
+
+const {
+  cityName,
+  countryName,
+  cityVideos
+} = Astro.props as {
+  cityName: string;
+  countryName: string;
+  cityVideos: Video[];
+};
+
+const labels: Record<string, Record<string, string>> = {
+  explore: {
+    en: 'Explore',
+    tr: 'Keşfet',
+    de: 'Entdecken',
+    es: 'Explorar',
+    it: 'Esplora',
+    fr: 'Explorer',
+    ja: '探索する',
+    pt: 'Explorar',
+    ru: 'Исследовать',
+    zh: '探索',
+    ko: '둘러보기',
+    ar: 'استكشف',
+    hi: 'खोजें',
+    nl: 'Ontdek',
+    pl: 'Odkrywaj',
+    sv: 'Utforska',
+    id: 'Jelajahi',
+    vi: 'Khám Phá'
+  },
+
+  walks: {
+    en: 'Walking Tours',
+    tr: 'Yürüyüş Turları',
+    de: 'Stadtrundgänge',
+    es: 'Recorridos a Pie',
+    it: 'Tour a Piedi',
+    fr: 'Visites à Pied',
+    ja: '街歩きツアー',
+    pt: 'Passeios a Pé',
+    ru: 'Пешеходные прогулки',
+    zh: '徒步之旅',
+    ko: '워킹 투어',
+    ar: 'جولات المشي',
+    hi: 'वॉकिंग टूर',
+    nl: 'Stadswandelingen',
+    pl: 'Spacery',
+    sv: 'Stadsvandringar',
+    id: 'Tur Jalan Kaki',
+    vi: 'Tour Đi Bộ'
+  },
+
+  videos: {
+    en: 'videos',
+    tr: 'video',
+    de: 'Videos',
+    es: 'videos',
+    it: 'video',
+    fr: 'vidéos',
+    ja: '本の動画',
+    pt: 'vídeos',
+    ru: 'видео',
+    zh: '个视频',
+    ko: '개 영상',
+    ar: 'فيديو',
+    hi: 'वीडियो',
+    nl: 'video’s',
+    pl: 'filmów',
+    sv: 'videor',
+    id: 'video',
+    vi: 'video'
+  },
+
+  home: {
+    en: 'Back to Home',
+    tr: 'Ana Sayfaya Dön',
+    de: 'Zur Startseite',
+    es: 'Volver al Inicio',
+    it: 'Torna alla Home',
+    fr: "Retour à l'accueil",
+    ja: 'ホームに戻る',
+    pt: 'Voltar ao Início',
+    ru: 'На главную',
+    zh: '返回首页',
+    ko: '홈으로',
+    ar: 'العودة للرئيسية',
+    hi: 'होम पर वापस',
+    nl: 'Terug naar Home',
+    pl: 'Powrót do strony głównej',
+    sv: 'Till startsidan',
+    id: 'Kembali ke Beranda',
+    vi: 'Về Trang Chủ'
+  }
+};
+
+function label(key: string) {
+  return (
+    labels[key]?.[currentLang] ||
+    labels[key]?.en ||
+    key
+  );
+}
+
+const pageTitle =
+  countryName
+    ? `${cityName}, ${countryName} | ${label('walks')} 4K`
+    : `${cityName} | ${label('walks')} 4K`;
+
+const pageDescription =
+  countryName
+    ? `${label('explore')} ${cityName}, ${countryName} through immersive 4K walking tours and real street videos.`
+    : `${label('explore')} ${cityName} through immersive 4K walking tours and real street videos.`;
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+>
+  <main class="city-page">
+    <div class="city-shell">
+
+      <a href={`/${currentLang}/`} class="back-link">
+        ← {label('home')}
+      </a>
+
+      <section class="city-hero">
+        <div class="city-heading">
+          <span class="eyebrow">
+            {label('explore')}
+          </span>
+
+          <h1>{cityName}</h1>
+
+          {countryName && (
+            <p class="country">
+              {countryName}
+            </p>
+          )}
+        </div>
+
+        <div class="video-count">
+          <strong>{cityVideos.length}</strong>
+          <span>{label('videos')}</span>
+        </div>
+      </section>
+
+      <section class="section-heading">
+        <h2>
+          {cityName} {label('walks')}
+        </h2>
+      </section>
+
+      <div class="video-grid">
+        {cityVideos.map((video) => (
+          <article class="video-card">
+
+            <a
+              href={`/${currentLang}/walks/${video.id}`}
+              class="thumbnail"
+            >
+              <img
+                src={
+                  video.thumbnail ||
+                  `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`
+                }
+                alt={getVideoCardTitle(video, currentLang)}
+                loading="lazy"
+              />
+
+              {video.badge && (
+                <span class="badge">
+                  {video.badge}
+                </span>
+              )}
+            </a>
+
+            <div class="video-info">
+              <h3>
+                <a href={`/${currentLang}/walks/${video.id}`}>
+                  {getVideoCardTitle(video, currentLang)}
+                </a>
+              </h3>
+
+              {(video.channelTitle || video.channel) && (
+                <p class="channel">
+                  {video.channelTitle || video.channel}
+                </p>
+              )}
+            </div>
+
+          </article>
+        ))}
+      </div>
+
+    </div>
+  </main>
+</BaseLayout>
+
+<style>
+  .city-page {
+    min-height: 100vh;
+    background: #0b0f17;
+    color: #f1f5f9;
+    padding: 104px 24px 72px;
+  }
+
+  .city-shell {
+    width: min(1400px, 100%);
+    margin: 0 auto;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 24px;
+    color: #aab4c3;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.2s ease;
+  }
+
+  .back-link:hover {
+    color: #ffffff;
+  }
+
+  .city-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 32px;
+    padding: 32px 0 36px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  .eyebrow {
+    display: block;
+    margin-bottom: 10px;
+    color: #d7b675;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .city-heading h1 {
+    margin: 0;
+    font-size: clamp(36px, 6vw, 72px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    color: #ffffff;
+  }
+
+  .country {
+    margin-top: 12px;
+    color: #aab4c3;
+    font-size: 18px;
+  }
+
+  .video-count {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    color: #aab4c3;
+    white-space: nowrap;
+  }
+
+  .video-count strong {
+    color: #ffffff;
+    font-size: 28px;
+  }
+
+  .video-count span {
+    font-size: 14px;
+  }
+
+  .section-heading {
+    margin: 38px 0 22px;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    font-size: 24px;
+    color: #ffffff;
+  }
+
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 30px 22px;
+  }
+
+  .video-card {
+    min-width: 0;
+  }
+
+  .thumbnail {
+    position: relative;
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border-radius: 12px;
+    background: #111827;
+  }
+
+  .thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.25s ease;
+  }
+
+  .thumbnail:hover img {
+    transform: scale(1.025);
+  }
+
+  .badge {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    padding: 5px 8px;
+    border-radius: 5px;
+    background: rgba(0, 0, 0, 0.82);
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .video-info {
+    padding-top: 12px;
+  }
+
+  .video-info h3 {
+    margin: 0;
+    font-size: 16px;
+    line-height: 1.4;
+    font-weight: 700;
+    color: #f8fafc;
+  }
+
+  .video-info h3 a:hover {
+    color: #d7b675;
+  }
+
+  .channel {
+    margin-top: 7px;
+    color: #8f9baa;
+    font-size: 13px;
+  }
+
+  @media (max-width: 1000px) {
+    .video-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 640px) {
+    .city-page {
+      padding: 92px 16px 50px;
+    }
+
+    .city-hero {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .video-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .section-heading {
+      margin-top: 30px;
+    }
+  }
+</style>
