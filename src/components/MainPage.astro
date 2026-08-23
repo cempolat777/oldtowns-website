@@ -16,31 +16,11 @@ const translations = ui as Record<string, Record<string, string>>;
 const t = translations[lang] || translations.en || translations.tr;
 const pageSeo = getPageSeo(lang);
 
-const beachCategoryLabels: Record<string, string> = {
-  en: 'Beach Walks',
-  tr: 'Plaj Yürüyüşleri',
-  de: 'Strandspaziergänge',
-  es: 'Paseos por la Playa',
-  it: 'Passeggiate in Spiaggia',
-  fr: 'Balades sur la Plage',
-  ja: 'ビーチウォーク',
-  pt: 'Caminhadas na Praia',
-  ru: 'Прогулки по пляжу',
-  zh: '海滩漫步',
-  ko: '해변 산책',
-  ar: 'جولات الشاطئ',
-  hi: 'समुद्र तट की सैर',
-  nl: 'Strandwandelingen',
-  pl: 'Spacery po Plaży',
-  sv: 'Strandpromenader',
-  id: 'Jalan-jalan di Pantai',
-  vi: 'Đi Bộ Trên Bãi Biển'
-};
-
+const emptyStateText = t['state.videosComingSoon'] || 'Videos coming soon';
 const categories = [
   { id: 'All', label: t['cat.all'] || 'All' },
   { id: 'Walking Tours', label: t['cat.walkingTours'] || 'Walking Tours' },
-  { id: 'Beach Walking Tours', label: t['cat.beachWalkingTours'] || beachCategoryLabels[lang] || 'Beach Walks' },
+  { id: 'Beach Walking Tours', label: t['cat.beachWalkingTours'] || 'Beach Walks' },
   { id: 'Drone & Aerial', label: t['cat.droneAerial'] || 'Drone & Aerial' },
   { id: 'POV Rides', label: t['cat.povRides'] || 'POV Rides' },
   { id: 'Night & Rain', label: t['cat.nightRain'] || 'Night & Rain' },
@@ -328,12 +308,22 @@ const videoSchema = {
         width: 100%;
       }
 
+      /* AdSense henüz içerik yerleştirmediyse sol reklam alanını tamamen gizle. */
+      .sidebar-ad-container:empty {
+        display: none;
+      }
+
       .ad-banner-top {
         width: 100%;
         min-height: 90px;
         border: 1px dashed rgba(255, 255, 255, 0.15);
         border-radius: 8px;
         margin-bottom: 24px;
+      }
+
+      /* AdSense henüz içerik yerleştirmediyse üst reklam alanını tamamen gizle. */
+      .ad-banner-top:empty {
+        display: none;
       }
 
       .ad-card-slot {
@@ -363,9 +353,13 @@ const videoSchema = {
 
       .chips-bar {
         display: flex;
+        flex-wrap: nowrap;
         gap: 12px;
         overflow-x: auto;
         padding-bottom: 16px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
       }
 
       .chips-bar::-webkit-scrollbar {
@@ -382,6 +376,7 @@ const videoSchema = {
         font-weight: 500;
         white-space: nowrap;
         cursor: pointer;
+        flex: 0 0 auto;
       }
 
       .chip:hover {
@@ -438,6 +433,11 @@ const videoSchema = {
 
       .thumbnail-wrapper:hover .video-poster {
         transform: scale(1.03);
+      }
+
+      .thumbnail-wrapper:focus-visible {
+        outline: 3px solid #f5b400;
+        outline-offset: 3px;
       }
 
       .thumbnail-wrapper iframe {
@@ -524,6 +524,19 @@ const videoSchema = {
         border: 1px solid #303030;
       }
 
+      .empty-state {
+        width: 100%;
+        padding: 56px 20px;
+        text-align: center;
+        color: #aaaaaa;
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      .empty-state[hidden] {
+        display: none;
+      }
+
       @media (max-width: 1100px) {
         .video-grid {
           grid-template-columns: repeat(2, 1fr);
@@ -555,8 +568,28 @@ const videoSchema = {
           padding: 12px 12px 0 12px;
         }
 
+        .chips-bar {
+          gap: 8px;
+          padding-bottom: 12px;
+          scroll-snap-type: x proximity;
+        }
+
+        .chip {
+          scroll-snap-align: start;
+        }
+
         .scrollable-grid-container {
           padding: 0 12px 12px 12px;
+        }
+
+        .video-card {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .thumbnail-wrapper {
+          width: 100%;
+          border-radius: 10px;
         }
 
         .ad-banner-top {
@@ -564,7 +597,13 @@ const videoSchema = {
         }
 
         .ad-card-slot {
-          min-height: 180px;
+          min-height: 160px;
+          grid-column: 1 / -1;
+        }
+
+        .empty-state {
+          padding: 42px 16px;
+          font-size: 14px;
         }
       }
 
@@ -842,6 +881,10 @@ const videoSchema = {
 
           </div>
 
+          <div class="empty-state" id="emptyState" hidden>
+            {emptyStateText}
+          </div>
+
         </div>
 
       </main>
@@ -885,6 +928,7 @@ const videoSchema = {
         const chips = document.querySelectorAll('.chip');
         const videoCards = document.querySelectorAll('.video-card');
         const videoGrid = document.querySelector('.video-grid');
+        const emptyState = document.getElementById('emptyState');
         const searchInput = document.getElementById('searchInput');
 
         if (!chips.length && !videoCards.length) return;
@@ -952,6 +996,10 @@ const videoSchema = {
             const visibleCards = Array.from(videoCards).filter(card =>
               card.style.display !== 'none'
             );
+
+            if (emptyState) {
+              emptyState.hidden = visibleCards.length !== 0;
+            }
 
             visibleCards.forEach((card, index) => {
 
@@ -1062,7 +1110,7 @@ const videoSchema = {
           let previewActive = false;
           let previewFrame = null;
 
-          wrapper.addEventListener('mouseenter', () => {
+          const startPreview = () => {
 
             const videoId =
               wrapper.getAttribute('data-video-id');
@@ -1090,10 +1138,9 @@ const videoSchema = {
             previewFrame = iframe;
             wrapper.appendChild(iframe);
 
-          });
+          };
 
-
-          wrapper.addEventListener('mouseleave', () => {
+          const stopPreview = () => {
 
             if (!previewActive) return;
 
@@ -1104,7 +1151,15 @@ const videoSchema = {
               previewFrame = null;
             }
 
-          });
+          };
+
+          // Bilgisayar: mouse hover
+          wrapper.addEventListener('mouseenter', startPreview);
+          wrapper.addEventListener('mouseleave', stopPreview);
+
+          // Smart TV / klavye: kumanda odağı karta geldiğinde aynı önizleme davranışı
+          wrapper.addEventListener('focus', startPreview);
+          wrapper.addEventListener('blur', stopPreview);
 
         });
 
