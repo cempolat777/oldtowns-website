@@ -1,9 +1,17 @@
 import fs from 'fs';
+import { loadEnvFile } from 'node:process';
 
-// YouTube API Key
-const API_KEY = process.env.YOUTUBE_API_KEY || 'AIzaSyAQR2TnjBRbsOPWTi68tiUmJ5kB7G7OyLE';
+loadEnvFile();
 
-// Dünyanın En Büyük Şehirleri ve Özel Kategoriler (1 Saatlik 4K Video Aramaları)
+const API_KEY = process.env.YOUTUBE_API_KEY;
+
+if (!API_KEY) {
+  console.error('YOUTUBE_API_KEY is missing.');
+  process.exit(1);
+}
+
+const OUTPUT_PATH = './src/data/videos.json';
+
 const SEARCH_QUERIES = [
   // Walking Tours
   { query: 'Tokyo 4k walking tour 1 hour', category: 'Walking Tours' },
@@ -12,6 +20,10 @@ const SEARCH_QUERIES = [
   { query: 'Istanbul 4k walking tour 1 hour', category: 'Walking Tours' },
   { query: 'New York 4k walking tour 1 hour', category: 'Walking Tours' },
   { query: 'Rome 4k walking tour 1 hour', category: 'Walking Tours' },
+
+  // Beach Walking Tours
+  { query: 'beach walking tour 4k 1 hour', category: 'Beach Walking Tours' },
+  { query: 'seaside walking tour 4k 1 hour', category: 'Beach Walking Tours' },
 
   // Night & Rain
   { query: 'Tokyo rain walk 4k 1 hour', category: 'Night & Rain' },
@@ -36,6 +48,7 @@ const SEARCH_QUERIES = [
 
 function cleanTitle(title) {
   if (!title) return '';
+
   return title
     .replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"')
@@ -44,66 +57,129 @@ function cleanTitle(title) {
     .replace(/&gt;/g, '>');
 }
 
+function loadExistingVideos() {
+  if (!fs.existsSync(OUTPUT_PATH)) {
+    return [];
+  }
+
+  try {
+    const rawData = fs.readFileSync(OUTPUT_PATH, 'utf8');
+    const data = JSON.parse(rawData);
+
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error('Could not read the existing videos.json file.');
+    process.exit(1);
+  }
+}
+
 async function fetchYouTubeVideos() {
-  let allVideos = [];
-  let seenVideoIds = new Set();
+  const existingVideos = loadExistingVideos();
+
+  const allVideos = [...existingVideos];
+
+  // Prevent duplicate videos using the unique YouTube video ID.
+  const seenVideoIds = new Set(
+    existingVideos
+      .map((video) => video.id)
+      .filter(Boolean)
+  );
+
+  let addedVideos = 0;
 
   for (const item of SEARCH_QUERIES) {
-    console.log(`⏳ Aranıyor: '${item.query}'...`);
-    
-    // videoDuration=long -> Sadece 20+ dakika ve 1 saat civarı videoları filtreler
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&q=${encodeURIComponent(item.query)}&type=video&videoDefinition=high&videoDuration=long&videoEmbeddable=true&key=${API_KEY}`;
-    
+    console.log(`Searching: "${item.query}"`);
+
+    const url =
+      `https://www.googleapis.com/youtube/v3/search` +
+      `?part=snippet` +
+      `&maxResults=25` +
+      `&q=${encodeURIComponent(item.query)}` +
+      `&type=video` +
+      `&videoDefinition=high` +
+      `&videoDuration=long` +
+      `&videoEmbeddable=true` +
+      `&key=${API_KEY}`;
+
     try {
       const response = await fetch(url);
       const data = await response.json();
 
       if (data.error) {
-        console.error(`❌ API HATASI (${item.query}):`, data.error.message);
+        console.error(
+          `YouTube API error (${item.query}):`,
+          data.error.message
+        );
         continue;
       }
 
-      if (!data.items || data.items.length === 0) {
-        console.log(`⚠️ Video bulunamadı: ${item.query}`);
+      if (!data.items?.length) {
+        console.log(`No videos found: ${item.query}`);
         continue;
       }
 
-      for (const v of data.items) {
-        const videoId = v.id?.videoId;
-        if (!videoId || seenVideoIds.has(videoId)) continue;
+      for (const video of data.items) {
+        const videoId = video.id?.videoId;
 
-        const title = cleanTitle(v.snippet.title);
-        
-        // Rozet belirleme
-        let badge = "4K 60FPS";
-        if (title.toLowerCase().includes("rain")) badge = "RAIN 4K";
-        if (title.toLowerCase().includes("drone")) badge = "DRONE 4K";
+        if (!videoId) {
+          continue;
+        }
+
+        // Skip videos that already exist in videos.json.
+        if (seenVideoIds.has(videoId)) {
+          continue;
+        }
+
+        const title = cleanTitle(video.snippet.title);
+
+        let badge = '4K 60FPS';
+
+        if (title.toLowerCase().includes('rain')) {
+          badge = 'RAIN 4K';
+        }
+
+        if (
+          title.toLowerCase().includes('drone') ||
+          title.toLowerCase().includes('aerial')
+        ) {
+          badge = 'DRONE 4K';
+        }
 
         allVideos.push({
           id: videoId,
-          title: title,
-          description: cleanTitle(v.snippet.description),
+          title,
+          description: cleanTitle(video.snippet.description),
           thumbnail: `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
           category: item.category,
-          channel: v.snippet.channelTitle,
-          channelTitle: v.snippet.channelTitle,
-          channelId: v.snippet.channelId,
-          badge: badge,
-          publishedAt: v.snippet.publishedAt
+          channel: video.snippet.channelTitle,
+          channelTitle: video.snippet.channelTitle,
+          channelId: video.snippet.channelId,
+          badge,
+          publishedAt: video.snippet.publishedAt
         });
 
         seenVideoIds.add(videoId);
+        addedVideos++;
       }
     } catch (error) {
-      console.error(`❌ Hata oluştu (${item.query}):`, error.message || error);
+      console.error(
+        `Fetch error (${item.query}):`,
+        error.message || error
+      );
     }
   }
 
-  const outputPath = './src/data/videos.json';
   fs.mkdirSync('./src/data', { recursive: true });
-  fs.writeFileSync(outputPath, JSON.stringify(allVideos, null, 2));
-  
-  console.log(`\n🎉 BAŞARILI! Toplam ${allVideos.length} adet 4K video 'src/data/videos.json' dosyasına yüklendi.`);
+
+  fs.writeFileSync(
+    OUTPUT_PATH,
+    JSON.stringify(allVideos, null, 2),
+    'utf8'
+  );
+
+  console.log(`Existing videos: ${existingVideos.length}`);
+  console.log(`New videos added: ${addedVideos}`);
+  console.log(`Total videos: ${allVideos.length}`);
 }
 
 fetchYouTubeVideos();
