@@ -21,6 +21,16 @@ const SEARCH_QUERIES = [
   { query: 'New York 4k walking tour 1 hour', category: 'Walking Tours' },
   { query: 'Rome 4k walking tour 1 hour', category: 'Walking Tours' },
 
+  // Airport Walks
+  { query: 'airport walking tour 4k', category: 'Airport Walks' },
+  { query: 'international airport walking tour 4k', category: 'Airport Walks' },
+  { query: 'airport terminal walk 4k', category: 'Airport Walks' },
+  { query: 'Haneda airport walking tour 4k', category: 'Airport Walks' },
+  { query: 'Changi airport walking tour 4k', category: 'Airport Walks' },
+  { query: 'Dubai airport walking tour 4k', category: 'Airport Walks' },
+  { query: 'Istanbul airport walking tour 4k', category: 'Airport Walks' },
+  { query: 'Heathrow airport walking tour 4k', category: 'Airport Walks' },
+
   // Beach Walking Tours
   { query: 'beach walking tour 4k 1 hour', category: 'Beach Walking Tours' },
   { query: 'seaside walking tour 4k 1 hour', category: 'Beach Walking Tours' },

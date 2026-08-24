@@ -21,6 +21,26 @@ function getCategoryByTitle(title) {
     return 'Drone & Aerial';
   }
 
+  // Airport and terminal walking tours
+  if (
+    (
+      t.includes('airport') ||
+      t.includes('terminal') ||
+      t.includes('aeropuerto') ||
+      t.includes('aéroport') ||
+      t.includes('flughafen') ||
+      t.includes('aeroporto')
+    ) && (
+      t.includes('walk') ||
+      t.includes('walking') ||
+      t.includes('tour') ||
+      t.includes('terminal') ||
+      t.includes('inside')
+    )
+  ) {
+    return 'Airport Walks';
+  }
+
   // Beach and seaside walking tours
   if (
     t.includes('beach') ||

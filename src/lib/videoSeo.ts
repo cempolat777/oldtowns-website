@@ -25,6 +25,13 @@ const categoryNames: Record<string, Record<string, string>> = {
     hi:'पैदल यात्रा', nl:'Stadswandeling', pl:'Spacer po Mieście', sv:'Stadsvandring',
     id:'Tur Jalan Kaki', vi:'Tour Đi Bộ'
   },
+  'Airport Walks': {
+    en:'Airport Walk', tr:'Havalimanı Yürüyüşü', de:'Flughafen-Spaziergang', es:'Paseo por el Aeropuerto',
+    it:'Passeggiata in Aeroporto', fr:'Promenade dans l’Aéroport', ja:'空港ウォーク', pt:'Caminhada no Aeroporto',
+    ru:'Прогулка по аэропорту', zh:'机场漫步', ko:'공항 산책', ar:'جولة في المطار',
+    hi:'एयरपोर्ट वॉक', nl:'Luchthavenwandeling', pl:'Spacer po Lotnisku', sv:'Flygplatspromenad',
+    id:'Jelajah Bandara', vi:'Đi Bộ Sân Bay'
+  },
   'Beach Walking Tours': {
     en:'Beach Walking Tour', tr:'Plaj Yürüyüş Turu', de:'Strandspaziergang',
     es:'Paseo por la Playa', it:'Passeggiata in Spiaggia', fr:'Balade sur la Plage',
@@ -222,6 +229,7 @@ function detectFeature(title: string, category?: string) {
     return 'drone';
   }
 
+  if (category === 'Airport Walks') return 'airport';
   if (category === 'Beach Walking Tours') return 'beach';
   if (category === 'Street Food') return 'food';
   if (category === 'Nature Trails') return 'nature';
@@ -251,6 +259,14 @@ const featureNames: Record<string, Record<string, string>> = {
     sv:'Stadsvandring',
     id:'Tur Jalan Kaki',
     vi:'Tour Đi Bộ'
+  },
+
+  airport: {
+    en:'Airport Walk', tr:'Havalimanı Yürüyüşü', de:'Flughafen-Spaziergang', es:'Paseo por el Aeropuerto',
+    it:'Passeggiata in Aeroporto', fr:'Promenade dans l’Aéroport', ja:'空港ウォーク', pt:'Caminhada no Aeroporto',
+    ru:'Прогулка по аэропорту', zh:'机场漫步', ko:'공항 산책', ar:'جولة في المطار',
+    hi:'एयरपोर्ट वॉक', nl:'Luchthavenwandeling', pl:'Spacer po Lotnisku', sv:'Flygplatspromenad',
+    id:'Jelajah Bandara', vi:'Đi Bộ Sân Bay'
   },
 
   beach: {
