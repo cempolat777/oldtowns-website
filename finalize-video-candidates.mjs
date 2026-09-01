@@ -15,6 +15,17 @@ const DEFAULT_REJECTED_PATH = './video-candidates.rejected.json';
 const DEFAULT_BACKUP_PATH = './src/data/videos.before-candidate-admission.json';
 const MINIMUM_METADATA_EVIDENCE = 2;
 
+const AERIAL_CATEGORY_WORDS = [
+  'drone',
+  'aerial'
+];
+
+const INFORMATIONAL_CATEGORY_WORDS = [
+  'documentary',
+  'documentaries',
+  'nature'
+];
+
 function parseArguments(argv) {
   const args = {
     currentPath: DEFAULT_CURRENT_PATH,
@@ -96,6 +107,100 @@ function uniqueReasons(values) {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
+function normalizePolicyText(value = '') {
+  return String(value)
+    .normalize('NFKD')
+    .replace(/\p{M}/gu, '')
+    .toLocaleLowerCase('en')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function includesCategoryWord(category, words) {
+  return words.some((word) =>
+    category.includes(word)
+  );
+}
+
+function getContentPolicy(candidate) {
+  const category = normalizePolicyText(
+    candidate.category ||
+    candidate.categorySlug ||
+    candidate.contentType ||
+    ''
+  );
+
+  if (includesCategoryWord(category, INFORMATIONAL_CATEGORY_WORDS)) {
+    return {
+      name: 'informational',
+      requiresVerifiedLocation: false,
+      requiresNearbyHotels: false
+    };
+  }
+
+  if (includesCategoryWord(category, AERIAL_CATEGORY_WORDS)) {
+    return {
+      name: 'aerial',
+      requiresVerifiedLocation: true,
+      requiresNearbyHotels: false
+    };
+  }
+
+  return {
+    name: 'location-experience',
+    requiresVerifiedLocation: true,
+    requiresNearbyHotels: true
+  };
+}
+
+function hasVerifiedLocation(candidate) {
+  const geo = candidate.geo;
+  const overture = candidate.evidence?.sources?.overture;
+  const latitude = Number(geo?.latitude);
+  const longitude = Number(geo?.longitude);
+
+  return Boolean(
+    geo &&
+    geo.verified === true &&
+    geo.integrityVerified === true &&
+    overture?.verified === true &&
+    Number.isFinite(latitude) &&
+    latitude >= -90 &&
+    latitude <= 90 &&
+    Number.isFinite(longitude) &&
+    longitude >= -180 &&
+    longitude <= 180
+  );
+}
+
+function hasVerifiedNearbyHotels(candidate) {
+  if (!Array.isArray(candidate.nearbyHotels)) {
+    return false;
+  }
+
+  return candidate.nearbyHotels.some((hotel) => {
+    const latitude = Number(hotel?.latitude);
+    const longitude = Number(hotel?.longitude);
+    const distanceMeters = Number(hotel?.distanceMeters);
+
+    return Boolean(
+      hotel &&
+      String(hotel.id || '').trim() &&
+      String(hotel.name || '').trim() &&
+      hotel.verified === true &&
+      hotel.cityContextVerified === true &&
+      Number.isFinite(latitude) &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      Number.isFinite(longitude) &&
+      longitude >= -180 &&
+      longitude <= 180 &&
+      Number.isFinite(distanceMeters) &&
+      distanceMeters >= 0
+    );
+  });
+}
+
 function prepareCandidate(candidate) {
   const qualityScore = getVideoQualityScore(candidate);
 
@@ -118,6 +223,7 @@ function auditCandidate(candidate) {
   const metadataEvidenceCount = Number(
     admission.uniqueEvidenceCount || 0
   );
+  const policy = getContentPolicy(candidate);
 
   if (admission.status !== 'accepted') {
     reasons.push('metadata-admission-missing');
@@ -125,6 +231,20 @@ function auditCandidate(candidate) {
 
   if (metadataEvidenceCount < MINIMUM_METADATA_EVIDENCE) {
     reasons.push('metadata-evidence-below-threshold');
+  }
+
+  if (
+    policy.requiresVerifiedLocation &&
+    !hasVerifiedLocation(candidate)
+  ) {
+    reasons.push('verified-location-required');
+  }
+
+  if (
+    policy.requiresNearbyHotels &&
+    !hasVerifiedNearbyHotels(candidate)
+  ) {
+    reasons.push('verified-nearby-hotel-required');
   }
 
   for (const audit of audits) {
@@ -144,6 +264,7 @@ function auditCandidate(candidate) {
   return {
     prepared,
     audits,
+    policy,
     reasons: uniqueReasons(reasons)
   };
 }
@@ -177,12 +298,20 @@ function main() {
     const id = String(candidate.id || '');
 
     if (currentIds.has(id)) {
-      rejected.push({ id, title: candidate.title || '', reasons: ['duplicate-existing'] });
+      rejected.push({
+        id,
+        title: candidate.title || '',
+        reasons: ['duplicate-existing']
+      });
       continue;
     }
 
     if (candidateIds.has(id)) {
-      rejected.push({ id, title: candidate.title || '', reasons: ['duplicate-candidate'] });
+      rejected.push({
+        id,
+        title: candidate.title || '',
+        reasons: ['duplicate-candidate']
+      });
       continue;
     }
 
@@ -194,6 +323,7 @@ function main() {
       rejected.push({
         id,
         title: candidate.title || '',
+        policy: result.policy.name,
         reasons: result.reasons,
         languages: result.audits.map((audit) => ({
           lang: audit.lang,
