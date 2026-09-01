@@ -4,17 +4,27 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 
 import { languages, defaultLang } from '../../../i18n/ui';
 
-import videos from '../../../data/videos.json';
+import { env } from 'cloudflare:workers';
 
 import {
 
   getVideoCardTitle,
 
-  getVideoSchema,
+  getCategoryName,
 
-  getCategoryName
+  getResolvedVideoCategory,
+
+  getVideoSeoStyleLabel,
+
+  getVideoSeoContent
 
 } from '../../../lib/videoSeo';
+
+import {
+  formatHotelDistance,
+  getNearbyHotelsForVideo,
+  resolveHotelDisplayName
+} from '../../../lib/nearbyHotels';
 
 interface Video {
 
@@ -42,51 +52,47 @@ interface Video {
 
   country?: string;
 
-}
+  geo?: {
+    latitude: number;
+    longitude: number;
+    verified?: boolean;
+    integrityVerified?: boolean;
+  };
 
-export async function getStaticPaths() {
-
-  const paths: Array<{
-
-    params: { lang: string; id: string };
-
-    props: { video: Video };
-
-  }> = [];
-
-  Object.keys(languages).forEach((lang) => {
-
-    (videos as unknown as Video[]).forEach((video) => {
-
-      paths.push({
-
-        params: {
-
-          lang,
-
-          id: video.id
-
-        },
-
-        props: {
-
-          video
-
-        }
-
-      });
-
-    });
-
-  });
-
-  return paths;
+  nearbyHotels?: Array<{
+    id: string;
+    name: string;
+    latinName?: string;
+    localName?: string;
+    city?: string;
+    country?: string;
+    address?: string;
+    latitude?: number;
+    longitude?: number;
+    distanceMeters?: number;
+    rank?: number;
+    provider?: string;
+    providerHotelId?: string;
+    starRating?: number;
+    guestRating?: number;
+    reviewCount?: number;
+    thumbnailUrl?: string;
+    bookingUrl?: string;
+    verified?: boolean;
+    cityContextVerified?: boolean;
+  }>;
 
 }
 
-const { lang } = Astro.params;
+export const prerender = false;
 
-const video = Astro.props.video as Video;
+interface VideoRow {
+
+  raw_json: string | null;
+
+}
+
+const { lang, id } = Astro.params;
 
 const currentLang =
 
@@ -96,17 +102,176 @@ const currentLang =
 
     : defaultLang;
 
+if (!id) {
+
+  return new Response(null, {
+
+    status: 404,
+
+    statusText: 'Not Found'
+
+  });
+
+}
+
+const db = (env as any).oldtowns_db;
+
+if (!db) {
+
+  throw new Error('D1 binding oldtowns_db is not available.');
+
+}
+
+const videoRow = await db
+
+  .prepare(`
+    SELECT raw_json
+    FROM videos
+    WHERE id = ?1
+      AND active = 1
+    LIMIT 1
+  `)
+
+  .bind(id)
+
+  .first() as VideoRow | null;
+
+if (!videoRow?.raw_json) {
+
+  return new Response(null, {
+
+    status: 404,
+
+    statusText: 'Not Found'
+
+  });
+
+}
+
+let video: Video;
+
+try {
+
+  video = JSON.parse(videoRow.raw_json) as Video;
+
+} catch {
+
+  throw new Error(`Invalid raw_json for video ${id}.`);
+
+}
+
+const hasTrustedHotelAnchor =
+  video.geo?.verified === true &&
+  video.geo?.integrityVerified === true;
+
+const nearbyHotelResult = hasTrustedHotelAnchor
+  ? await getNearbyHotelsForVideo(db, video.id, 30)
+  : { items: [], total: 0 };
+
+const embeddedNearbyHotels = hasTrustedHotelAnchor
+  ? (video.nearbyHotels || [])
+      .filter((hotel) => {
+        const distanceMeters = Number(hotel.distanceMeters);
+
+        return (
+          hotel?.verified === true &&
+          hotel?.cityContextVerified !== false &&
+          String(hotel?.id || '').trim().length > 0 &&
+          String(hotel?.name || '').trim().length > 0 &&
+          Number.isFinite(distanceMeters) &&
+          distanceMeters >= 0 &&
+          distanceMeters <= 3_000
+        );
+      })
+      .sort(
+        (left, right) =>
+          Number(left.distanceMeters) - Number(right.distanceMeters)
+      )
+      .slice(0, 30)
+      .map((hotel, index) => ({
+        id: hotel.id,
+        name: hotel.name,
+        latinName: hotel.latinName,
+        localName: hotel.localName,
+        city: hotel.city,
+        country: hotel.country,
+        address: hotel.address,
+        latitude: Number(hotel.latitude ?? video.geo?.latitude),
+        longitude: Number(hotel.longitude ?? video.geo?.longitude),
+        distanceMeters: Number(hotel.distanceMeters),
+        rank: Number(hotel.rank || index + 1),
+        provider: hotel.provider,
+        providerHotelId: hotel.providerHotelId,
+        starRating: hotel.starRating,
+        guestRating: hotel.guestRating,
+        reviewCount: hotel.reviewCount,
+        thumbnailUrl: hotel.thumbnailUrl,
+        bookingUrl: hotel.bookingUrl
+      }))
+  : [];
+
+const nearbyHotels = nearbyHotelResult.items.length > 0
+  ? nearbyHotelResult.items
+  : embeddedNearbyHotels;
+
+const nearbyHotelsTotal = nearbyHotelResult.items.length > 0
+  ? nearbyHotelResult.total
+  : embeddedNearbyHotels.length;
+
+const resolvedCategory =
+
+  getResolvedVideoCategory(video);
+
+const resolvedVideo: Video = {
+
+  ...video,
+
+  category: resolvedCategory,
+
+  nearbyHotels: nearbyHotels.slice(0, 3).map((hotel) => ({
+    id: hotel.id,
+    name: resolveHotelDisplayName(hotel, currentLang),
+    distanceMeters: hotel.distanceMeters,
+    guestRating: hotel.guestRating,
+    reviewCount: hotel.reviewCount,
+    bookingUrl: hotel.bookingUrl,
+    verified: true,
+    cityContextVerified: true
+  }))
+
+};
+
+const seoContent =
+
+  getVideoSeoContent(resolvedVideo, currentLang);
+
 const seoTitle =
 
-  getVideoCardTitle(video, currentLang);
+  seoContent.h1;
 
-const videoSchema =
+Astro.response.headers.set(
 
-  getVideoSchema(video, currentLang);
+  'X-Robots-Tag',
+
+  seoContent.robots
+
+);
+
+Astro.response.headers.set(
+
+  'Link',
+
+  `<${seoContent.canonicalUrl}>; rel="canonical"`
+
+);
 
 const categoryLabel =
 
-  getCategoryName(video.category, currentLang);
+  getCategoryName(resolvedCategory, currentLang);
+
+const descriptionStyleLabel =
+
+  getVideoSeoStyleLabel(video, currentLang);
 
 const locationLabel =
 
@@ -153,17 +318,62 @@ const countryUrl = video.country
   : null;
 
 
+const relatedRows = await db
+
+  .prepare(`
+    SELECT raw_json
+    FROM videos
+    WHERE id != ?1
+      AND active = 1
+    ORDER BY published_at DESC
+    LIMIT 300
+  `)
+
+  .bind(video.id)
+
+  .all() as { results?: VideoRow[] };
+
 const relatedVideos =
 
-  (videos as unknown as Video[])
+  (relatedRows.results || [])
 
-    .filter((item) =>
+    .map((row: VideoRow) => {
 
-      item.id !== video.id &&
+      if (!row.raw_json) {
 
-      item.category === video.category
+        return null;
 
-    )
+      }
+
+      try {
+
+        return JSON.parse(row.raw_json) as Video;
+
+      } catch {
+
+        return null;
+
+      }
+
+    })
+
+    .filter((item: Video | null): item is Video => {
+
+      if (item === null) {
+
+        return false;
+
+      }
+
+      return (
+
+        item.id !== video.id &&
+
+        getResolvedVideoCategory(item) === resolvedCategory
+
+      );
+
+    })
 
     .slice(0, 30);
 
@@ -659,163 +869,2217 @@ const label = (key: string) =>
 
   key;
 
-const descriptions: Record<string, string[]> = {
-
-  tr: [
-
-    `${locationLabel} bölgesini bu etkileyici 4K ${categoryLabel.toLocaleLowerCase('tr-TR')} deneyimiyle keşfedin. Tur, sokak atmosferini, kentsel ortamı ve günlük yaşamı gerçekçi bir bakış açısıyla sergiliyor.`,
-
-    `Old Towns Walks bu içeriği bölgeyi sanal olarak keşfetmek, seyahat fikirleri edinmek ve benzer videolar bulmak isteyen ziyaretçiler için düzenler. Video kaynağı: ${sourceName}.`
-
-  ],
-
-  en: [
-
-    `Explore ${locationLabel} through this immersive 4K ${categoryLabel.toLowerCase()} experience. The video offers a street-level view of the local atmosphere, urban surroundings and everyday life.`,
-
-    `Old Towns Walks organizes this content for viewers who want to explore the area virtually, discover travel ideas and find related experiences. Video source: ${sourceName}.`
-
-  ],
-
-  de: [
-
-    `Entdecke ${locationLabel} mit diesem immersiven 4K-Erlebnis. Die Tour zeigt die Straßenatmosphäre, die urbane Umgebung und das tägliche Leben aus einer realistischen Perspektive.`,
-
-    `Old Towns Walks ordnet dieses Video für Besucher ein, die die Region virtuell erkunden, Reiseideen entdecken und ähnliche Videos finden möchten. Videoquelle: ${sourceName}.`
-
-  ],
-
-  es: [
-
-    `Descubre ${locationLabel} mediante esta experiencia inmersiva en 4K. El recorrido muestra el ambiente de las calles, el entorno urbano y la vida cotidiana desde una perspectiva peatonal.`,
-
-    `Old Towns Walks organiza este contenido para quienes desean explorar la zona virtualmente, descubrir ideas de viaje y encontrar vídeos relacionados. Fuente: ${sourceName}.`
-
-  ],
-
-  it: [
-
-    `Scopri ${locationLabel} attraverso questa esperienza immersiva in 4K. Il percorso mostra l'atmosfera delle strade, l'ambiente urbano e la vita quotidiana da una prospettiva autentica.`,
-
-    `Old Towns Walks organizza questo contenuto per chi desidera esplorare virtualmente la zona, trovare idee di viaggio e scoprire video correlati. Fonte: ${sourceName}.`
-
-  ],
-
-  fr: [
-
-    `Découvrez ${locationLabel} grâce à cette expérience immersive en 4K. La visite présente l'ambiance des rues, l'environnement urbain et la vie quotidienne depuis une perspective réelle.`,
-
-    `Old Towns Walks organise ce contenu pour les visiteurs souhaitant explorer la région virtuellement, trouver des idées de voyage et découvrir des vidéos associées. Source : ${sourceName}.`
-
-  ],
-
-  ja: [
-
-    `${locationLabel}を4K映像で探索してください。街路の雰囲気、都市の景観、日常の様子をリアルな視点から楽しめます。`,
-
-    `Old Towns Walksでは、地域をバーチャルに探索し、旅行のアイデアや関連動画を見つけられるよう、このコンテンツを整理しています。動画提供元: ${sourceName}。`
-
-  ],
-
-  pt: [
-
-    `Explore ${locationLabel} através desta experiência imersiva em 4K. O passeio mostra a atmosfera das ruas, o ambiente urbano e a vida cotidiana.`,
-
-    `Old Towns Walks organiza este conteúdo para quem deseja explorar a região virtualmente, encontrar ideias de viagem e descobrir vídeos relacionados. Fonte: ${sourceName}.`
-
-  ],
-
-  ru: [
-
-    `Исследуйте ${locationLabel} в формате 4K. Видео показывает атмосферу улиц, городское окружение и повседневную жизнь.`,
-
-    `Old Towns Walks организует этот материал для тех, кто хочет виртуально познакомиться с районом и найти похожие видео. Источник: ${sourceName}.`
-
-  ],
-
-  zh: [
-
-    `通过这段4K视频探索${locationLabel}。内容展示当地街道氛围、城市环境和日常生活。`,
-
-    `Old Towns Walks 整理此内容，帮助用户虚拟探索该地区并发现相关视频。视频来源：${sourceName}。`
-
-  ],
-
-  ko: [
-
-    `4K 영상으로 ${locationLabel}을 탐험해 보세요. 거리 분위기와 도시 환경, 일상의 모습을 실제 시점에서 경험할 수 있습니다.`,
-
-    `Old Towns Walks는 지역을 가상으로 둘러보고 관련 영상을 찾을 수 있도록 이 콘텐츠를 구성합니다. 영상 출처: ${sourceName}.`
-
-  ],
-
-  ar: [
-
-    `استكشف ${locationLabel} من خلال تجربة غامرة بدقة 4K. تعرض الجولة أجواء الشوارع والمشهد الحضري والحياة اليومية.`,
-
-    `ينظم Old Towns Walks هذا المحتوى للزوار الذين يرغبون في استكشاف المنطقة افتراضيًا والعثور على فيديوهات مشابهة. المصدر: ${sourceName}.`
-
-  ],
-
-  hi: [
-
-    `${locationLabel} को इस 4K अनुभव के माध्यम से देखें। यह वीडियो सड़क के माहौल, शहरी परिवेश और रोज़मर्रा की जिंदगी को वास्तविक दृष्टिकोण से दिखाता है।`,
-
-    `Old Towns Walks इस सामग्री को क्षेत्र को वर्चुअली देखने और संबंधित वीडियो खोजने वाले दर्शकों के लिए व्यवस्थित करता है। स्रोत: ${sourceName}.`
-
-  ],
-
-  nl: [
-
-    `Ontdek ${locationLabel} met deze meeslepende 4K-ervaring. De video toont de sfeer van de straten, de stedelijke omgeving en het dagelijkse leven.`,
-
-    `Old Towns Walks organiseert deze content voor bezoekers die het gebied virtueel willen ontdekken en vergelijkbare video's willen vinden. Bron: ${sourceName}.`
-
-  ],
-
-  pl: [
-
-    `Odkryj ${locationLabel} dzięki temu doświadczeniu w jakości 4K. Film pokazuje atmosferę ulic, miejskie otoczenie i codzienne życie.`,
-
-    `Old Towns Walks porządkuje ten materiał dla osób, które chcą wirtualnie odkrywać okolicę i znaleźć podobne filmy. Źródło: ${sourceName}.`
-
-  ],
-
-  sv: [
-
-    `Upptäck ${locationLabel} genom denna uppslukande 4K-upplevelse. Videon visar gatulivet, stadsmiljön och vardagen.`,
-
-    `Old Towns Walks organiserar innehållet för besökare som vill utforska området virtuellt och hitta liknande videor. Källa: ${sourceName}.`
-
-  ],
-
-  id: [
-
-    `Jelajahi ${locationLabel} melalui pengalaman 4K yang imersif ini. Video menampilkan suasana jalan, lingkungan kota, dan kehidupan sehari-hari.`,
-
-    `Old Towns Walks mengatur konten ini bagi pengunjung yang ingin menjelajahi kawasan secara virtual dan menemukan video terkait. Sumber: ${sourceName}.`
-
-  ],
-
-  vi: [
-
-    `Khám phá ${locationLabel} qua trải nghiệm 4K sống động này. Video cho thấy bầu không khí đường phố, không gian đô thị và cuộc sống hằng ngày.`,
-
-    `Old Towns Walks sắp xếp nội dung này cho những người muốn khám phá khu vực trực tuyến và tìm các video liên quan. Nguồn: ${sourceName}.`
-
-  ]
-
+function hashText(value: string) {
+  let hash = 2166136261;
+
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+function formatVideoDate(value: string | undefined, lang: string) {
+  if (!value) return '';
+
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return '';
+
+  try {
+    return new Intl.DateTimeFormat(lang, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(date);
+  } catch {
+    return value.slice(0, 10);
+  }
+}
+
+function cleanSourceTitle(value: string) {
+  return String(value || '')
+    .replace(/https?:\/\/\S+/gi, ' ')
+    .replace(/#[\p{L}\p{N}_-]+/gu, ' ')
+    .replace(/[\u{1F1E6}-\u{1F1FF}]{2}/gu, ' ')
+    .replace(/[\p{Extended_Pictographic}\uFE0F]/gu, ' ')
+    .replace(/[【】\[\]<>]/g, ' ')
+    .replace(/\b(?:4K|8K|HDR|UHD|60FPS|60\s*FPS|ULTRA\s*HD|ASMR|NO\s*TALKING|CAPTIONS?)\b/gi, ' ')
+    .replace(/[|•·]+/g, ' | ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 180);
+}
+
+function normalizeComparison(value: string) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase()
+    .replace(/[.,|–—-]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function looksLikeDateDetail(value: string) {
+  const normalized = normalizeComparison(value);
+
+  if (!normalized) return false;
+
+  const hasYear = /\b(?:19|20)\d{2}\b/.test(normalized);
+  const numericDate = /^\d{1,2}\s+\d{1,2}\s+(?:19|20)\d{2}$/.test(normalized);
+  const monthDate = /^\d{1,2}\s+[\p{L}\p{M}.]+\s+(?:19|20)\d{2}$/u.test(normalized);
+  const yearMonth = /^(?:19|20)\d{2}\s+[\p{L}\p{M}.]+$/u.test(normalized);
+  const monthYear = /^[\p{L}\p{M}.]+\s+(?:19|20)\d{2}$/u.test(normalized);
+
+  return numericDate || monthDate || yearMonth || monthYear || (hasYear && normalized.split(' ').length <= 5);
+}
+
+function extractSeoDetail(
+  title: string,
+  publishedAt: string | undefined,
+  lang: string
+) {
+  const parts = title
+    .split('|')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (parts.length < 3) return '';
+
+  const detail = parts.slice(1, -1).join(' | ').trim();
+  const formattedDate = formatVideoDate(publishedAt, lang);
+
+  if (!detail || looksLikeDateDetail(detail)) return '';
+
+  if (
+    formattedDate &&
+    normalizeComparison(detail) === normalizeComparison(formattedDate)
+  ) {
+    return '';
+  }
+
+  return detail;
+}
+
+const detailStopWords = new Set([
+  'best','ultimate','amazing','incredible','beautiful','famous','popular','top','hidden',
+  'must','see','why','how','this','that','these','those','world','worlds','discover','discovery',
+  'explore','exploring','experience','experiences','relaxing','cinematic','virtual','video','videos',
+  'walking','walk','tour','tours','travel','city','streets','street','full','complete','true',
+  'hour','hours','minute','minutes','day','days','spring','summer','autumn','winter','record','breaking',
+  'snow','snowy','rain','rainy','night','evening','wet','storm','scorching','hot','long',
+  'sound','immersive','caption','captions','with','and','the','in','at','of','for','a','an','to','from','via'
+]);
+
+function removeKnownLocationWords(value: string, video: Video) {
+  let result = String(value || '');
+
+  for (const literal of [video.city, video.country]) {
+    const item = String(literal || '').trim();
+    if (!item) continue;
+
+    result = result.replace(
+      new RegExp(`(^|[^\\p{L}\\p{N}])${escapeRegExp(item)}(?=$|[^\\p{L}\\p{N}])`, 'giu'),
+      ' '
+    );
+  }
+
+  return result;
+}
+
+function cleanDetailCandidate(value: string, video: Video) {
+  return removeKnownLocationWords(value, video)
+    .replace(/\b(?:19|20)\d{2}\b/g, ' ')
+    .replace(/\b\d+(?:\.\d+)?\s*(?:h|hr|hrs|hour|hours|min|mins|minute|minutes)\b/gi, ' ')
+    .replace(/\b(?:UK|USA|UAE|POV|HDR|UHD|ASMR|FPS)\b/gi, ' ')
+    .replace(/\b(?:walking|walk|tour|tours|virtual|video|full|complete|captions?|immersive|sound|ultra|city)\b/gi, ' ')
+    .replace(/[(){}\[\]]/g, ' ')
+    .replace(/^[\s,:;|\-–—]+|[\s,:;|\-–—]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isSafeDetailCandidate(value: string, video: Video) {
+  const cleaned = String(value || '').trim();
+  if (cleaned.length < 3 || cleaned.length > 64) return false;
+  if (looksLikeDateDetail(cleaned)) return false;
+  if (/[!?]/.test(cleaned)) return false;
+  if (/^\d+$/.test(cleaned)) return false;
+
+  const normalized = normalizeComparison(cleaned);
+  if (!normalized) return false;
+
+  const city = normalizeComparison(video.city || '');
+  const country = normalizeComparison(video.country || '');
+  if (normalized === city || normalized === country) return false;
+
+  const words = normalized.split(' ').filter(Boolean);
+  if (!words.length || words.length > 7) return false;
+
+  const meaningful = words.filter(
+    (word) => /[\p{L}\p{N}]/u.test(word) && !detailStopWords.has(word)
+  );
+  if (!meaningful.length) return false;
+
+  const weakCount = words.filter((word) => detailStopWords.has(word)).length;
+  if (weakCount >= Math.max(2, Math.ceil(words.length * 0.6))) return false;
+
+  return /[\p{L}]/u.test(cleaned);
+}
+
+function extractAirportDetailFromTitle(title: string) {
+  const source = String(title || '')
+    .replace(/[\u{1F1E6}-\u{1F1FF}]{2}/gu, ' ')
+    .replace(/[\p{Extended_Pictographic}\uFE0F]/gu, ' ')
+    .replace(/[【】\[\]<>]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  const airportMatch = source.match(
+    /([A-Z][\p{L}\p{M}.'’\-]+(?:\s+[A-Z][\p{L}\p{M}.'’\-]+){0,5}\s+(?:International\s+)?Airport)\b/u
+  );
+
+  if (!airportMatch?.[1]) return '';
+
+  const airport = airportMatch[1].trim();
+  const codeMatch = source.match(/\(([A-Z]{3})\)/);
+  const terminalMatch = source.match(/\bTerminal\s+([0-9]+[A-Z]?)\b/i);
+
+  let result = airport;
+
+  if (codeMatch?.[1] && !result.includes(`(${codeMatch[1]})`)) {
+    result += ` (${codeMatch[1]})`;
+  }
+
+  if (terminalMatch?.[1] && !/\bTerminal\b/i.test(result)) {
+    result += ` – Terminal ${terminalMatch[1]}`;
+  }
+
+  return result;
+}
+
+function extractFromToDetail(title: string, video: Video) {
+  const source = cleanSourceTitle(title);
+  let match = source.match(
+    /\bfrom\s+(.+?)\s+to\s+(.+?)(?=\s+(?:via|through)\b|\s+\||\s+[–—-]\s+|$)/i
+  );
+
+  if (!match) {
+    const segments = source
+      .split(/\s+\|\s+|\s+[–—]\s+|\s+-\s+/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    for (const segment of segments) {
+      const direct = segment.match(/^(.+?)\s+to\s+(.+?)$/i);
+      if (direct) {
+        match = direct;
+        break;
+      }
+    }
+  }
+
+  if (!match) return '';
+
+  const start = cleanDetailCandidate(match[1], video);
+  const end = cleanDetailCandidate(match[2], video);
+
+  if (!isSafeDetailCandidate(start, video) || !isSafeDetailCandidate(end, video)) {
+    return '';
+  }
+
+  return `${start} → ${end}`;
+}
+
+function extractTitleDetail(title: string, video: Video) {
+  const source = cleanSourceTitle(title);
+  const fromTo = extractFromToDetail(title, video);
+  if (fromTo) return fromTo;
+
+  const candidates = source
+    .split(/\s+\|\s+|\s+[–—]\s+|\s+-\s+/)
+    .map((part) => cleanDetailCandidate(part, video))
+    .filter((part) => isSafeDetailCandidate(part, video));
+
+  candidates.sort((a, b) => {
+    const aWords = a.split(/\s+/).length;
+    const bWords = b.split(/\s+/).length;
+    const aCaps = /^[A-Z0-9 &'’.-]+$/.test(a) ? 2 : 0;
+    const bCaps = /^[A-Z0-9 &'’.-]+$/.test(b) ? 2 : 0;
+    return (bCaps + Math.min(bWords, 5)) - (aCaps + Math.min(aWords, 5));
+  });
+
+  return candidates[0] || '';
+}
+
+function extractVideoSpecificDetail(
+  video: Video,
+  seoTitleValue: string,
+  lang: string
+) {
+  if (video.category === 'Airport Walks') {
+    const airportDetail = extractAirportDetailFromTitle(video.title);
+    if (airportDetail) return airportDetail;
+  }
+
+  const seoDetail = extractSeoDetail(
+    seoTitleValue,
+    video.publishedAt,
+    lang
+  );
+
+  if (seoDetail && isSafeDetailCandidate(seoDetail, video)) {
+    return seoDetail;
+  }
+
+  const titleDetail = extractTitleDetail(video.title, video);
+  if (titleDetail) return titleDetail;
+
+  return '';
+}
+
+function extractRoutePlaces(description?: string) {
+  if (!description) return [] as string[];
+
+  const source = String(description).replace(/\r/g, ' ');
+  const pattern = /(?:^|\s)(?:\d{1,2}:)?\d{1,2}:\d{2}\s*[-–—:]?\s*(.*?)(?=\s+(?:\d{1,2}:)?\d{1,2}:\d{2}\b|$)/g;
+  const places: string[] = [];
+  const seen = new Set<string>();
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(source)) !== null) {
+    const place = String(match[1] || '')
+      .replace(/https?:\/\/\S+/gi, ' ')
+      .replace(/[#@][\p{L}\p{N}_-]+/gu, ' ')
+      .replace(/\b(?:intro|preview|outro|subscribe|chapter|chapters|start|ending)\b/gi, ' ')
+      .replace(/[|•·]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 72);
+
+    const key = place.toLocaleLowerCase();
+
+    if (
+      place.length >= 3 &&
+      place.length <= 72 &&
+      !looksLikeDateDetail(place) &&
+      !seen.has(key)
+    ) {
+      seen.add(key);
+      places.push(place);
+    }
+
+    if (places.length >= 4) break;
+  }
+
+  return places;
+}
+
+function formatRouteList(items: string[], lang: string) {
+  if (!items.length) return '';
+
+  try {
+    return new Intl.ListFormat(lang, {
+      style: 'long',
+      type: 'conjunction'
+    }).format(items);
+  } catch {
+    return items.join(', ');
+  }
+}
+
+function normalizeNarrativeQuality(value?: string) {
+  const badge = String(value || '').trim();
+  if (!badge) return '';
+
+  if (/8K/i.test(badge)) {
+    return /60\s*FPS/i.test(badge) ? '8K 60FPS' : '8K';
+  }
+
+  if (/4K/i.test(badge)) {
+    return /60\s*FPS/i.test(badge) ? '4K 60FPS' : '4K';
+  }
+
+  return '';
+}
+
+function getNarrativeSceneKey(video: Video) {
+  const title = String(video.title || '').toLocaleLowerCase();
+
+  if (video.category === 'Night & Rain') {
+    const hasRain = /\b(?:rain|rainy|storm|wet)\b/i.test(title);
+    const hasNight = /\b(?:night|evening|nighttime|after dark)\b/i.test(title);
+
+    if (hasRain && hasNight) return 'rainNight';
+    if (hasRain) return 'rain';
+    if (hasNight) return 'night';
+    return 'night';
+  }
+
+  switch (video.category) {
+    case 'Airport Walks': return 'airport';
+    case 'Beach Walking Tours': return 'beach';
+    case 'Drone & Aerial': return 'drone';
+    case 'Street Food': return 'food';
+    case 'Nature Trails': return 'nature';
+    case 'Museums & Culture': return 'culture';
+    case 'POV Rides': return 'pov';
+    case 'Documentaries': return 'documentary';
+    default: return 'walk';
+  }
+}
+
+type NarrativeContext = {
+  lang: string;
+  mode: string;
+  location: string;
+  category: string;
+  scene: string;
+  detail: string;
+  route: string;
+  source: string;
+  date: string;
+  quality: string;
+  seed: number;
 };
 
-const pageDescription =
+type NarrativePack = {
+  introDetail: string[];
+  introBasic: string[];
+  route: string[];
+  flow: string[];
+  discovery: string[];
+  close: string[];
+};
 
-  descriptions[currentLang] ||
+function fillNarrative(
+  template: string,
+  values: Record<string, string>
+) {
+  return template.replace(
+    /\{(\w+)\}/g,
+    (_, key: string) => values[key] || ''
+  );
+}
 
-  descriptions.en;
+function pickNarrative(
+  items: string[],
+  seed: number,
+  offset: number
+) {
+  return items[(seed + offset) % items.length];
+}
 
-const metaDescription =
+const sceneText: Record<string, Record<string, string>> = {
+  en: {
+    walk: `streets, squares, architecture and everyday city life`,
+    airport: `terminal spaces, passenger areas and the atmosphere inside the airport`,
+    beach: `shoreline, promenades and the coastal atmosphere`,
+    night: `illuminated streets, evening city life and the nighttime atmosphere`,
+    rain: `rain-soaked streets, reflections and the changing urban atmosphere`,
+    rainNight: `illuminated wet streets, reflections and the nighttime city atmosphere`,
+    drone: `cityscape, landmarks and the surrounding landscape from above`,
+    food: `food stalls, markets and the local street-food atmosphere`,
+    nature: `trails, landscape and natural surroundings`,
+    culture: `museums, historic spaces, architecture and cultural surroundings`,
+    pov: `roads, neighborhoods and the changing view along the journey`,
+    documentary: `places, local surroundings and travel context captured in documentary form`
+  },
+  tr: {
+    walk: `sokaklar, meydanlar, mimari ve günlük şehir yaşamı`,
+    airport: `terminal alanları, yolcu bölümleri ve havalimanı içindeki atmosfer`,
+    beach: `sahil şeridi, yürüyüş yolları ve kıyı atmosferi`,
+    night: `aydınlatılmış sokaklar, akşam şehir yaşamı ve gece atmosferi`,
+    rain: `yağmurlu sokaklar, yansımalar ve değişen şehir atmosferi`,
+    rainNight: `aydınlatılmış ıslak sokaklar, yansımalar ve gece şehir atmosferi`,
+    drone: `şehir dokusu, önemli noktalar ve çevredeki manzaranın havadan görünümü`,
+    food: `yemek tezgâhları, pazarlar ve yerel sokak lezzetleri atmosferi`,
+    nature: `patikalar, manzara ve doğal çevre`,
+    culture: `müzeler, tarihi alanlar, mimari ve kültürel çevre`,
+    pov: `yollar, mahalleler ve yolculuk boyunca değişen çevre`,
+    documentary: `belgesel anlatımı içinde gösterilen yerler, yerel çevre ve seyahat bağlamı`
+  },
+  de: {
+    walk: `Straßen, Plätze, Architektur und städtischer Alltag`,
+    airport: `Terminalbereiche, Passagierzonen und die Atmosphäre im Flughafen`,
+    beach: `Küstenlinie, Promenaden und die Atmosphäre am Meer`,
+    night: `beleuchtete Straßen, abendliches Stadtleben und Nachtatmosphäre`,
+    rain: `regennasse Straßen, Spiegelungen und wechselnde Stadtatmosphäre`,
+    rainNight: `beleuchtete nasse Straßen, Spiegelungen und nächtliche Stadtatmosphäre`,
+    drone: `Stadtbild, markante Orte und die umliegende Landschaft aus der Luft`,
+    food: `Essensstände, Märkte und lokale Street-Food-Atmosphäre`,
+    nature: `Wege, Landschaft und natürliche Umgebung`,
+    culture: `Museen, historische Räume, Architektur und kulturelle Umgebung`,
+    pov: `Straßen, Viertel und wechselnde Eindrücke entlang der Fahrt`,
+    documentary: `Orte, lokale Umgebung und Reisekontext in dokumentarischer Form`
+  },
+  es: {
+    walk: `calles, plazas, arquitectura y vida urbana cotidiana`,
+    airport: `espacios de la terminal, zonas de pasajeros y ambiente interior del aeropuerto`,
+    beach: `costa, paseos marítimos y ambiente junto al mar`,
+    night: `calles iluminadas, vida urbana nocturna y ambiente de la noche`,
+    rain: `calles mojadas por la lluvia, reflejos y ambiente urbano cambiante`,
+    rainNight: `calles mojadas e iluminadas, reflejos y ambiente urbano nocturno`,
+    drone: `paisaje urbano, lugares destacados y entorno visto desde el aire`,
+    food: `puestos de comida, mercados y ambiente gastronómico callejero local`,
+    nature: `senderos, paisaje y entorno natural`,
+    culture: `museos, espacios históricos, arquitectura y entorno cultural`,
+    pov: `carreteras, barrios y vistas cambiantes a lo largo del trayecto`,
+    documentary: `lugares, entorno local y contexto de viaje presentados en formato documental`
+  },
+  it: {
+    walk: `strade, piazze, architettura e vita urbana quotidiana`,
+    airport: `spazi del terminal, aree passeggeri e atmosfera interna dell'aeroporto`,
+    beach: `litorale, passeggiate e atmosfera costiera`,
+    night: `strade illuminate, vita serale e atmosfera notturna`,
+    rain: `strade bagnate dalla pioggia, riflessi e atmosfera urbana mutevole`,
+    rainNight: `strade bagnate e illuminate, riflessi e atmosfera urbana notturna`,
+    drone: `paesaggio urbano, punti di riferimento e dintorni visti dall'alto`,
+    food: `bancarelle, mercati e atmosfera dello street food locale`,
+    nature: `sentieri, paesaggio e ambiente naturale`,
+    culture: `musei, spazi storici, architettura e ambiente culturale`,
+    pov: `strade, quartieri e panorami che cambiano lungo il percorso`,
+    documentary: `luoghi, ambiente locale e contesto di viaggio raccontati in forma documentaria`
+  },
+  fr: {
+    walk: `rues, places, architecture et vie urbaine quotidienne`,
+    airport: `espaces du terminal, zones passagers et ambiance intérieure de l'aéroport`,
+    beach: `littoral, promenades et ambiance côtière`,
+    night: `rues éclairées, vie urbaine du soir et ambiance nocturne`,
+    rain: `rues mouillées, reflets et ambiance urbaine changeante`,
+    rainNight: `rues mouillées et éclairées, reflets et ambiance urbaine nocturne`,
+    drone: `paysage urbain, points de repère et environnement vus depuis les airs`,
+    food: `stands, marchés et ambiance locale de street food`,
+    nature: `sentiers, paysages et environnement naturel`,
+    culture: `musées, espaces historiques, architecture et environnement culturel`,
+    pov: `routes, quartiers et vues changeantes au fil du trajet`,
+    documentary: `lieux, environnement local et contexte de voyage présentés sous forme documentaire`
+  },
+  ja: {
+    walk: `街路、広場、建築、日常の都市風景`,
+    airport: `ターミナル空間、旅客エリア、空港内部の雰囲気`,
+    beach: `海岸線、遊歩道、海辺の雰囲気`,
+    night: `ライトアップされた通り、夜の街の動き、夜間の雰囲気`,
+    rain: `雨に濡れた通り、反射する光、変化する都市の雰囲気`,
+    rainNight: `雨に濡れて光る通り、反射、夜の都市風景`,
+    drone: `上空から見た街並み、ランドマーク、周辺の景観`,
+    food: `屋台、市場、地域のストリートフードの雰囲気`,
+    nature: `トレイル、景観、自然環境`,
+    culture: `博物館、歴史的空間、建築、文化的な周辺環境`,
+    pov: `道路、地区、移動とともに変わる景色`,
+    documentary: `ドキュメンタリー形式で描かれる場所、地域の環境、旅の背景`
+  },
+  pt: {
+    walk: `ruas, praças, arquitetura e vida urbana cotidiana`,
+    airport: `áreas do terminal, espaços de passageiros e atmosfera interna do aeroporto`,
+    beach: `linha costeira, calçadões e atmosfera litorânea`,
+    night: `ruas iluminadas, vida urbana noturna e atmosfera da noite`,
+    rain: `ruas molhadas pela chuva, reflexos e atmosfera urbana em mudança`,
+    rainNight: `ruas molhadas e iluminadas, reflexos e atmosfera urbana noturna`,
+    drone: `paisagem urbana, pontos de referência e arredores vistos do alto`,
+    food: `barracas, mercados e atmosfera da comida de rua local`,
+    nature: `trilhas, paisagem e ambiente natural`,
+    culture: `museus, espaços históricos, arquitetura e ambiente cultural`,
+    pov: `estradas, bairros e vistas que mudam ao longo do percurso`,
+    documentary: `lugares, ambiente local e contexto de viagem apresentados em formato documental`
+  },
+  ru: {
+    walk: `улицы, площади, архитектура и повседневная городская жизнь`,
+    airport: `пространства терминала, пассажирские зоны и атмосфера внутри аэропорта`,
+    beach: `береговая линия, набережные и прибрежная атмосфера`,
+    night: `освещённые улицы, вечерняя городская жизнь и ночная атмосфера`,
+    rain: `мокрые улицы, отражения и меняющаяся городская атмосфера`,
+    rainNight: `освещённые мокрые улицы, отражения и ночная атмосфера города`,
+    drone: `городской пейзаж, заметные места и окружающая местность с воздуха`,
+    food: `уличные прилавки, рынки и атмосфера местной еды`,
+    nature: `тропы, пейзажи и природное окружение`,
+    culture: `музеи, исторические пространства, архитектура и культурная среда`,
+    pov: `дороги, районы и меняющиеся виды по ходу поездки`,
+    documentary: `места, местная среда и контекст путешествия в документальном формате`
+  },
+  zh: {
+    walk: `街道、广场、建筑与日常城市生活`,
+    airport: `航站楼空间、旅客区域与机场内部氛围`,
+    beach: `海岸线、滨海步道与海边氛围`,
+    night: `灯光下的街道、夜间城市生活与夜色氛围`,
+    rain: `雨中的街道、倒影与不断变化的城市氛围`,
+    rainNight: `灯光下的湿润街道、倒影与夜间城市氛围`,
+    drone: `从空中看到的城市景观、地标与周边环境`,
+    food: `小吃摊、市场与当地街头美食氛围`,
+    nature: `步道、景观与自然环境`,
+    culture: `博物馆、历史空间、建筑与文化环境`,
+    pov: `道路、街区与旅途中不断变化的视野`,
+    documentary: `以纪录片形式呈现的地点、当地环境与旅行背景`
+  },
+  ko: {
+    walk: `거리, 광장, 건축물과 일상의 도시 풍경`,
+    airport: `터미널 공간, 승객 구역과 공항 내부 분위기`,
+    beach: `해안선, 산책로와 해변 분위기`,
+    night: `불빛이 켜진 거리, 저녁 도시 생활과 야간 분위기`,
+    rain: `비에 젖은 거리, 반사되는 불빛과 변화하는 도시 분위기`,
+    rainNight: `젖고 밝게 빛나는 거리, 반사와 야간 도시 분위기`,
+    drone: `상공에서 바라본 도시 풍경, 주요 지점과 주변 경관`,
+    food: `음식 노점, 시장과 현지 길거리 음식 분위기`,
+    nature: `트레일, 풍경과 자연 환경`,
+    culture: `박물관, 역사 공간, 건축과 문화적 환경`,
+    pov: `도로, 동네와 이동하며 달라지는 풍경`,
+    documentary: `다큐멘터리 형식으로 담긴 장소, 지역 환경과 여행 맥락`
+  },
+  ar: {
+    walk: `الشوارع والساحات والعمارة والحياة اليومية في المدينة`,
+    airport: `مساحات مبنى المطار ومناطق المسافرين والأجواء داخل المطار`,
+    beach: `الساحل والممرات البحرية والأجواء الساحلية`,
+    night: `الشوارع المضاءة وحياة المدينة مساءً والأجواء الليلية`,
+    rain: `الشوارع المبتلة بالمطر والانعكاسات وتغير أجواء المدينة`,
+    rainNight: `الشوارع المبتلة والمضاءة والانعكاسات وأجواء المدينة الليلية`,
+    drone: `المشهد الحضري والمعالم والمناطق المحيطة من الجو`,
+    food: `أكشاك الطعام والأسواق وأجواء المأكولات الشعبية المحلية`,
+    nature: `المسارات والمناظر الطبيعية والبيئة المحيطة`,
+    culture: `المتاحف والأماكن التاريخية والعمارة والمحيط الثقافي`,
+    pov: `الطرق والأحياء والمشاهد المتغيرة أثناء الرحلة`,
+    documentary: `الأماكن والبيئة المحلية وسياق السفر في قالب وثائقي`
+  },
+  hi: {
+    walk: `सड़कें, चौक, वास्तुकला और रोज़मर्रा का शहरी जीवन`,
+    airport: `टर्मिनल क्षेत्र, यात्री स्थान और हवाई अड्डे का अंदरूनी माहौल`,
+    beach: `समुद्र तट, सैरगाह और तटीय वातावरण`,
+    night: `रोशन सड़कें, शाम का शहरी जीवन और रात का माहौल`,
+    rain: `बारिश से भीगी सड़कें, प्रतिबिंब और बदलता शहरी वातावरण`,
+    rainNight: `भीगी और रोशन सड़कें, प्रतिबिंब और रात का शहरी वातावरण`,
+    drone: `ऊपर से दिखाई देने वाला शहर, प्रमुख स्थल और आसपास का दृश्य`,
+    food: `खाने के स्टॉल, बाज़ार और स्थानीय स्ट्रीट फूड का माहौल`,
+    nature: `पगडंडियाँ, प्राकृतिक दृश्य और आसपास का वातावरण`,
+    culture: `संग्रहालय, ऐतिहासिक स्थान, वास्तुकला और सांस्कृतिक परिवेश`,
+    pov: `सड़कें, पड़ोस और यात्रा के साथ बदलते दृश्य`,
+    documentary: `डॉक्यूमेंट्री रूप में दिखाए गए स्थान, स्थानीय परिवेश और यात्रा संदर्भ`
+  },
+  nl: {
+    walk: `straten, pleinen, architectuur en het dagelijkse stadsleven`,
+    airport: `terminalruimtes, passagierszones en de sfeer binnen de luchthaven`,
+    beach: `kustlijn, promenades en de sfeer aan zee`,
+    night: `verlichte straten, avondleven en nachtelijke stadssfeer`,
+    rain: `natte straten, weerspiegelingen en veranderende stadssfeer`,
+    rainNight: `verlichte natte straten, weerspiegelingen en nachtelijke stadssfeer`,
+    drone: `stadsbeeld, herkenningspunten en omgeving vanuit de lucht`,
+    food: `eetkraampjes, markten en lokale streetfoodsfeer`,
+    nature: `paden, landschap en natuurlijke omgeving`,
+    culture: `musea, historische plekken, architectuur en culturele omgeving`,
+    pov: `wegen, wijken en veranderende uitzichten onderweg`,
+    documentary: `plaatsen, lokale omgeving en reiscontext in documentairevorm`
+  },
+  pl: {
+    walk: `ulice, place, architekturę i codzienne życie miasta`,
+    airport: `przestrzenie terminalu, strefy pasażerskie i atmosferę wewnątrz lotniska`,
+    beach: `linię brzegową, promenady i nadmorską atmosferę`,
+    night: `oświetlone ulice, wieczorne życie miasta i nocną atmosferę`,
+    rain: `mokre ulice, odbicia i zmieniającą się miejską atmosferę`,
+    rainNight: `oświetlone mokre ulice, odbicia i nocną atmosferę miasta`,
+    drone: `panoramę miasta, charakterystyczne miejsca i otoczenie z lotu ptaka`,
+    food: `stoiska, targi i atmosferę lokalnego street foodu`,
+    nature: `szlaki, krajobraz i naturalne otoczenie`,
+    culture: `muzea, przestrzenie historyczne, architekturę i otoczenie kulturowe`,
+    pov: `drogi, dzielnice i zmieniające się widoki podczas podróży`,
+    documentary: `miejsca, lokalne otoczenie i kontekst podróży w formie dokumentalnej`
+  },
+  sv: {
+    walk: `gator, torg, arkitektur och vardagligt stadsliv`,
+    airport: `terminalområden, passagerarytor och atmosfären inne på flygplatsen`,
+    beach: `kustlinje, promenader och atmosfären vid havet`,
+    night: `upplysta gator, kvällsliv och nattlig stadsatmosfär`,
+    rain: `regnvåta gator, reflektioner och skiftande stadsatmosfär`,
+    rainNight: `upplysta våta gator, reflektioner och nattlig stadsatmosfär`,
+    drone: `stadsbild, landmärken och omgivningar från luften`,
+    food: `matstånd, marknader och lokal street food-atmosfär`,
+    nature: `leder, landskap och naturmiljö`,
+    culture: `museer, historiska miljöer, arkitektur och kulturella omgivningar`,
+    pov: `vägar, stadsdelar och föränderliga vyer under resan`,
+    documentary: `platser, lokal miljö och resekontext i dokumentär form`
+  },
+  id: {
+    walk: `jalan, alun-alun, arsitektur, dan kehidupan kota sehari-hari`,
+    airport: `ruang terminal, area penumpang, dan suasana di dalam bandara`,
+    beach: `garis pantai, promenade, dan suasana pesisir`,
+    night: `jalan yang diterangi, kehidupan kota pada malam hari, dan suasana malam`,
+    rain: `jalan basah karena hujan, pantulan cahaya, dan suasana kota yang berubah`,
+    rainNight: `jalan basah yang diterangi, pantulan cahaya, dan suasana kota pada malam hari`,
+    drone: `pemandangan kota, titik penting, dan lingkungan sekitar dari udara`,
+    food: `gerai makanan, pasar, dan suasana kuliner jalanan lokal`,
+    nature: `jalur, lanskap, dan lingkungan alami`,
+    culture: `museum, ruang bersejarah, arsitektur, dan lingkungan budaya`,
+    pov: `jalan, lingkungan, dan pemandangan yang berubah sepanjang perjalanan`,
+    documentary: `tempat, lingkungan lokal, dan konteks perjalanan dalam format dokumenter`
+  },
+  vi: {
+    walk: `đường phố, quảng trường, kiến trúc và nhịp sống đô thị hằng ngày`,
+    airport: `không gian nhà ga, khu vực hành khách và bầu không khí bên trong sân bay`,
+    beach: `đường bờ biển, lối dạo và không khí ven biển`,
+    night: `đường phố lên đèn, nhịp sống buổi tối và không khí ban đêm`,
+    rain: `đường phố ướt mưa, ánh phản chiếu và bầu không khí đô thị thay đổi`,
+    rainNight: `đường phố ướt và lên đèn, ánh phản chiếu cùng không khí thành phố về đêm`,
+    drone: `toàn cảnh thành phố, các điểm nổi bật và cảnh quan xung quanh từ trên cao`,
+    food: `quầy thức ăn, chợ và không khí ẩm thực đường phố địa phương`,
+    nature: `đường mòn, cảnh quan và môi trường tự nhiên`,
+    culture: `bảo tàng, không gian lịch sử, kiến trúc và môi trường văn hóa`,
+    pov: `đường sá, khu phố và góc nhìn thay đổi trong suốt hành trình`,
+    documentary: `địa điểm, môi trường địa phương và bối cảnh du lịch dưới dạng phim tài liệu`
+  }
+};
 
-  pageDescription.join(' ').slice(0, 160);
+const narrativeText: Record<string, NarrativePack> = {
+  en: {
+    introDetail: [
+      `Explore {location} through this 4K {category}. The recording focuses on {scene}, while {detail} gives this particular video a clear location-specific identity.`,
+      `This 4K {category} offers a closer look at {location}, with {scene} unfolding naturally on screen. A defining location detail in this recording is {detail}.`
+    ],
+    introBasic: [
+      `Explore {location} through this 4K {category}. The recording follows {scene} in a continuous visual flow, giving you a direct sense of the destination as it appears on screen.`,
+      `Take a closer look at {location} in this 4K {category}. The video presents {scene} without turning the experience into a conventional travel guide, allowing the destination to unfold at its own pace.`
+    ],
+    route: [
+      `The route includes named points such as {route}. These real locations add geographic context to the recording and make it easier to follow how the journey progresses through the destination.`,
+      `Along the recorded route you can follow places including {route}. Seeing these points in sequence helps connect individual scenes with the wider geography of {location}.`
+    ],
+    flow: [
+      `The recording moves forward as one continuous journey, so the surroundings can be followed in the natural order in which they were filmed. This makes it easier to notice how the character of {location} changes from one section to the next.`,
+      `Because the video unfolds continuously, you can experience the destination in the same sequence as the original recording. Streets, spaces and surroundings gradually change without forcing the walk into an artificial list of stops.`
+    ],
+    discovery: [
+      `For trip planning, visual research or relaxed exploration, this kind of long-form recording can help you compare different parts of {location}, recognize the feel of the area and decide which places you may want to experience in person.`,
+      `The video can serve as a visual reference before a visit or simply as a way to experience {location} from a distance, with enough time to notice the environment, movement and everyday details that shorter travel clips often miss.`
+    ],
+    close: [
+      `For another perspective on {location}, continue with related videos from the same destination. Different routes, times of day and recording conditions can reveal a noticeably different side of the same place.`,
+      `If you want to keep exploring {location}, the related videos on this page offer additional routes and viewpoints, helping you build a broader visual picture of the destination beyond a single recording.`
+    ]
+  },
+  tr: {
+    introDetail: [
+      `{location} bölgesini bu 4K {category} videosuyla keşfedin. Kayıtta {scene} doğal akışıyla izlenirken, {detail} bu videoya belirgin ve video-özel bir konum kimliği kazandırıyor.`,
+      `Bu 4K {category}, {location} için daha yakından bir bakış sunuyor; {scene} görüntüler boyunca doğal biçimde ilerliyor. Kaydı diğer videolardan ayıran belirgin konum ayrıntılarından biri {detail}.`
+    ],
+    introBasic: [
+      `{location} bölgesini bu 4K {category} videosuyla keşfedin. Kayıt, {scene} görüntülerini kesintisiz bir akış içinde sunarak destinasyonun çevresini ve atmosferini kendi temponuzda izlemenize imkân veriyor.`,
+      `Bu 4K {category}, {location} çevresini doğrudan görsel bir deneyim olarak sunuyor. {scene} doğal kayıt sırası içinde ilerlediği için bölgenin karakterini klasik bir gezi rehberinden farklı biçimde gözlemleyebilirsiniz.`
+    ],
+    route: [
+      `Güzergâhta {route} gibi adı belirtilen gerçek noktalar yer alıyor. Bu konumlar, kaydın destinasyon içinde nasıl ilerlediğini anlamayı ve görüntüleri {location} coğrafyasıyla ilişkilendirmeyi kolaylaştırıyor.`,
+      `Video boyunca {route} gibi rota noktaları takip edilebiliyor. Bu yerlerin kayıt sırası içinde görülmesi, yürüyüşün veya yolculuğun {location} içinde nasıl şekillendiğine daha açık bir perspektif kazandırıyor.`
+    ],
+    flow: [
+      `Kayıt tek bir akış halinde ilerlediği için çevreyi görüntülerin doğal sırası içinde takip edebilirsiniz. Böylece {location} içinde bir bölümden diğerine geçerken sokakların, alanların ve genel atmosferin nasıl değiştiği daha rahat fark ediliyor.`,
+      `Video kesintisiz ilerlediğinden destinasyonu kaydın gerçek sırasıyla deneyimleyebilirsiniz. Görüntüler yapay bir durak listesine bölünmeden ilerlerken {location} çevresindeki farklı alanlar doğal biçimde birbirine bağlanıyor.`
+    ],
+    discovery: [
+      `Seyahat planı yaparken, farklı bölgeleri karşılaştırırken veya yalnızca uzun formatlı bir şehir ve gezi deneyimi izlemek istediğinizde bu kayıt {location} hakkında yararlı bir görsel referans sunabilir. Çevrenin ayrıntılarını, hareketliliğini ve günlük atmosferini kısa videolara göre daha uzun süre gözlemleme fırsatı verir.`,
+      `Bu kayıt, bir ziyaret öncesinde {location} hakkında görsel fikir edinmek ya da destinasyonu uzaktan ve kendi temponuzda keşfetmek için kullanılabilir. Uzun format sayesinde çevre, mimari, hareket ve günlük ayrıntılar daha sakin bir tempoda izlenebilir.`
+    ],
+    close: [
+      `{location} için farklı bir bakış görmek isterseniz aynı destinasyondaki ilgili videolara da geçebilirsiniz. Farklı rotalar, günün farklı saatleri ve çekim koşulları aynı yerin bambaşka yönlerini gösterebilir.`,
+      `{location} keşfine devam etmek için bu sayfadaki ilgili videolar farklı güzergâhlar ve bakış açıları sunar. Böylece tek bir kayda bağlı kalmadan destinasyon hakkında daha geniş bir görsel fikir oluşturabilirsiniz.`
+    ]
+  },
+  de: {
+    introDetail: [
+      `Entdecke {location} mit dieser 4K-{category}. Die Aufnahme zeigt {scene} in natürlichem Verlauf, während {detail} diesem Video eine klare, ortsspezifische Identität gibt.`,
+      `Diese 4K-{category} bietet einen näheren Blick auf {location}; {scene} entfalten sich Schritt für Schritt im Bild. Ein markantes Ortsdetail dieser Aufnahme ist {detail}.`
+    ],
+    introBasic: [
+      `Entdecke {location} mit dieser 4K-{category}. Die Aufnahme zeigt {scene} in einem kontinuierlichen Ablauf und vermittelt so einen direkten Eindruck von Umgebung und Atmosphäre.`,
+      `Diese 4K-{category} zeigt {location} als fortlaufendes visuelles Erlebnis. {scene} erscheinen in der tatsächlichen Reihenfolge der Aufnahme und lassen den Charakter des Ortes ohne klassischen Reiseführer entstehen.`
+    ],
+    route: [
+      `Die Route umfasst benannte Punkte wie {route}. Diese realen Orte geben der Aufnahme geografischen Kontext und machen nachvollziehbar, wie sich der Weg durch {location} entwickelt.`,
+      `Entlang der Aufnahme erscheinen Orte wie {route}. Ihre Reihenfolge verbindet einzelne Szenen mit der größeren Geografie von {location}.`
+    ],
+    flow: [
+      `Die Aufnahme verläuft als zusammenhängende Reise, sodass sich die Umgebung in der natürlichen Reihenfolge des Films verfolgen lässt. Dadurch werden Veränderungen zwischen verschiedenen Bereichen von {location} gut erkennbar.`,
+      `Da das Video kontinuierlich weiterläuft, erlebst du {location} in derselben Reihenfolge wie bei der ursprünglichen Aufnahme. Straßen, Räume und Umgebung gehen ohne künstliche Stoppliste ineinander über.`
+    ],
+    discovery: [
+      `Für Reiseplanung, visuelle Recherche oder entspanntes Erkunden kann diese Langform-Aufnahme helfen, verschiedene Bereiche von {location} zu vergleichen und ein Gefühl für Umgebung, Bewegung und Alltag vor Ort zu bekommen.`,
+      `Das Video eignet sich als visuelle Orientierung vor einer Reise oder einfach, um {location} aus der Ferne zu erleben. Durch die längere Laufzeit bleiben mehr Details der Umgebung und des täglichen Stadtbilds sichtbar.`
+    ],
+    close: [
+      `Weitere Videos aus {location} zeigen andere Routen, Tageszeiten und Aufnahmebedingungen und können dadurch eine deutlich andere Seite desselben Ortes vermitteln.`,
+      `Wenn du {location} weiter erkunden möchtest, bieten die verwandten Videos zusätzliche Wege und Blickwinkel für ein breiteres visuelles Bild des Reiseziels.`
+    ]
+  },
+  es: {
+    introDetail: [
+      `Explora {location} con este {category} en 4K. La grabación muestra {scene} de forma natural, mientras que {detail} aporta a este video una identidad geográfica concreta.`,
+      `Este {category} en 4K ofrece una mirada más cercana a {location}; {scene} se desarrollan de forma continua y {detail} destaca como un detalle propio de esta grabación.`
+    ],
+    introBasic: [
+      `Explora {location} con este {category} en 4K. La grabación sigue {scene} en un flujo visual continuo y permite observar el entorno y la atmósfera del destino a tu propio ritmo.`,
+      `Este {category} en 4K presenta {location} como una experiencia visual continua. {scene} aparecen en el orden real de la grabación, sin convertir el recorrido en una guía turística convencional.`
+    ],
+    route: [
+      `La ruta incluye lugares identificados como {route}. Estos puntos reales aportan contexto geográfico y ayudan a entender cómo avanza el recorrido por {location}.`,
+      `A lo largo de la grabación aparecen lugares como {route}. Verlos en secuencia ayuda a relacionar las escenas con la geografía general de {location}.`
+    ],
+    flow: [
+      `La grabación avanza como un recorrido continuo, por lo que el entorno se puede seguir en el mismo orden en que fue filmado. Así se perciben mejor los cambios entre distintas zonas de {location}.`,
+      `Como el video se desarrolla sin interrupciones, puedes experimentar {location} siguiendo la secuencia original. Las calles y espacios cambian gradualmente sin una lista artificial de paradas.`
+    ],
+    discovery: [
+      `Para planificar un viaje, comparar zonas o simplemente explorar con calma, esta grabación larga puede servir como referencia visual de {location} y mostrar detalles del entorno y de la vida cotidiana que los videos cortos suelen pasar por alto.`,
+      `El video puede ayudarte a conocer visualmente {location} antes de una visita o a recorrerlo a distancia, con tiempo suficiente para observar el ambiente, el movimiento y los pequeños detalles del destino.`
+    ],
+    close: [
+      `Para descubrir otra perspectiva de {location}, continúa con los videos relacionados del mismo destino. Diferentes rutas, horarios y condiciones de grabación pueden mostrar una cara distinta del mismo lugar.`,
+      `Si quieres seguir explorando {location}, los videos relacionados ofrecen rutas y puntos de vista adicionales para formar una imagen más amplia del destino.`
+    ]
+  },
+  it: {
+    introDetail: [
+      `Scopri {location} con questo {category} in 4K. La registrazione mostra {scene} nel loro naturale sviluppo, mentre {detail} dà al video un'identità geografica più precisa.`,
+      `Questo {category} in 4K offre uno sguardo ravvicinato su {location}; {scene} scorrono naturalmente e {detail} emerge come dettaglio distintivo della registrazione.`
+    ],
+    introBasic: [
+      `Scopri {location} con questo {category} in 4K. La registrazione segue {scene} in un flusso visivo continuo, permettendo di osservare l'ambiente e l'atmosfera della destinazione con calma.`,
+      `Questo {category} in 4K presenta {location} come un'esperienza visiva continua. {scene} compaiono nell'ordine reale della registrazione senza trasformare il percorso in una guida turistica tradizionale.`
+    ],
+    route: [
+      `Il percorso comprende luoghi indicati come {route}. Questi punti reali aggiungono contesto geografico e aiutano a capire come la registrazione si sviluppa attraverso {location}.`,
+      `Nel corso del video compaiono luoghi come {route}. La loro sequenza collega le singole scene alla geografia più ampia di {location}.`
+    ],
+    flow: [
+      `La registrazione procede come un viaggio continuo, quindi l'ambiente può essere seguito nello stesso ordine in cui è stato filmato. Questo rende più evidenti i cambiamenti tra le diverse zone di {location}.`,
+      `Poiché il video scorre senza interruzioni, puoi vivere {location} nella sequenza originale della ripresa. Strade e spazi si susseguono senza una lista artificiale di tappe.`
+    ],
+    discovery: [
+      `Per pianificare un viaggio, confrontare zone diverse o esplorare con calma, questa registrazione lunga può essere una utile fonte visiva su {location}, mostrando dettagli dell'ambiente e della vita quotidiana che i video brevi spesso non colgono.`,
+      `Il video può servire come riferimento prima di una visita o semplicemente per vivere {location} a distanza, con il tempo necessario per osservare ambiente, movimento e dettagli quotidiani.`
+    ],
+    close: [
+      `Per un'altra prospettiva su {location}, continua con i video correlati della stessa destinazione. Percorsi, orari e condizioni diverse possono mostrare un volto differente dello stesso luogo.`,
+      `Se vuoi continuare a esplorare {location}, i video correlati offrono altri percorsi e punti di vista per costruire un quadro visivo più ampio della destinazione.`
+    ]
+  },
+  fr: {
+    introDetail: [
+      `Découvrez {location} avec cette {category} en 4K. La vidéo montre {scene} dans leur déroulement naturel, tandis que {detail} donne à cet enregistrement une identité géographique plus précise.`,
+      `Cette {category} en 4K offre un regard plus proche sur {location}; {scene} se dévoilent naturellement et {detail} constitue un repère distinctif de cette vidéo.`
+    ],
+    introBasic: [
+      `Découvrez {location} avec cette {category} en 4K. La vidéo suit {scene} dans un flux visuel continu, ce qui permet d'observer l'environnement et l'ambiance de la destination à votre rythme.`,
+      `Cette {category} en 4K présente {location} comme une expérience visuelle continue. {scene} apparaissent dans l'ordre réel de l'enregistrement, sans transformer le parcours en guide touristique classique.`
+    ],
+    route: [
+      `L'itinéraire comprend des lieux nommés comme {route}. Ces points réels ajoutent un contexte géographique et permettent de mieux comprendre la progression à travers {location}.`,
+      `Au fil de la vidéo, on retrouve des lieux comme {route}. Leur succession relie les scènes à la géographie plus large de {location}.`
+    ],
+    flow: [
+      `L'enregistrement avance comme un parcours continu, ce qui permet de suivre l'environnement dans l'ordre naturel du tournage. Les changements entre les différentes zones de {location} deviennent ainsi plus faciles à percevoir.`,
+      `Comme la vidéo se déroule sans interruption, vous découvrez {location} dans la séquence originale de l'enregistrement. Les rues et les espaces évoluent progressivement sans liste artificielle d'étapes.`
+    ],
+    discovery: [
+      `Pour préparer un voyage, comparer des quartiers ou simplement explorer tranquillement, ce format long peut servir de référence visuelle sur {location} et montrer des détails d'ambiance et de vie quotidienne souvent absents des vidéos courtes.`,
+      `La vidéo peut aider à découvrir visuellement {location} avant une visite ou simplement à l'explorer à distance, avec suffisamment de temps pour observer l'environnement, les mouvements et les détails du quotidien.`
+    ],
+    close: [
+      `Pour voir une autre facette de {location}, poursuivez avec les vidéos liées à la même destination. Des itinéraires, horaires et conditions de tournage différents peuvent révéler un tout autre visage du même lieu.`,
+      `Si vous souhaitez continuer à explorer {location}, les vidéos associées proposent d'autres parcours et points de vue pour construire une vision plus large de la destination.`
+    ]
+  },
+  ja: {
+    introDetail: [
+      `この4K{category}で{location}を探索できます。映像では{scene}が自然な流れで映し出され、{detail}がこの動画ならではの場所の特徴を示しています。`,
+      `この4K{category}では{location}をより近くから見ることができます。{scene}が連続して展開し、{detail}が映像を特徴づける具体的な場所の情報になっています。`
+    ],
+    introBasic: [
+      `この4K{category}で{location}を探索できます。映像は{scene}を連続した流れで映し、現地の環境や雰囲気を自分のペースで観察できます。`,
+      `この4K{category}は{location}を連続した映像体験として見せます。{scene}が実際の撮影順に現れ、一般的な観光ガイドとは違う形で場所の雰囲気を感じられます。`
+    ],
+    route: [
+      `ルートには{route}など実際に名前が示された場所が含まれます。これらの地点によって、映像が{location}の中をどのように進むのかを地理的に理解しやすくなります。`,
+      `映像の中では{route}などの場所を順にたどることができます。各シーンと{location}全体の位置関係をつかむ手がかりになります。`
+    ],
+    flow: [
+      `映像は一つの連続した流れとして進むため、撮影された自然な順序のまま周辺を追うことができます。{location}の場所ごとの雰囲気の変化も分かりやすくなります。`,
+      `動画が途切れずに進むため、元の撮影と同じ順序で{location}を体験できます。道路や空間が人工的な停止地点に分けられず、自然につながっていきます。`
+    ],
+    discovery: [
+      `旅行前の下調べ、地域の比較、あるいはゆっくりとした視覚的な探索に、この長時間映像は{location}の参考になります。短い旅行動画では見落としやすい環境や人の動き、日常の細部まで観察できます。`,
+      `訪問前の視覚的な参考としても、遠くから{location}を体験する方法としても利用できます。長い映像だからこそ、周囲の環境や動き、日常の小さな変化まで時間をかけて見ることができます。`
+    ],
+    close: [
+      `{location}を別の角度から見たい場合は、同じ目的地の関連動画もご覧ください。異なるルート、時間帯、撮影条件によって、同じ場所でも違った表情が見えてきます。`,
+      `{location}の探索を続けるなら、関連動画で別のルートや視点を確認できます。一つの映像だけでは分からない、より広い目的地の姿をつかむ助けになります。`
+    ]
+  },
+  pt: {
+    introDetail: [
+      `Explore {location} neste {category} em 4K. A gravação mostra {scene} em seu fluxo natural, enquanto {detail} dá a este vídeo uma identidade geográfica mais específica.`,
+      `Este {category} em 4K oferece um olhar mais próximo sobre {location}; {scene} aparecem naturalmente e {detail} se destaca como um detalhe próprio desta gravação.`
+    ],
+    introBasic: [
+      `Explore {location} neste {category} em 4K. A gravação acompanha {scene} em um fluxo visual contínuo, permitindo observar o ambiente e a atmosfera do destino no seu próprio ritmo.`,
+      `Este {category} em 4K apresenta {location} como uma experiência visual contínua. {scene} aparecem na ordem real da gravação, sem transformar o percurso em um guia turístico tradicional.`
+    ],
+    route: [
+      `A rota inclui locais identificados como {route}. Esses pontos reais acrescentam contexto geográfico e ajudam a entender como o percurso avança por {location}.`,
+      `Ao longo da gravação aparecem lugares como {route}. A sequência desses pontos conecta as cenas à geografia mais ampla de {location}.`
+    ],
+    flow: [
+      `A gravação avança como uma jornada contínua, permitindo acompanhar o ambiente na ordem natural em que foi filmado. Assim, as mudanças entre diferentes áreas de {location} ficam mais perceptíveis.`,
+      `Como o vídeo segue sem interrupções, você pode experimentar {location} na mesma sequência da gravação original. Ruas e espaços mudam gradualmente sem uma lista artificial de paradas.`
+    ],
+    discovery: [
+      `Para planejar uma viagem, comparar áreas ou simplesmente explorar com calma, esta gravação longa pode servir como referência visual de {location}, mostrando detalhes do ambiente e do cotidiano que vídeos curtos costumam deixar de fora.`,
+      `O vídeo pode ajudar a conhecer visualmente {location} antes de uma visita ou simplesmente a explorar o destino à distância, com tempo para observar o ambiente, o movimento e os pequenos detalhes do dia a dia.`
+    ],
+    close: [
+      `Para ver outra perspectiva de {location}, continue com os vídeos relacionados do mesmo destino. Rotas, horários e condições de gravação diferentes podem revelar um lado diferente do mesmo lugar.`,
+      `Se quiser continuar explorando {location}, os vídeos relacionados oferecem outras rotas e pontos de vista para formar uma visão mais ampla do destino.`
+    ]
+  },
+  ru: {
+    introDetail: [
+      `Исследуйте {location} в этом видео {category} в 4K. В кадре естественно раскрываются {scene}, а {detail} придаёт записи более конкретную привязку к месту.`,
+      `Это видео {category} в 4K позволяет ближе увидеть {location}; {scene} постепенно раскрываются в кадре, а {detail} становится характерной деталью именно этой записи.`
+    ],
+    introBasic: [
+      `Исследуйте {location} в этом видео {category} в 4K. Запись показывает {scene} непрерывным визуальным потоком, позволяя спокойно наблюдать окружение и атмосферу места.`,
+      `Это видео {category} в 4K показывает {location} как непрерывное визуальное путешествие. {scene} появляются в реальном порядке съёмки, без превращения маршрута в обычный туристический гид.`
+    ],
+    route: [
+      `Маршрут включает такие названные точки, как {route}. Эти реальные места добавляют географический контекст и помогают понять, как запись проходит через {location}.`,
+      `По ходу записи можно увидеть такие места, как {route}. Их последовательность связывает отдельные сцены с общей географией {location}.`
+    ],
+    flow: [
+      `Запись развивается как единое непрерывное путешествие, поэтому окружение можно наблюдать в естественном порядке съёмки. Так заметнее, как меняется характер разных частей {location}.`,
+      `Поскольку видео идёт непрерывно, {location} можно увидеть в той же последовательности, в которой проходила съёмка. Улицы и пространства постепенно сменяют друг друга без искусственного списка остановок.`
+    ],
+    discovery: [
+      `Для планирования поездки, сравнения районов или спокойного виртуального знакомства эта длинная запись может стать полезным визуальным ориентиром по {location}, позволяя заметить детали среды и повседневной жизни, которые часто теряются в коротких роликах.`,
+      `Видео подходит как визуальный ориентир перед поездкой или как способ познакомиться с {location} на расстоянии, уделяя достаточно времени окружающей среде, движению и повседневным деталям.`
+    ],
+    close: [
+      `Чтобы увидеть другую сторону {location}, можно перейти к связанным видео из того же места. Другие маршруты, время суток и условия съёмки способны показать тот же город совсем иначе.`,
+      `Если вы хотите продолжить знакомство с {location}, связанные видео предлагают дополнительные маршруты и точки зрения для более широкой визуальной картины места.`
+    ]
+  },
+  zh: {
+    introDetail: [
+      `通过这段4K{category}探索{location}。画面自然呈现{scene}，而{detail}为这段视频提供了更明确、独特的地点信息。`,
+      `这段4K{category}让你更近距离地观察{location}；{scene}在画面中自然展开，{detail}则成为这段记录中具有代表性的地点细节。`
+    ],
+    introBasic: [
+      `通过这段4K{category}探索{location}。视频以连续的视觉流程呈现{scene}，让你按照自己的节奏观察当地环境与氛围。`,
+      `这段4K{category}把{location}呈现为一段连续的视觉体验。{scene}按照实际拍摄顺序出现，不把旅程变成传统的旅游指南。`
+    ],
+    route: [
+      `路线中包括{route}等明确地点。这些真实地点为视频增加了地理背景，也更容易理解行程如何在{location}中推进。`,
+      `在视频中可以依次看到{route}等地点。它们把具体画面与{location}更广泛的地理环境联系起来。`
+    ],
+    flow: [
+      `视频以一段连续行程向前推进，因此可以按照实际拍摄的自然顺序观察周边环境，也更容易感受到{location}不同区域之间的变化。`,
+      `由于画面连续展开，你可以按照原始拍摄顺序体验{location}。街道与空间自然衔接，而不是被拆成一份人为的停靠点清单。`
+    ],
+    discovery: [
+      `无论是规划旅行、比较不同区域，还是安静地进行线上探索，这类长视频都可以作为了解{location}的视觉参考，让你看到短视频经常忽略的环境、移动与日常细节。`,
+      `这段视频既可以作为到访前的视觉参考，也可以让你从远处体验{location}，有足够时间观察环境、人流与日常细节。`
+    ],
+    close: [
+      `如果想从另一个角度了解{location}，可以继续观看同一目的地的相关视频。不同路线、时间和拍摄条件往往会呈现同一地点完全不同的一面。`,
+      `想继续探索{location}时，相关视频提供更多路线与视角，帮助你在单一记录之外建立更完整的目的地印象。`
+    ]
+  },
+  ko: {
+    introDetail: [
+      `이 4K {category} 영상으로 {location}를 살펴보세요. {scene}가 자연스럽게 이어지며, {detail}는 이 영상만의 구체적인 장소 정보를 더해 줍니다.`,
+      `이 4K {category}는 {location}를 가까이에서 보여 줍니다. {scene}가 화면에 자연스럽게 펼쳐지고, {detail}는 이 기록을 특징짓는 장소 정보입니다.`
+    ],
+    introBasic: [
+      `이 4K {category} 영상으로 {location}를 살펴보세요. {scene}가 끊김 없는 흐름으로 이어져 현지 환경과 분위기를 자신의 속도로 관찰할 수 있습니다.`,
+      `이 4K {category}는 {location}를 연속적인 시각 경험으로 보여 줍니다. {scene}가 실제 촬영 순서대로 이어져 일반적인 여행 가이드와 다른 방식으로 지역을 느낄 수 있습니다.`
+    ],
+    route: [
+      `경로에는 {route}와 같은 실제 지명이 포함되어 있습니다. 이러한 장소들은 영상에 지리적 맥락을 더하고 {location} 안에서 이동이 어떻게 이어지는지 이해하는 데 도움이 됩니다.`,
+      `영상에서는 {route}와 같은 장소를 순서대로 볼 수 있습니다. 이 지점들은 개별 장면과 {location}의 전체 지리를 연결해 줍니다.`
+    ],
+    flow: [
+      `영상은 하나의 연속된 여정으로 진행되므로 실제 촬영 순서대로 주변을 따라갈 수 있습니다. 이를 통해 {location}의 구역마다 분위기가 어떻게 달라지는지도 자연스럽게 보입니다.`,
+      `영상이 끊기지 않고 이어지기 때문에 원래 촬영 순서대로 {location}를 경험할 수 있습니다. 거리와 공간이 인위적인 정류장 목록 없이 자연스럽게 이어집니다.`
+    ],
+    discovery: [
+      `여행을 준비하거나 여러 지역을 비교하거나 편안하게 둘러보고 싶을 때, 이런 긴 형식의 영상은 {location}를 이해하는 시각적 참고 자료가 될 수 있습니다. 짧은 여행 영상에서 놓치기 쉬운 환경과 움직임, 일상의 세부를 더 오래 관찰할 수 있습니다.`,
+      `방문 전에 {location}의 분위기를 확인하거나 멀리서 지역을 경험하는 데 활용할 수 있습니다. 긴 영상 덕분에 주변 환경과 사람들의 움직임, 일상적인 작은 변화까지 천천히 볼 수 있습니다.`
+    ],
+    close: [
+      `{location}를 다른 관점에서 보고 싶다면 같은 목적지의 관련 영상도 확인해 보세요. 다른 경로와 시간대, 촬영 조건은 같은 장소의 또 다른 모습을 보여 줄 수 있습니다.`,
+      `{location} 탐색을 계속하려면 관련 영상에서 추가 경로와 시점을 확인할 수 있습니다. 하나의 영상보다 더 넓은 목적지의 모습을 이해하는 데 도움이 됩니다.`
+    ]
+  },
+  ar: {
+    introDetail: [
+      `استكشف {location} من خلال {category} بدقة 4K. يعرض التسجيل {scene} بتسلسل طبيعي، بينما يمنح {detail} هذا الفيديو هوية مكانية أكثر تحديدًا.`,
+      `يقدم هذا {category} بدقة 4K نظرة أقرب إلى {location}؛ تظهر {scene} بصورة طبيعية ويبرز {detail} كتفصيل مكاني مميز لهذا التسجيل.`
+    ],
+    introBasic: [
+      `استكشف {location} من خلال {category} بدقة 4K. يتابع التسجيل {scene} في تدفق بصري متواصل، ما يتيح مشاهدة البيئة والأجواء المحلية بإيقاع مريح.`,
+      `يقدم هذا {category} بدقة 4K تجربة بصرية متواصلة في {location}. تظهر {scene} وفق ترتيب التصوير الحقيقي من دون تحويل الرحلة إلى دليل سياحي تقليدي.`
+    ],
+    route: [
+      `يشمل المسار أماكن مسماة مثل {route}. تضيف هذه المواقع الحقيقية سياقًا جغرافيًا وتساعد على فهم كيفية تقدم الرحلة عبر {location}.`,
+      `تظهر خلال التسجيل أماكن مثل {route}. ويساعد ترتيبها على ربط المشاهد الفردية بالجغرافيا الأوسع لـ {location}.`
+    ],
+    flow: [
+      `يتقدم التسجيل كرحلة واحدة متصلة، لذلك يمكن متابعة البيئة بالترتيب الطبيعي الذي صُورت به. وهذا يجعل التغير بين مناطق {location} المختلفة أكثر وضوحًا.`,
+      `بما أن الفيديو يتدفق من دون انقطاع، يمكن مشاهدة {location} وفق تسلسل التصوير الأصلي. تتغير الشوارع والمساحات تدريجيًا من دون قائمة مصطنعة من نقاط التوقف.`
+    ],
+    discovery: [
+      `سواء للتخطيط لرحلة أو مقارنة المناطق أو الاستكشاف الهادئ، يمكن لهذا التسجيل الطويل أن يكون مرجعًا بصريًا مفيدًا عن {location} ويكشف تفاصيل البيئة والحركة والحياة اليومية التي قد تغيب عن المقاطع القصيرة.`,
+      `يمكن استخدام الفيديو كمرجع بصري قبل الزيارة أو كطريقة لاستكشاف {location} عن بُعد، مع وقت كافٍ لملاحظة البيئة والحركة والتفاصيل اليومية.`
+    ],
+    close: [
+      `لمشاهدة منظور آخر لـ {location}، تابع الفيديوهات المرتبطة من الوجهة نفسها. قد تكشف المسارات والأوقات وظروف التصوير المختلفة جانبًا مختلفًا تمامًا من المكان ذاته.`,
+      `إذا أردت مواصلة استكشاف {location}، توفر الفيديوهات المرتبطة مسارات ووجهات نظر إضافية تساعد على تكوين صورة بصرية أوسع عن الوجهة.`
+    ]
+  },
+  hi: {
+    introDetail: [
+      `इस 4K {category} के माध्यम से {location} को देखें। रिकॉर्डिंग में {scene} स्वाभाविक क्रम में दिखाई देते हैं, जबकि {detail} इस वीडियो को एक स्पष्ट और विशिष्ट स्थान पहचान देता है।`,
+      `यह 4K {category} {location} को करीब से दिखाता है। {scene} स्वाभाविक रूप से आगे बढ़ते हैं और {detail} इस रिकॉर्डिंग का प्रमुख स्थान-संबंधी विवरण है।`
+    ],
+    introBasic: [
+      `इस 4K {category} के माध्यम से {location} को देखें। रिकॉर्डिंग {scene} को लगातार दृश्य प्रवाह में दिखाती है, जिससे आप स्थानीय वातावरण को अपनी गति से देख सकते हैं।`,
+      `यह 4K {category} {location} को एक निरंतर दृश्य अनुभव के रूप में प्रस्तुत करता है। {scene} वास्तविक रिकॉर्डिंग क्रम में सामने आते हैं, बिना इसे पारंपरिक यात्रा गाइड में बदले।`
+    ],
+    route: [
+      `मार्ग में {route} जैसे नामित स्थान शामिल हैं। ये वास्तविक स्थान रिकॉर्डिंग को भौगोलिक संदर्भ देते हैं और यह समझने में मदद करते हैं कि यात्रा {location} में कैसे आगे बढ़ती है।`,
+      `वीडियो में {route} जैसे स्थान क्रम से दिखाई देते हैं। ये बिंदु अलग-अलग दृश्यों को {location} के व्यापक भूगोल से जोड़ते हैं।`
+    ],
+    flow: [
+      `रिकॉर्डिंग एक निरंतर यात्रा की तरह आगे बढ़ती है, इसलिए आसपास के क्षेत्र को उसी प्राकृतिक क्रम में देखा जा सकता है जिसमें उसे फिल्माया गया था। इससे {location} के अलग-अलग हिस्सों का बदलता स्वरूप स्पष्ट दिखता है।`,
+      `वीडियो बिना रुकावट आगे बढ़ता है, इसलिए आप {location} को मूल रिकॉर्डिंग क्रम में अनुभव कर सकते हैं। सड़कें और स्थान किसी कृत्रिम स्टॉप सूची के बिना धीरे-धीरे बदलते हैं।`
+    ],
+    discovery: [
+      `यात्रा की योजना, अलग-अलग क्षेत्रों की तुलना या शांत दृश्य अन्वेषण के लिए यह लंबी रिकॉर्डिंग {location} का उपयोगी दृश्य संदर्भ बन सकती है और उन रोज़मर्रा के विवरणों को दिखाती है जो छोटे यात्रा वीडियो में अक्सर छूट जाते हैं।`,
+      `यह वीडियो यात्रा से पहले {location} को देखने या दूर से अनुभव करने के लिए उपयोगी है, क्योंकि इसमें आसपास के वातावरण, गतिविधि और दैनिक जीवन के छोटे विवरणों को देखने के लिए पर्याप्त समय मिलता है।`
+    ],
+    close: [
+      `{location} का दूसरा रूप देखने के लिए उसी गंतव्य के संबंधित वीडियो देखें। अलग मार्ग, समय और रिकॉर्डिंग स्थितियाँ एक ही स्थान का बिल्कुल अलग पक्ष दिखा सकती हैं।`,
+      `यदि आप {location} को और देखना चाहते हैं, तो संबंधित वीडियो अतिरिक्त मार्ग और दृष्टिकोण प्रदान करते हैं और गंतव्य की अधिक व्यापक दृश्य समझ बनाने में मदद करते हैं।`
+    ]
+  },
+  nl: {
+    introDetail: [
+      `Ontdek {location} met deze {category} in 4K. De opname laat {scene} in een natuurlijke volgorde zien, terwijl {detail} deze video een duidelijke, locatiespecifieke identiteit geeft.`,
+      `Deze {category} in 4K biedt een nadere blik op {location}; {scene} ontvouwen zich geleidelijk en {detail} vormt een herkenbaar locatie-detail van deze opname.`
+    ],
+    introBasic: [
+      `Ontdek {location} met deze {category} in 4K. De opname volgt {scene} in een ononderbroken visuele stroom, zodat je omgeving en sfeer in je eigen tempo kunt bekijken.`,
+      `Deze {category} in 4K presenteert {location} als een doorlopende visuele ervaring. {scene} verschijnen in de echte opnamevolgorde zonder de route om te vormen tot een traditionele reisgids.`
+    ],
+    route: [
+      `De route bevat benoemde plekken zoals {route}. Deze echte locaties geven geografische context en maken duidelijker hoe de opname zich door {location} beweegt.`,
+      `Tijdens de opname verschijnen plaatsen zoals {route}. Hun volgorde verbindt afzonderlijke scènes met de bredere geografie van {location}.`
+    ],
+    flow: [
+      `De opname verloopt als één doorlopende reis, waardoor de omgeving in de natuurlijke filmvolgorde kan worden gevolgd. Zo worden veranderingen tussen verschillende delen van {location} beter zichtbaar.`,
+      `Omdat de video zonder onderbreking doorgaat, ervaar je {location} in dezelfde volgorde als de oorspronkelijke opname. Straten en ruimtes lopen geleidelijk in elkaar over zonder kunstmatige lijst met stops.`
+    ],
+    discovery: [
+      `Voor reisplanning, het vergelijken van wijken of rustig virtueel verkennen kan deze lange opname dienen als visuele referentie voor {location}, met details van omgeving en dagelijks leven die korte reisvideo's vaak missen.`,
+      `De video kan helpen om {location} voor een bezoek visueel te leren kennen of om de bestemming op afstand te ervaren, met genoeg tijd om omgeving, beweging en dagelijkse details te observeren.`
+    ],
+    close: [
+      `Bekijk voor een ander perspectief op {location} ook gerelateerde video's van dezelfde bestemming. Andere routes, tijdstippen en opnameomstandigheden kunnen een heel andere kant van dezelfde plek tonen.`,
+      `Als je {location} verder wilt ontdekken, bieden de gerelateerde video's extra routes en gezichtspunten voor een breder visueel beeld van de bestemming.`
+    ]
+  },
+  pl: {
+    introDetail: [
+      `Odkrywaj {location} dzięki temu materiałowi {category} w 4K. Nagranie pokazuje {scene} w naturalnym przebiegu, a {detail} nadaje temu filmowi wyraźną, charakterystyczną lokalizację.`,
+      `Ten materiał {category} w 4K pozwala bliżej zobaczyć {location}; {scene} rozwijają się naturalnie, a {detail} stanowi wyróżniający szczegół miejsca w tej konkretnej rejestracji.`
+    ],
+    introBasic: [
+      `Odkrywaj {location} dzięki temu materiałowi {category} w 4K. Nagranie prowadzi przez {scene} w ciągłym wizualnym rytmie, pozwalając spokojnie obserwować otoczenie i atmosferę miejsca.`,
+      `Ten materiał {category} w 4K przedstawia {location} jako ciągłe doświadczenie wizualne. {scene} pojawiają się w rzeczywistej kolejności nagrania bez zamieniania trasy w tradycyjny przewodnik.`
+    ],
+    route: [
+      `Trasa obejmuje nazwane miejsca, takie jak {route}. Te rzeczywiste punkty dodają kontekst geograficzny i pomagają zrozumieć, jak nagranie przebiega przez {location}.`,
+      `W trakcie nagrania pojawiają się miejsca takie jak {route}. Ich kolejność łączy poszczególne sceny z szerszą geografią {location}.`
+    ],
+    flow: [
+      `Nagranie rozwija się jako jedna ciągła podróż, dzięki czemu otoczenie można śledzić w naturalnej kolejności filmowania. Łatwiej wtedy zauważyć różnice między kolejnymi częściami {location}.`,
+      `Ponieważ film przebiega bez przerw, {location} można zobaczyć w tej samej kolejności co podczas nagrania. Ulice i przestrzenie zmieniają się stopniowo bez sztucznej listy przystanków.`
+    ],
+    discovery: [
+      `Przy planowaniu podróży, porównywaniu dzielnic lub spokojnym wirtualnym zwiedzaniu taki długi materiał może być dobrym wizualnym punktem odniesienia dla {location}, pokazując szczegóły otoczenia i codzienności pomijane w krótkich filmach.`,
+      `Film może pomóc poznać wizualnie {location} przed wizytą lub po prostu doświadczyć miejsca na odległość, z czasem na obserwowanie otoczenia, ruchu i codziennych detali.`
+    ],
+    close: [
+      `Aby zobaczyć inną stronę {location}, przejdź do powiązanych filmów z tej samej destynacji. Inne trasy, pory dnia i warunki nagrania mogą pokazać zupełnie inną twarz tego samego miejsca.`,
+      `Jeśli chcesz dalej odkrywać {location}, powiązane filmy oferują dodatkowe trasy i perspektywy, pomagając zbudować szerszy wizualny obraz destynacji.`
+    ]
+  },
+  sv: {
+    introDetail: [
+      `Upptäck {location} genom denna {category} i 4K. Inspelningen visar {scene} i ett naturligt flöde, medan {detail} ger videon en tydlig och platsspecifik identitet.`,
+      `Denna {category} i 4K ger en närmare blick på {location}; {scene} utvecklas naturligt och {detail} fungerar som en tydlig platsdetalj i just denna inspelning.`
+    ],
+    introBasic: [
+      `Upptäck {location} genom denna {category} i 4K. Inspelningen följer {scene} i ett sammanhängande visuellt flöde och låter dig observera miljön och atmosfären i lugn takt.`,
+      `Denna {category} i 4K visar {location} som en kontinuerlig visuell upplevelse. {scene} följer den faktiska inspelningsordningen utan att göra resan till en traditionell reseguide.`
+    ],
+    route: [
+      `Rutten innehåller namngivna platser som {route}. Dessa verkliga punkter ger geografiskt sammanhang och gör det lättare att förstå hur inspelningen rör sig genom {location}.`,
+      `Under inspelningen syns platser som {route}. Deras ordning kopplar enskilda scener till den större geografin i {location}.`
+    ],
+    flow: [
+      `Inspelningen går framåt som en sammanhängande resa, så omgivningen kan följas i den naturliga ordning den filmades. Det gör förändringarna mellan olika delar av {location} tydligare.`,
+      `Eftersom videon fortsätter utan avbrott kan du uppleva {location} i samma ordning som den ursprungliga inspelningen. Gator och miljöer förändras gradvis utan en konstgjord lista med stopp.`
+    ],
+    discovery: [
+      `För reseplanering, jämförelse av områden eller lugn virtuell utforskning kan denna långformade inspelning fungera som en visuell referens för {location} och visa detaljer i miljö och vardagsliv som korta reseklipp ofta missar.`,
+      `Videon kan användas som visuell orientering före ett besök eller som ett sätt att uppleva {location} på avstånd, med tid att observera miljö, rörelse och vardagliga detaljer.`
+    ],
+    close: [
+      `För en annan syn på {location}, fortsätt med relaterade videor från samma destination. Andra rutter, tider på dagen och inspelningsförhållanden kan visa en helt annan sida av samma plats.`,
+      `Om du vill fortsätta utforska {location} erbjuder de relaterade videorna fler rutter och perspektiv för en bredare visuell bild av destinationen.`
+    ]
+  },
+  id: {
+    introDetail: [
+      `Jelajahi {location} melalui {category} 4K ini. Rekaman menampilkan {scene} dalam alur alami, sementara {detail} memberi video ini identitas lokasi yang lebih jelas dan spesifik.`,
+      `{category} 4K ini menawarkan pandangan lebih dekat ke {location}; {scene} berkembang secara alami dan {detail} menjadi rincian lokasi yang membedakan rekaman ini.`
+    ],
+    introBasic: [
+      `Jelajahi {location} melalui {category} 4K ini. Rekaman mengikuti {scene} dalam alur visual yang berkesinambungan sehingga lingkungan dan suasana tujuan dapat diamati dengan santai.`,
+      `{category} 4K ini menampilkan {location} sebagai pengalaman visual yang terus mengalir. {scene} muncul sesuai urutan rekaman sebenarnya tanpa mengubah perjalanan menjadi panduan wisata biasa.`
+    ],
+    route: [
+      `Rute mencakup tempat bernama seperti {route}. Lokasi nyata ini memberi konteks geografis dan membantu memahami bagaimana rekaman bergerak melalui {location}.`,
+      `Sepanjang rekaman terlihat tempat seperti {route}. Urutannya menghubungkan adegan-adegan tertentu dengan geografi {location} secara lebih luas.`
+    ],
+    flow: [
+      `Rekaman bergerak sebagai satu perjalanan berkelanjutan, sehingga lingkungan dapat diikuti sesuai urutan alami saat direkam. Perubahan antarbagian {location} pun lebih mudah terlihat.`,
+      `Karena video berjalan tanpa putus, Anda dapat mengalami {location} dalam urutan yang sama seperti rekaman asli. Jalan dan ruang berubah secara bertahap tanpa daftar pemberhentian buatan.`
+    ],
+    discovery: [
+      `Untuk merencanakan perjalanan, membandingkan kawasan, atau menjelajah dengan santai, rekaman panjang ini dapat menjadi referensi visual tentang {location} dan memperlihatkan detail lingkungan serta kehidupan sehari-hari yang sering terlewat dalam video pendek.`,
+      `Video ini dapat membantu mengenal {location} secara visual sebelum berkunjung atau sekadar mengalaminya dari jauh, dengan cukup waktu untuk memperhatikan lingkungan, pergerakan, dan detail sehari-hari.`
+    ],
+    close: [
+      `Untuk melihat sisi lain {location}, lanjutkan ke video terkait dari tujuan yang sama. Rute, waktu, dan kondisi rekaman yang berbeda dapat menampilkan sisi lain dari tempat yang sama.`,
+      `Jika ingin terus menjelajahi {location}, video terkait menyediakan rute dan sudut pandang tambahan untuk membangun gambaran visual yang lebih luas tentang tujuan tersebut.`
+    ]
+  },
+  vi: {
+    introDetail: [
+      `Khám phá {location} qua {category} 4K này. Bản ghi thể hiện {scene} theo dòng tự nhiên, trong khi {detail} mang lại cho video một dấu ấn địa điểm rõ ràng và riêng biệt.`,
+      `{category} 4K này mang đến góc nhìn gần hơn về {location}; {scene} diễn ra tự nhiên và {detail} trở thành chi tiết địa điểm nổi bật của bản ghi.`
+    ],
+    introBasic: [
+      `Khám phá {location} qua {category} 4K này. Bản ghi theo dõi {scene} trong dòng hình ảnh liên tục, giúp bạn quan sát môi trường và bầu không khí của điểm đến theo nhịp riêng.`,
+      `{category} 4K này trình bày {location} như một trải nghiệm hình ảnh liên tục. {scene} xuất hiện theo đúng trình tự quay thực tế mà không biến hành trình thành một hướng dẫn du lịch thông thường.`
+    ],
+    route: [
+      `Tuyến đường gồm các địa điểm được nêu tên như {route}. Những vị trí thực này bổ sung bối cảnh địa lý và giúp hiểu cách bản ghi di chuyển qua {location}.`,
+      `Trong video có thể theo dõi các địa điểm như {route}. Trình tự của chúng giúp kết nối từng cảnh với địa lý rộng hơn của {location}.`
+    ],
+    flow: [
+      `Bản ghi tiến triển như một hành trình liên tục, vì vậy môi trường có thể được theo dõi theo đúng thứ tự tự nhiên khi quay. Điều này giúp nhận ra rõ hơn sự thay đổi giữa các khu vực của {location}.`,
+      `Vì video diễn ra liên tục, bạn có thể trải nghiệm {location} theo đúng trình tự quay ban đầu. Đường phố và không gian thay đổi dần mà không bị chia thành danh sách điểm dừng nhân tạo.`
+    ],
+    discovery: [
+      `Để lên kế hoạch du lịch, so sánh các khu vực hoặc khám phá thư giãn, bản ghi dài này có thể là tài liệu hình ảnh hữu ích về {location}, cho thấy môi trường và những chi tiết đời thường mà video ngắn thường bỏ qua.`,
+      `Video có thể giúp bạn làm quen với {location} trước chuyến đi hoặc đơn giản là trải nghiệm điểm đến từ xa, với đủ thời gian để quan sát môi trường, chuyển động và các chi tiết hằng ngày.`
+    ],
+    close: [
+      `Để xem một góc nhìn khác về {location}, hãy tiếp tục với các video liên quan từ cùng điểm đến. Tuyến đường, thời điểm và điều kiện quay khác nhau có thể cho thấy một diện mạo rất khác của cùng một nơi.`,
+      `Nếu muốn tiếp tục khám phá {location}, các video liên quan cung cấp thêm tuyến đường và góc nhìn để xây dựng một bức tranh trực quan rộng hơn về điểm đến.`
+    ]
+  }
+};
+
+const naturalIntroBasicText: Record<string, string> = {
+  en: `Explore {location} through this 4K {category}. The recording follows {scene} in a continuous visual flow, giving you time to observe the destination, its surroundings and its atmosphere as they naturally appear on screen.`,
+  tr: `{location} bölgesini bu 4K {category} videosuyla keşfedin. Kayıt, {scene} görüntülerini kesintisiz bir akış içinde sunarak destinasyonun çevresini, hareketliliğini ve atmosferini kendi temponuzda izlemenize imkân veriyor.`,
+  de: `Entdecke {location} mit dieser 4K-{category}. Die Aufnahme zeigt {scene} in einem kontinuierlichen visuellen Ablauf und lässt Zeit, Umgebung, Bewegung und Atmosphäre des Reiseziels in Ruhe zu beobachten.`,
+  es: `Explora {location} con este {category} en 4K. La grabación muestra {scene} en un flujo visual continuo y permite observar con calma el entorno, el movimiento y la atmósfera del destino.`,
+  it: `Scopri {location} con questo {category} in 4K. La registrazione mostra {scene} in un flusso visivo continuo, lasciando il tempo di osservare l'ambiente, il movimento e l'atmosfera della destinazione.`,
+  fr: `Découvrez {location} avec cette {category} en 4K. La vidéo montre {scene} dans un flux visuel continu, laissant le temps d'observer l'environnement, les mouvements et l'atmosphère de la destination.`,
+  ja: `この4K{category}で{location}を探索できます。映像は{scene}を連続した流れで映し、現地の環境や動き、雰囲気を自分のペースでじっくり見ることができます。`,
+  pt: `Explore {location} neste {category} em 4K. A gravação mostra {scene} em um fluxo visual contínuo, permitindo observar com calma o ambiente, o movimento e a atmosfera do destino.`,
+  ru: `Исследуйте {location} в этом видео {category} в 4K. Запись показывает {scene} непрерывным визуальным потоком и позволяет спокойно рассмотреть окружение, движение и атмосферу места.`,
+  zh: `通过这段4K{category}探索{location}。视频以连续的视觉流程呈现{scene}，让你可以按照自己的节奏观察当地环境、活动与整体氛围。`,
+  ko: `이 4K {category} 영상으로 {location}를 살펴보세요. {scene}가 끊김 없는 흐름으로 이어져 현지 환경과 움직임, 분위기를 자신의 속도로 천천히 관찰할 수 있습니다.`,
+  ar: `استكشف {location} من خلال {category} بدقة 4K. يعرض التسجيل {scene} في تدفق بصري متواصل، مع وقت كافٍ لملاحظة البيئة والحركة والأجواء في الوجهة.`,
+  hi: `इस 4K {category} के माध्यम से {location} को देखें। रिकॉर्डिंग {scene} को लगातार दृश्य प्रवाह में दिखाती है, जिससे आप स्थान के वातावरण, गतिविधि और आसपास के विवरणों को अपनी गति से देख सकते हैं।`,
+  nl: `Ontdek {location} met deze {category} in 4K. De opname toont {scene} in een ononderbroken visuele stroom, zodat je omgeving, beweging en sfeer van de bestemming rustig kunt bekijken.`,
+  pl: `Odkrywaj {location} dzięki temu materiałowi {category} w 4K. Nagranie pokazuje {scene} w ciągłym wizualnym rytmie, pozwalając spokojnie obserwować otoczenie, ruch i atmosferę miejsca.`,
+  sv: `Upptäck {location} genom denna {category} i 4K. Inspelningen visar {scene} i ett sammanhängande visuellt flöde och ger tid att observera miljön, rörelsen och atmosfären i destinationen.`,
+  id: `Jelajahi {location} melalui {category} 4K ini. Rekaman menampilkan {scene} dalam alur visual yang berkesinambungan sehingga lingkungan, pergerakan, dan suasana tujuan dapat diamati dengan santai.`,
+  vi: `Khám phá {location} qua {category} 4K này. Bản ghi thể hiện {scene} trong dòng hình ảnh liên tục, giúp bạn quan sát môi trường, chuyển động và bầu không khí của điểm đến theo nhịp riêng.`
+};
+
+const naturalFlowText: Record<string, string> = {
+  en: `The recording moves forward as one continuous journey, so {scene} can be followed in the natural order in which they were filmed. This makes it easier to notice how the surroundings and character of {location} change from one part of the recording to the next.`,
+  tr: `Kayıt tek bir akış halinde ilerlediği için {scene} görüntülerini doğal kayıt sırasıyla takip edebilirsiniz. Böylece video boyunca {location} çevresinin ve genel atmosferin bölümden bölüme nasıl değiştiğini daha rahat gözlemleyebilirsiniz.`,
+  de: `Die Aufnahme verläuft als zusammenhängende Reise, sodass sich {scene} in der natürlichen Reihenfolge der Dreharbeiten verfolgen lassen. Dadurch werden Veränderungen in Umgebung und Atmosphäre von {location} im Verlauf des Videos leichter erkennbar.`,
+  es: `La grabación avanza como un recorrido continuo, por lo que {scene} se pueden seguir en el orden natural en que fueron filmados. Así resulta más fácil percibir cómo cambian el entorno y la atmósfera de {location} a lo largo del video.`,
+  it: `La registrazione procede come un viaggio continuo, quindi {scene} possono essere seguiti nell'ordine naturale delle riprese. In questo modo è più facile notare come cambiano l'ambiente e l'atmosfera di {location} nel corso del video.`,
+  fr: `L'enregistrement avance comme un parcours continu, ce qui permet de suivre {scene} dans l'ordre naturel du tournage. Il devient ainsi plus facile de voir comment l'environnement et l'atmosphère de {location} évoluent au fil de la vidéo.`,
+  ja: `映像は一つの連続した流れとして進むため、{scene}を実際の撮影順に追うことができます。動画が進むにつれて、{location}の周辺環境や雰囲気がどのように変化するかも分かりやすくなります。`,
+  pt: `A gravação avança como uma jornada contínua, permitindo acompanhar {scene} na ordem natural em que foram filmados. Assim fica mais fácil perceber como o ambiente e a atmosfera de {location} mudam ao longo do vídeo.`,
+  ru: `Запись развивается как единое непрерывное путешествие, поэтому {scene} можно наблюдать в естественном порядке съёмки. Так легче заметить, как окружение и атмосфера {location} меняются по ходу видео.`,
+  zh: `视频以一段连续行程向前推进，因此可以按照实际拍摄顺序观察{scene}。随着画面展开，也更容易感受到{location}周边环境与整体氛围的变化。`,
+  ko: `영상은 하나의 연속된 여정으로 진행되므로 {scene}를 실제 촬영 순서대로 따라갈 수 있습니다. 영상이 이어지면서 {location}의 주변 환경과 분위기가 어떻게 달라지는지도 자연스럽게 확인할 수 있습니다.`,
+  ar: `يتقدم التسجيل كرحلة واحدة متصلة، لذلك يمكن متابعة {scene} وفق الترتيب الطبيعي للتصوير. ومع استمرار الفيديو يصبح من الأسهل ملاحظة تغير البيئة والأجواء في {location}.`,
+  hi: `रिकॉर्डिंग एक निरंतर यात्रा की तरह आगे बढ़ती है, इसलिए {scene} को उसी प्राकृतिक क्रम में देखा जा सकता है जिसमें उन्हें फिल्माया गया था। वीडियो के साथ आगे बढ़ते हुए {location} के वातावरण और आसपास के बदलाव भी स्पष्ट दिखते हैं।`,
+  nl: `De opname verloopt als één doorlopende reis, waardoor {scene} in de natuurlijke filmvolgorde kunnen worden gevolgd. Zo is beter te zien hoe omgeving en sfeer van {location} tijdens de video veranderen.`,
+  pl: `Nagranie rozwija się jako jedna ciągła podróż, dzięki czemu {scene} można śledzić w naturalnej kolejności filmowania. Łatwiej wtedy zauważyć, jak otoczenie i atmosfera {location} zmieniają się w trakcie filmu.`,
+  sv: `Inspelningen går framåt som en sammanhängande resa, så {scene} kan följas i den naturliga ordning de filmades. Det gör det lättare att se hur miljön och atmosfären i {location} förändras under videon.`,
+  id: `Rekaman bergerak sebagai satu perjalanan berkelanjutan, sehingga {scene} dapat diikuti sesuai urutan alami saat direkam. Dengan begitu perubahan lingkungan dan suasana {location} sepanjang video lebih mudah terlihat.`,
+  vi: `Bản ghi tiến triển như một hành trình liên tục, vì vậy {scene} có thể được theo dõi theo đúng thứ tự tự nhiên khi quay. Nhờ đó, sự thay đổi của môi trường và bầu không khí tại {location} trong suốt video cũng dễ nhận thấy hơn.`
+};
+
+const sourceFactText: Record<string, {
+  both: string;
+  date: string;
+  quality: string;
+  basic: string;
+}> = {
+  en: {
+    both: 'The video was published by {source} on {date} and is listed with {quality} quality.',
+    date: 'The video was published by {source} on {date}.',
+    quality: 'The video comes from {source} and is listed with {quality} quality.',
+    basic: 'Video source: {source}.'
+  },
+  tr: {
+    both: 'Video, {source} tarafından {date} tarihinde yayımlandı ve {quality} kalitesiyle listeleniyor.',
+    date: 'Video, {source} tarafından {date} tarihinde yayımlandı.',
+    quality: 'Video kaynağı {source}; görüntü kalitesi {quality} olarak listeleniyor.',
+    basic: 'Video kaynağı: {source}.'
+  },
+  de: {
+    both: 'Das Video wurde am {date} von {source} veröffentlicht und ist mit {quality} angegeben.',
+    date: 'Das Video wurde am {date} von {source} veröffentlicht.',
+    quality: 'Das Video stammt von {source} und ist mit {quality} angegeben.',
+    basic: 'Videoquelle: {source}.'
+  },
+  es: {
+    both: 'El video fue publicado por {source} el {date} y figura con calidad {quality}.',
+    date: 'El video fue publicado por {source} el {date}.',
+    quality: 'El video procede de {source} y figura con calidad {quality}.',
+    basic: 'Fuente del video: {source}.'
+  },
+  it: {
+    both: 'Il video è stato pubblicato da {source} il {date} ed è indicato con qualità {quality}.',
+    date: 'Il video è stato pubblicato da {source} il {date}.',
+    quality: 'Il video proviene da {source} ed è indicato con qualità {quality}.',
+    basic: 'Fonte del video: {source}.'
+  },
+  fr: {
+    both: 'La vidéo a été publiée par {source} le {date} et est indiquée en qualité {quality}.',
+    date: 'La vidéo a été publiée par {source} le {date}.',
+    quality: 'La vidéo provient de {source} et est indiquée en qualité {quality}.',
+    basic: 'Source de la vidéo : {source}.'
+  },
+  ja: {
+    both: 'この映像は{date}に{source}から公開され、画質情報は{quality}です。',
+    date: 'この映像は{date}に{source}から公開されました。',
+    quality: '映像提供元は{source}で、画質情報は{quality}です。',
+    basic: '映像提供元：{source}。'
+  },
+  pt: {
+    both: 'O vídeo foi publicado por {source} em {date} e está listado com qualidade {quality}.',
+    date: 'O vídeo foi publicado por {source} em {date}.',
+    quality: 'O vídeo é de {source} e está listado com qualidade {quality}.',
+    basic: 'Fonte do vídeo: {source}.'
+  },
+  ru: {
+    both: 'Видео опубликовано каналом {source} {date} и указано с качеством {quality}.',
+    date: 'Видео опубликовано каналом {source} {date}.',
+    quality: 'Источник видео — {source}; указанное качество — {quality}.',
+    basic: 'Источник видео: {source}.'
+  },
+  zh: {
+    both: '视频由{source}于{date}发布，当前标注画质为{quality}。',
+    date: '视频由{source}于{date}发布。',
+    quality: '视频来源为{source}，当前标注画质为{quality}。',
+    basic: '视频来源：{source}。'
+  },
+  ko: {
+    both: '이 영상은 {date}에 {source}에서 게시했으며 화질 정보는 {quality}입니다.',
+    date: '이 영상은 {date}에 {source}에서 게시했습니다.',
+    quality: '영상 출처는 {source}이며 화질 정보는 {quality}입니다.',
+    basic: '영상 출처: {source}.'
+  },
+  ar: {
+    both: 'نُشر الفيديو بواسطة {source} بتاريخ {date} وهو مدرج بجودة {quality}.',
+    date: 'نُشر الفيديو بواسطة {source} بتاريخ {date}.',
+    quality: 'مصدر الفيديو هو {source} وهو مدرج بجودة {quality}.',
+    basic: 'مصدر الفيديو: {source}.'
+  },
+  hi: {
+    both: 'वीडियो {source} द्वारा {date} को प्रकाशित किया गया था और इसकी सूचीबद्ध गुणवत्ता {quality} है।',
+    date: 'वीडियो {source} द्वारा {date} को प्रकाशित किया गया था।',
+    quality: 'वीडियो का स्रोत {source} है और सूचीबद्ध गुणवत्ता {quality} है।',
+    basic: 'वीडियो स्रोत: {source}।'
+  },
+  nl: {
+    both: 'De video werd op {date} gepubliceerd door {source} en staat vermeld met kwaliteit {quality}.',
+    date: 'De video werd op {date} gepubliceerd door {source}.',
+    quality: 'De video is afkomstig van {source} en staat vermeld met kwaliteit {quality}.',
+    basic: 'Videobron: {source}.'
+  },
+  pl: {
+    both: 'Film został opublikowany przez {source} dnia {date} i jest oznaczony jako {quality}.',
+    date: 'Film został opublikowany przez {source} dnia {date}.',
+    quality: 'Źródłem filmu jest {source}, a podana jakość to {quality}.',
+    basic: 'Źródło filmu: {source}.'
+  },
+  sv: {
+    both: 'Videon publicerades av {source} den {date} och är angiven med kvalitet {quality}.',
+    date: 'Videon publicerades av {source} den {date}.',
+    quality: 'Videon kommer från {source} och är angiven med kvalitet {quality}.',
+    basic: 'Videokälla: {source}.'
+  },
+  id: {
+    both: 'Video diterbitkan oleh {source} pada {date} dan tercantum dengan kualitas {quality}.',
+    date: 'Video diterbitkan oleh {source} pada {date}.',
+    quality: 'Video berasal dari {source} dan tercantum dengan kualitas {quality}.',
+    basic: 'Sumber video: {source}.'
+  },
+  vi: {
+    both: 'Video được {source} đăng vào {date} và được ghi nhận với chất lượng {quality}.',
+    date: 'Video được {source} đăng vào {date}.',
+    quality: 'Nguồn video là {source} và chất lượng được ghi nhận là {quality}.',
+    basic: 'Nguồn video: {source}.'
+  }
+};
+
+
+const safeSceneText: Record<string, Record<string, string>> = {
+  en: {
+    walk: 'the street-level surroundings and everyday city atmosphere seen during the walk',
+    airport: 'the terminal environment, passenger areas and movement inside the airport',
+    beach: 'the shoreline environment and coastal atmosphere shown along the route',
+    night: 'the streets and evening atmosphere shown after dark',
+    rain: 'the rain-soaked surroundings, reflections and changing street atmosphere',
+    rainNight: 'the illuminated wet streets, reflections and nighttime atmosphere',
+    drone: 'the landscape and built environment seen from the aerial perspective',
+    food: 'the food-focused surroundings and local street activity shown in the recording',
+    nature: 'the trail environment and natural scenery shown along the route',
+    culture: 'the cultural spaces, architecture and surroundings shown in the recording',
+    pov: 'the changing surroundings visible from the moving point of view',
+    documentary: 'the places and local context presented in the documentary'
+  },
+  tr: {
+    walk: 'yürüyüş boyunca görülen sokak çevresi ve günlük şehir atmosferi',
+    airport: 'terminal ortamı, yolcu alanları ve havalimanı içindeki hareket',
+    beach: 'rota boyunca görülen sahil çevresi ve kıyı atmosferi',
+    night: 'karanlık sonrası görülen sokaklar ve akşam atmosferi',
+    rain: 'yağmur altındaki çevre, yansımalar ve değişen sokak atmosferi',
+    rainNight: 'aydınlatılmış ıslak sokaklar, yansımalar ve gece atmosferi',
+    drone: 'havadan bakışla görülen çevre, yapılaşma ve manzara',
+    food: 'kayıtta görülen yeme-içme odaklı çevre ve yerel sokak hareketi',
+    nature: 'rota boyunca görülen patika çevresi ve doğal manzara',
+    culture: 'kayıtta görülen kültürel alanlar, mimari ve çevre',
+    pov: 'hareketli bakış açısından görülen değişen çevre',
+    documentary: 'belgeselde sunulan yerler ve yerel bağlam'
+  },
+  de: {
+    walk: 'die Straßenumgebung und alltägliche Stadtatmosphäre entlang des Spaziergangs',
+    airport: 'die Terminalumgebung, Passagierbereiche und Bewegungen innerhalb des Flughafens',
+    beach: 'die Küstenumgebung und Atmosphäre entlang der Route',
+    night: 'die Straßen und Abendatmosphäre nach Einbruch der Dunkelheit',
+    rain: 'die regennasse Umgebung, Spiegelungen und wechselnde Straßenatmosphäre',
+    rainNight: 'beleuchtete nasse Straßen, Spiegelungen und nächtliche Atmosphäre',
+    drone: 'Landschaft und Bebauung aus der Luftperspektive',
+    food: 'die auf Essen ausgerichtete Umgebung und lokale Straßenaktivität',
+    nature: 'die Wegumgebung und Naturlandschaft entlang der Route',
+    culture: 'kulturelle Orte, Architektur und Umgebung der Aufnahme',
+    pov: 'die wechselnde Umgebung aus der bewegten Perspektive',
+    documentary: 'die im Dokumentarfilm gezeigten Orte und lokalen Zusammenhänge'
+  },
+  es: {
+    walk: 'el entorno a pie de calle y la atmósfera urbana cotidiana del recorrido',
+    airport: 'el entorno de la terminal, las zonas de pasajeros y el movimiento dentro del aeropuerto',
+    beach: 'el entorno costero y la atmósfera del litoral mostrados en la ruta',
+    night: 'las calles y el ambiente nocturno después del anochecer',
+    rain: 'el entorno bajo la lluvia, los reflejos y la atmósfera cambiante de las calles',
+    rainNight: 'las calles mojadas e iluminadas, los reflejos y el ambiente nocturno',
+    drone: 'el paisaje y el entorno construido vistos desde una perspectiva aérea',
+    food: 'el entorno gastronómico y la actividad local de la calle mostrados en la grabación',
+    nature: 'el entorno del sendero y el paisaje natural a lo largo de la ruta',
+    culture: 'los espacios culturales, la arquitectura y el entorno mostrados en la grabación',
+    pov: 'el entorno cambiante visible desde el punto de vista en movimiento',
+    documentary: 'los lugares y el contexto local presentados en el documental'
+  },
+  it: {
+    walk: 'l’ambiente a livello strada e l’atmosfera urbana quotidiana lungo il percorso',
+    airport: 'l’ambiente del terminal, le aree passeggeri e il movimento all’interno dell’aeroporto',
+    beach: 'l’ambiente costiero e l’atmosfera del litorale mostrati lungo il percorso',
+    night: 'le strade e l’atmosfera serale dopo il tramonto',
+    rain: 'l’ambiente sotto la pioggia, i riflessi e l’atmosfera mutevole delle strade',
+    rainNight: 'le strade bagnate e illuminate, i riflessi e l’atmosfera notturna',
+    drone: 'il paesaggio e l’ambiente costruito visti dalla prospettiva aerea',
+    food: 'l’ambiente dedicato al cibo e l’attività locale di strada mostrati nella registrazione',
+    nature: 'l’ambiente del sentiero e il paesaggio naturale lungo il percorso',
+    culture: 'gli spazi culturali, l’architettura e l’ambiente mostrati nella registrazione',
+    pov: 'l’ambiente che cambia visto dal punto di vista in movimento',
+    documentary: 'i luoghi e il contesto locale presentati nel documentario'
+  },
+  fr: {
+    walk: 'l’environnement au niveau de la rue et l’atmosphère urbaine quotidienne pendant la promenade',
+    airport: 'l’environnement du terminal, les zones passagers et les mouvements à l’intérieur de l’aéroport',
+    beach: 'l’environnement du littoral et l’atmosphère côtière montrés le long du parcours',
+    night: 'les rues et l’atmosphère du soir après la tombée de la nuit',
+    rain: 'l’environnement sous la pluie, les reflets et l’atmosphère changeante des rues',
+    rainNight: 'les rues mouillées et éclairées, les reflets et l’atmosphère nocturne',
+    drone: 'le paysage et l’environnement bâti vus depuis une perspective aérienne',
+    food: 'l’environnement consacré à la cuisine et l’activité locale de rue montrés dans la vidéo',
+    nature: 'l’environnement du sentier et les paysages naturels le long du parcours',
+    culture: 'les espaces culturels, l’architecture et l’environnement montrés dans la vidéo',
+    pov: 'l’environnement changeant visible depuis le point de vue en mouvement',
+    documentary: 'les lieux et le contexte local présentés dans le documentaire'
+  },
+  ja: {
+    walk: '歩行中に見える街路の周辺環境と日常の街の雰囲気',
+    airport: '空港ターミナルの環境、旅客エリア、空港内の人の動き',
+    beach: 'ルート沿いに映る海岸周辺と沿岸の雰囲気',
+    night: '日没後の街路と夜の雰囲気',
+    rain: '雨に濡れた周辺、反射、変化する街路の雰囲気',
+    rainNight: '照明に照らされた濡れた街路、反射、夜の雰囲気',
+    drone: '空から見た景観と建物の広がり',
+    food: '映像に映る食を中心とした周辺環境と街の動き',
+    nature: 'ルート沿いのトレイル環境と自然景観',
+    culture: '映像に映る文化的空間、建築、周辺環境',
+    pov: '移動する視点から見える変化する周辺環境',
+    documentary: 'ドキュメンタリーで紹介される場所と地域の背景'
+  },
+  pt: {
+    walk: 'o ambiente ao nível da rua e a atmosfera urbana cotidiana ao longo do passeio',
+    airport: 'o ambiente do terminal, as áreas de passageiros e o movimento dentro do aeroporto',
+    beach: 'o ambiente costeiro e a atmosfera do litoral mostrados ao longo da rota',
+    night: 'as ruas e a atmosfera noturna depois de escurecer',
+    rain: 'o ambiente sob a chuva, os reflexos e a atmosfera mutável das ruas',
+    rainNight: 'as ruas molhadas e iluminadas, os reflexos e a atmosfera noturna',
+    drone: 'a paisagem e o ambiente construído vistos da perspectiva aérea',
+    food: 'o ambiente ligado à comida e a atividade local de rua mostrados na gravação',
+    nature: 'o ambiente da trilha e a paisagem natural ao longo da rota',
+    culture: 'os espaços culturais, a arquitetura e o entorno mostrados na gravação',
+    pov: 'o ambiente em mudança visto do ponto de vista em movimento',
+    documentary: 'os lugares e o contexto local apresentados no documentário'
+  },
+  ru: {
+    walk: 'уличное окружение и повседневная городская атмосфера во время прогулки',
+    airport: 'обстановка терминала, пассажирские зоны и движение внутри аэропорта',
+    beach: 'прибрежная обстановка и атмосфера побережья вдоль маршрута',
+    night: 'улицы и вечерняя атмосфера после наступления темноты',
+    rain: 'окружение под дождём, отражения и меняющаяся атмосфера улиц',
+    rainNight: 'освещённые мокрые улицы, отражения и ночная атмосфера',
+    drone: 'ландшафт и застройка с воздушной перспективы',
+    food: 'пространство, связанное с едой, и местная уличная активность',
+    nature: 'окружение тропы и природные пейзажи вдоль маршрута',
+    culture: 'культурные пространства, архитектура и окружение в записи',
+    pov: 'меняющееся окружение с движущейся точки зрения',
+    documentary: 'места и местный контекст, представленные в документальном видео'
+  },
+  zh: {
+    walk: '步行过程中看到的街道环境与日常城市氛围',
+    airport: '航站楼环境、旅客区域以及机场内部的人流活动',
+    beach: '路线沿途呈现的海岸环境与滨海氛围',
+    night: '入夜后的街道与夜间氛围',
+    rain: '雨中的环境、倒影与不断变化的街道氛围',
+    rainNight: '灯光下的湿润街道、倒影与夜间氛围',
+    drone: '从空中视角看到的景观与建筑环境',
+    food: '画面中以美食为主题的环境与当地街头活动',
+    nature: '路线沿途的步道环境与自然景观',
+    culture: '画面中的文化空间、建筑与周边环境',
+    pov: '移动视角中不断变化的周边环境',
+    documentary: '纪录片中呈现的地点与当地背景'
+  },
+  ko: {
+    walk: '도보 중 보이는 거리 주변 환경과 일상의 도시 분위기',
+    airport: '터미널 환경, 승객 구역, 공항 내부의 이동 모습',
+    beach: '경로를 따라 보이는 해안 환경과 해변 분위기',
+    night: '해가 진 뒤의 거리와 저녁 분위기',
+    rain: '비에 젖은 주변 환경, 반사광, 변화하는 거리 분위기',
+    rainNight: '조명에 비친 젖은 거리, 반사광, 야간 분위기',
+    drone: '공중 시점에서 보이는 풍경과 건축 환경',
+    food: '영상에 담긴 음식 중심의 주변 환경과 현지 거리 활동',
+    nature: '경로를 따라 보이는 트레일 환경과 자연 풍경',
+    culture: '영상에 담긴 문화 공간, 건축, 주변 환경',
+    pov: '움직이는 시점에서 보이는 변화하는 주변 환경',
+    documentary: '다큐멘터리에 소개되는 장소와 지역적 맥락'
+  },
+  ar: {
+    walk: 'المحيط على مستوى الشارع والأجواء اليومية للمدينة أثناء الجولة',
+    airport: 'بيئة مبنى المطار ومناطق المسافرين والحركة داخل المطار',
+    beach: 'البيئة الساحلية وأجواء الشاطئ الظاهرة على امتداد المسار',
+    night: 'الشوارع والأجواء المسائية بعد حلول الظلام',
+    rain: 'المحيط تحت المطر والانعكاسات وتغير أجواء الشوارع',
+    rainNight: 'الشوارع المبللة والمضاءة والانعكاسات والأجواء الليلية',
+    drone: 'المشهد والبيئة العمرانية كما تظهر من المنظور الجوي',
+    food: 'المحيط المرتبط بالطعام والنشاط المحلي في الشارع كما يظهر في التسجيل',
+    nature: 'بيئة المسار والمناظر الطبيعية على امتداد الطريق',
+    culture: 'المساحات الثقافية والعمارة والمحيط الظاهر في التسجيل',
+    pov: 'المحيط المتغير كما يظهر من وجهة النظر المتحركة',
+    documentary: 'الأماكن والسياق المحلي المقدم في الفيلم الوثائقي'
+  },
+  hi: {
+    walk: 'पैदल यात्रा के दौरान दिखाई देने वाला सड़क-स्तरीय परिवेश और रोज़मर्रा का शहरी माहौल',
+    airport: 'टर्मिनल का वातावरण, यात्री क्षेत्र और हवाई अड्डे के भीतर की गतिविधि',
+    beach: 'रूट के साथ दिखाई देने वाला तटीय परिवेश और समुद्री माहौल',
+    night: 'अंधेरा होने के बाद दिखाई देने वाली सड़कें और शाम का माहौल',
+    rain: 'बारिश से भीगा परिवेश, प्रतिबिंब और बदलता सड़क माहौल',
+    rainNight: 'रोशनी में भीगी सड़कें, प्रतिबिंब और रात का माहौल',
+    drone: 'हवाई दृष्टिकोण से दिखाई देने वाला परिदृश्य और निर्मित परिवेश',
+    food: 'रिकॉर्डिंग में दिखाई देने वाला भोजन-केंद्रित परिवेश और स्थानीय सड़क गतिविधि',
+    nature: 'रूट के साथ दिखाई देने वाला पगडंडी परिवेश और प्राकृतिक दृश्य',
+    culture: 'रिकॉर्डिंग में दिखाई देने वाले सांस्कृतिक स्थान, वास्तुकला और आसपास का परिवेश',
+    pov: 'चलते हुए दृष्टिकोण से दिखाई देने वाला बदलता परिवेश',
+    documentary: 'डॉक्यूमेंट्री में प्रस्तुत स्थान और स्थानीय संदर्भ'
+  },
+  nl: {
+    walk: 'de omgeving op straatniveau en de dagelijkse stadssfeer tijdens de wandeling',
+    airport: 'de terminalomgeving, passagierszones en beweging binnen de luchthaven',
+    beach: 'de kustomgeving en sfeer langs de route',
+    night: 'de straten en avondsfeer na het invallen van de duisternis',
+    rain: 'de regenachtige omgeving, weerspiegelingen en veranderende straatsfeer',
+    rainNight: 'verlichte natte straten, weerspiegelingen en nachtsfeer',
+    drone: 'het landschap en de bebouwde omgeving vanuit de lucht',
+    food: 'de op eten gerichte omgeving en lokale straatactiviteit in de opname',
+    nature: 'de padomgeving en natuurlijke landschappen langs de route',
+    culture: 'culturele ruimtes, architectuur en omgeving in de opname',
+    pov: 'de veranderende omgeving vanuit het bewegende standpunt',
+    documentary: 'de plaatsen en lokale context die in de documentaire worden gepresenteerd'
+  },
+  pl: {
+    walk: 'otoczenie na poziomie ulicy i codzienna atmosfera miasta podczas spaceru',
+    airport: 'otoczenie terminala, strefy pasażerskie i ruch wewnątrz lotniska',
+    beach: 'nadmorskie otoczenie i atmosfera wybrzeża wzdłuż trasy',
+    night: 'ulice i wieczorna atmosfera po zmroku',
+    rain: 'otoczenie w deszczu, odbicia i zmieniająca się atmosfera ulic',
+    rainNight: 'oświetlone mokre ulice, odbicia i nocna atmosfera',
+    drone: 'krajobraz i zabudowa widziane z perspektywy lotniczej',
+    food: 'otoczenie związane z jedzeniem i lokalna aktywność uliczna w nagraniu',
+    nature: 'otoczenie szlaku i naturalny krajobraz wzdłuż trasy',
+    culture: 'przestrzenie kulturowe, architektura i otoczenie pokazane w nagraniu',
+    pov: 'zmieniające się otoczenie widoczne z ruchomej perspektywy',
+    documentary: 'miejsca i lokalny kontekst przedstawione w materiale dokumentalnym'
+  },
+  sv: {
+    walk: 'gatumiljön och den vardagliga stadsatmosfären under promenaden',
+    airport: 'terminalmiljön, passagerarområden och rörelsen inne på flygplatsen',
+    beach: 'kustmiljön och atmosfären längs rutten',
+    night: 'gatorna och kvällsatmosfären efter mörkrets inbrott',
+    rain: 'den regnvåta miljön, reflektionerna och den föränderliga gatuatmosfären',
+    rainNight: 'upplysta våta gator, reflektioner och nattatmosfär',
+    drone: 'landskap och bebyggelse sedda ur flygperspektiv',
+    food: 'den matfokuserade miljön och den lokala gatuaktiviteten i inspelningen',
+    nature: 'ledmiljön och naturlandskapet längs rutten',
+    culture: 'kulturella miljöer, arkitektur och omgivningar i inspelningen',
+    pov: 'den föränderliga omgivningen sedd från det rörliga perspektivet',
+    documentary: 'platserna och den lokala kontexten som presenteras i dokumentären'
+  },
+  id: {
+    walk: 'lingkungan setingkat jalan dan suasana kota sehari-hari selama perjalanan',
+    airport: 'lingkungan terminal, area penumpang, dan pergerakan di dalam bandara',
+    beach: 'lingkungan pesisir dan suasana pantai yang terlihat sepanjang rute',
+    night: 'jalan-jalan dan suasana malam setelah gelap',
+    rain: 'lingkungan yang basah oleh hujan, pantulan, dan suasana jalan yang berubah',
+    rainNight: 'jalan basah yang diterangi lampu, pantulan, dan suasana malam',
+    drone: 'lanskap dan lingkungan bangunan yang terlihat dari sudut udara',
+    food: 'lingkungan bertema kuliner dan aktivitas jalan lokal yang terlihat dalam rekaman',
+    nature: 'lingkungan jalur dan pemandangan alam sepanjang rute',
+    culture: 'ruang budaya, arsitektur, dan lingkungan yang terlihat dalam rekaman',
+    pov: 'lingkungan yang berubah dari sudut pandang bergerak',
+    documentary: 'tempat dan konteks lokal yang disajikan dalam dokumenter'
+  },
+  vi: {
+    walk: 'không gian ở tầm đường phố và bầu không khí đô thị thường ngày trong suốt chuyến đi bộ',
+    airport: 'không gian nhà ga, khu vực hành khách và hoạt động bên trong sân bay',
+    beach: 'không gian ven biển và bầu không khí bờ biển xuất hiện dọc theo tuyến đường',
+    night: 'đường phố và bầu không khí buổi tối sau khi trời tối',
+    rain: 'khung cảnh dưới mưa, các phản chiếu và bầu không khí đường phố thay đổi',
+    rainNight: 'những con phố ướt được chiếu sáng, phản chiếu và bầu không khí ban đêm',
+    drone: 'cảnh quan và môi trường xây dựng nhìn từ góc nhìn trên không',
+    food: 'không gian tập trung vào ẩm thực và hoạt động đường phố địa phương trong video',
+    nature: 'không gian đường mòn và cảnh quan tự nhiên dọc theo tuyến đường',
+    culture: 'không gian văn hóa, kiến trúc và môi trường xung quanh trong video',
+    pov: 'môi trường thay đổi nhìn từ góc nhìn đang di chuyển',
+    documentary: 'các địa điểm và bối cảnh địa phương được trình bày trong phim tài liệu'
+  }
+};
+
+const polishedNarrativeText: Record<string, {
+  introDetail: string;
+  introBasic: string;
+  route: string;
+  flow: string;
+  closeDetail: string;
+  closeBasic: string;
+}> = {
+  en: {
+    introDetail: '{location}: this {category} focuses on {detail}, with {scene} forming the main visual setting.',
+    introBasic: '{location}: this {category} keeps the focus on {scene}.',
+    route: 'The source description identifies {route} along the route. These locations give the journey a clear geographic structure and make its progression easier to follow.',
+    flow: 'The video follows its own route as it unfolds, allowing the surroundings to change naturally from one part of the recording to the next.',
+    closeDetail: 'With {detail} as a central point, the recording provides a clear visual reference for this part of {location}.',
+    closeBasic: 'The recording provides a direct visual reference for {location}, centered on the environment shown in the video.'
+  },
+  tr: {
+    introDetail: '{location}: Bu {category}, {detail} çevresine odaklanıyor; {scene} videonun ana görsel bağlamını oluşturuyor.',
+    introBasic: '{location}: Bu {category}, {scene} odağında ilerliyor.',
+    route: 'Kaynak açıklamasında rota üzerinde {route} noktaları belirtiliyor. Bu yerler videodaki güzergâhın somut konumlarını gösteriyor ve ilerleyişi takip etmeyi kolaylaştırıyor.',
+    flow: 'Video kendi akışı boyunca ilerlerken çevredeki değişim de görüntülerle birlikte doğal biçimde takip ediliyor.',
+    closeDetail: '{detail} odağı sayesinde kayıt, {location} içindeki bu bölgeyi daha yakından görmek için net bir görsel referans sunuyor.',
+    closeBasic: 'Kayıt, {location} çevresini doğrudan görüntüler üzerinden görmek için sade ve net bir görsel referans sunuyor.'
+  },
+  de: {
+    introDetail: '{location}: Diese {category} konzentriert sich auf {detail}; {scene} bilden den visuellen Rahmen der Aufnahme.',
+    introBasic: '{location}: Diese {category} richtet den Blick auf {scene}.',
+    route: 'In der Quellenbeschreibung werden entlang der Route {route} genannt. Diese Orte geben dem Verlauf eine klare geografische Struktur und machen die Strecke leichter nachvollziehbar.',
+    flow: 'Das Video folgt seinem eigenen Verlauf, während sich die Umgebung von einem Abschnitt der Aufnahme zum nächsten auf natürliche Weise verändert.',
+    closeDetail: 'Mit {detail} als zentralem Bezugspunkt bietet die Aufnahme eine klare visuelle Orientierung für diesen Teil von {location}.',
+    closeBasic: 'Die Aufnahme bietet einen direkten visuellen Eindruck von {location} und konzentriert sich auf die im Video gezeigte Umgebung.'
+  },
+  es: {
+    introDetail: '{location}: este {category} se centra en {detail}, con {scene} como marco visual principal.',
+    introBasic: '{location}: este {category} mantiene el foco en {scene}.',
+    route: 'La descripción de la fuente señala {route} a lo largo del recorrido. Estos lugares dan una estructura geográfica clara al trayecto y facilitan seguir su avance.',
+    flow: 'El video sigue su propio recorrido y deja que el entorno cambie de forma natural de una parte de la grabación a la siguiente.',
+    closeDetail: 'Con {detail} como punto central, la grabación ofrece una referencia visual clara de esta parte de {location}.',
+    closeBasic: 'La grabación ofrece una referencia visual directa de {location}, centrada en el entorno que aparece en el video.'
+  },
+  it: {
+    introDetail: '{location}: questo {category} si concentra su {detail}, con {scene} come principale contesto visivo.',
+    introBasic: '{location}: questo {category} mantiene l’attenzione su {scene}.',
+    route: 'La descrizione della fonte indica {route} lungo il percorso. Questi luoghi danno al tragitto una struttura geografica chiara e ne rendono più semplice seguire l’avanzamento.',
+    flow: 'Il video segue il proprio percorso mentre l’ambiente cambia in modo naturale da una parte della registrazione alla successiva.',
+    closeDetail: 'Con {detail} come punto centrale, la registrazione offre un riferimento visivo chiaro per questa parte di {location}.',
+    closeBasic: 'La registrazione offre un riferimento visivo diretto di {location}, concentrandosi sull’ambiente mostrato nel video.'
+  },
+  fr: {
+    introDetail: '{location} : cette {category} se concentre sur {detail}, avec {scene} comme cadre visuel principal.',
+    introBasic: '{location} : cette {category} reste centrée sur {scene}.',
+    route: 'La description de la source mentionne {route} le long du parcours. Ces lieux donnent une structure géographique claire au trajet et permettent d’en suivre plus facilement la progression.',
+    flow: 'La vidéo suit son propre parcours et laisse l’environnement évoluer naturellement d’une partie de l’enregistrement à l’autre.',
+    closeDetail: 'Avec {detail} comme point central, l’enregistrement offre un repère visuel clair pour cette partie de {location}.',
+    closeBasic: 'L’enregistrement offre un aperçu visuel direct de {location}, centré sur l’environnement réellement montré dans la vidéo.'
+  },
+  ja: {
+    introDetail: '{location}：この{category}は{detail}周辺に焦点を当て、{scene}を映像の中心として捉えています。',
+    introBasic: '{location}：この{category}は{scene}を中心に構成されています。',
+    route: '元の説明文では、ルート上の地点として{route}が示されています。これらの場所によって移動の流れが具体的になり、映像の進行を追いやすくなります。',
+    flow: '映像は実際の進行に沿って続き、周囲の景色が区間ごとに自然に変化していく様子を確認できます。',
+    closeDetail: '{detail}を中心に見ることで、{location}のこのエリアを把握するための分かりやすい映像資料になります。',
+    closeBasic: 'この映像は、実際に映っている環境を中心に{location}を視覚的に確認できる資料です。'
+  },
+  pt: {
+    introDetail: '{location}: este {category} concentra-se em {detail}, tendo {scene} como principal contexto visual.',
+    introBasic: '{location}: este {category} mantém o foco em {scene}.',
+    route: 'A descrição da fonte identifica {route} ao longo do percurso. Esses locais dão uma estrutura geográfica clara ao trajeto e facilitam acompanhar a progressão do vídeo.',
+    flow: 'O vídeo segue o próprio percurso, permitindo que o ambiente mude naturalmente de uma parte da gravação para a seguinte.',
+    closeDetail: 'Com {detail} como ponto central, a gravação oferece uma referência visual clara desta parte de {location}.',
+    closeBasic: 'A gravação oferece uma referência visual direta de {location}, centrada no ambiente mostrado no vídeo.'
+  },
+  ru: {
+    introDetail: '{location}: этот материал в формате {category} сосредоточен на {detail}, а главным визуальным контекстом остаются {scene}.',
+    introBasic: '{location}: этот материал в формате {category} сосредоточен на {scene}.',
+    route: 'В исходном описании по маршруту указаны {route}. Эти места задают понятную географическую структуру и помогают следить за продвижением по видео.',
+    flow: 'Видео следует собственному маршруту, а окружающая обстановка естественно меняется от одной части записи к другой.',
+    closeDetail: 'Благодаря фокусу на {detail} запись служит наглядным визуальным ориентиром для этой части {location}.',
+    closeBasic: 'Запись даёт прямое визуальное представление о {location}, оставаясь сосредоточенной на показанном в видео окружении.'
+  },
+  zh: {
+    introDetail: '{location}：这段{category}以{detail}周边为重点，{scene}构成主要视觉内容。',
+    introBasic: '{location}：这段{category}主要呈现{scene}。',
+    route: '原始说明中标出的路线地点包括{route}。这些地点为行程提供了清晰的地理结构，也让视频中的移动过程更容易理解。',
+    flow: '视频按照自身路线推进，周围环境也会随着画面自然变化。',
+    closeDetail: '以{detail}为核心，这段影像可作为了解{location}这一片区的清晰视觉参考。',
+    closeBasic: '这段影像以实际画面中的环境为核心，为了解{location}提供直接的视觉参考。'
+  },
+  ko: {
+    introDetail: '{location}: 이 {category}은(는) {detail} 주변에 초점을 맞추며, {scene}이 주요 시각적 배경을 이룹니다.',
+    introBasic: '{location}: 이 {category}은(는) {scene}을 중심으로 보여 줍니다.',
+    route: '원본 설명에는 경로 지점으로 {route}이(가) 표시되어 있습니다. 이 장소들은 이동 경로를 구체적으로 보여 주고 영상의 진행을 따라가기 쉽게 합니다.',
+    flow: '영상은 실제 진행 경로를 따라 이어지며, 주변 환경이 구간마다 자연스럽게 달라지는 모습을 볼 수 있습니다.',
+    closeDetail: '{detail}에 초점을 둔 이 영상은 {location}의 해당 지역을 살펴볼 수 있는 분명한 시각적 참고 자료가 됩니다.',
+    closeBasic: '이 영상은 실제 화면에 담긴 환경을 중심으로 {location}을 살펴볼 수 있는 직접적인 시각 자료입니다.'
+  },
+  ar: {
+    introDetail: '{location}: يركز هذا {category} على محيط {detail}، بينما يشكل {scene} الإطار البصري الرئيسي للفيديو.',
+    introBasic: '{location}: يركز هذا {category} على {scene}.',
+    route: 'يذكر وصف المصدر نقاطاً على المسار تشمل {route}. تمنح هذه المواقع الرحلة بنية جغرافية واضحة وتجعل متابعة تقدم الفيديو أسهل.',
+    flow: 'يتبع الفيديو مساره كما هو، مع تغير البيئة المحيطة بصورة طبيعية من جزء من التسجيل إلى آخر.',
+    closeDetail: 'مع التركيز على {detail}، يقدم التسجيل مرجعاً بصرياً واضحاً لهذا الجزء من {location}.',
+    closeBasic: 'يقدم التسجيل مرجعاً بصرياً مباشراً لـ {location} مع التركيز على البيئة الظاهرة فعلياً في الفيديو.'
+  },
+  hi: {
+    introDetail: '{location}: यह {category}, {detail} के आसपास केंद्रित है और {scene} इसका मुख्य दृश्य संदर्भ बनाते हैं।',
+    introBasic: '{location}: यह {category}, {scene} पर केंद्रित है।',
+    route: 'मूल विवरण में मार्ग के बिंदुओं के रूप में {route} का उल्लेख है। ये स्थान यात्रा को स्पष्ट भौगोलिक संरचना देते हैं और वीडियो की प्रगति को समझना आसान बनाते हैं।',
+    flow: 'वीडियो अपने वास्तविक मार्ग के साथ आगे बढ़ता है और आसपास का परिवेश एक हिस्से से दूसरे हिस्से तक स्वाभाविक रूप से बदलता दिखाई देता है।',
+    closeDetail: '{detail} पर केंद्रित यह रिकॉर्डिंग {location} के इस हिस्से को देखने के लिए एक स्पष्ट दृश्य संदर्भ देती है।',
+    closeBasic: 'यह रिकॉर्डिंग वीडियो में दिखाई देने वाले परिवेश पर केंद्रित रहते हुए {location} का सीधा दृश्य संदर्भ देती है।'
+  },
+  nl: {
+    introDetail: '{location}: deze {category} richt zich op {detail}, met {scene} als belangrijkste visuele context.',
+    introBasic: '{location}: deze {category} blijft gericht op {scene}.',
+    route: 'In de bronbeschrijving worden langs de route {route} genoemd. Deze locaties geven de tocht een duidelijke geografische structuur en maken de voortgang gemakkelijker te volgen.',
+    flow: 'De video volgt zijn eigen route, terwijl de omgeving van het ene deel van de opname naar het volgende op natuurlijke wijze verandert.',
+    closeDetail: 'Met {detail} als centraal punt biedt de opname een duidelijke visuele referentie voor dit deel van {location}.',
+    closeBasic: 'De opname biedt een directe visuele referentie voor {location}, met de nadruk op de omgeving die in de video te zien is.'
+  },
+  pl: {
+    introDetail: '{location}: ten materiał typu {category} koncentruje się na {detail}, a głównym kontekstem wizualnym pozostają {scene}.',
+    introBasic: '{location}: ten materiał typu {category} koncentruje się na {scene}.',
+    route: 'W opisie źródłowym wskazano na trasie {route}. Miejsca te nadają przejściu czytelną strukturę geograficzną i ułatwiają śledzenie kolejnych etapów filmu.',
+    flow: 'Film podąża własną trasą, a otoczenie zmienia się naturalnie między kolejnymi częściami nagrania.',
+    closeDetail: 'Dzięki skupieniu na {detail} nagranie stanowi czytelny wizualny punkt odniesienia dla tej części {location}.',
+    closeBasic: 'Nagranie stanowi bezpośredni wizualny punkt odniesienia dla {location}, skupiony na otoczeniu widocznym w filmie.'
+  },
+  sv: {
+    introDetail: '{location}: denna {category} fokuserar på {detail}, med {scene} som huvudsaklig visuell miljö.',
+    introBasic: '{location}: denna {category} håller fokus på {scene}.',
+    route: 'I källbeskrivningen anges {route} längs rutten. Platserna ger resan en tydlig geografisk struktur och gör det lättare att följa hur videon rör sig framåt.',
+    flow: 'Videon följer sin egen rutt medan omgivningen förändras naturligt från en del av inspelningen till nästa.',
+    closeDetail: 'Med {detail} som central punkt ger inspelningen en tydlig visuell referens för denna del av {location}.',
+    closeBasic: 'Inspelningen ger en direkt visuell referens för {location}, med fokus på miljön som faktiskt visas i videon.'
+  },
+  id: {
+    introDetail: '{location}: {category} ini berfokus pada area {detail}, dengan {scene} sebagai konteks visual utama.',
+    introBasic: '{location}: {category} ini tetap berfokus pada {scene}.',
+    route: 'Deskripsi sumber menyebut {route} sebagai titik di sepanjang rute. Lokasi-lokasi ini memberi perjalanan struktur geografis yang jelas dan memudahkan mengikuti perkembangan video.',
+    flow: 'Video mengikuti rutenya sendiri, sementara lingkungan berubah secara alami dari satu bagian rekaman ke bagian berikutnya.',
+    closeDetail: 'Dengan {detail} sebagai titik utama, rekaman ini menjadi referensi visual yang jelas untuk bagian tersebut di {location}.',
+    closeBasic: 'Rekaman ini memberi referensi visual langsung tentang {location}, dengan fokus pada lingkungan yang terlihat di dalam video.'
+  },
+  vi: {
+    introDetail: '{location}: {category} này tập trung vào khu vực {detail}, với {scene} là bối cảnh hình ảnh chính.',
+    introBasic: '{location}: {category} này tập trung vào {scene}.',
+    route: 'Phần mô tả nguồn nêu các điểm trên tuyến gồm {route}. Những địa điểm này tạo cấu trúc địa lý rõ ràng cho hành trình và giúp việc theo dõi tiến trình của video dễ hơn.',
+    flow: 'Video đi theo chính tuyến đường của mình, trong khi cảnh quan xung quanh thay đổi tự nhiên từ phần này sang phần khác của bản ghi.',
+    closeDetail: 'Với {detail} là điểm nhấn chính, bản ghi mang lại một tham chiếu hình ảnh rõ ràng cho khu vực này của {location}.',
+    closeBasic: 'Bản ghi mang lại một tham chiếu hình ảnh trực tiếp về {location}, tập trung vào môi trường thực sự xuất hiện trong video.'
+  }
+};
+
+function buildSourceFact(context: NarrativeContext) {
+  const pack = sourceFactText[context.lang] || sourceFactText.en;
+  const template = context.date && context.quality
+    ? pack.both
+    : context.date
+      ? pack.date
+      : context.quality
+        ? pack.quality
+        : pack.basic;
+
+  return fillNarrative(template, {
+    source: context.source,
+    date: context.date,
+    quality: context.quality
+  });
+}
+
+type NaturalNarrativePack = {
+  intro: Record<string, string>;
+  route: string;
+  close: string;
+};
+
+const naturalNarrativeText: Record<string, NaturalNarrativePack> = {
+  en: {
+    intro: {
+      walk: '{location}: this {quality} {category} shows the streets and everyday city atmosphere from a ground-level perspective.',
+      airport: '{location}: this {quality} airport walk moves through terminal spaces, passenger areas and the everyday flow inside the airport.',
+      beach: '{location}: this {quality} beach walk follows the waterfront, promenades and the coastal atmosphere along the route.',
+      night: '{location}: this {quality} night walk captures illuminated streets, evening activity and the atmosphere after dark.',
+      rain: '{location}: this {quality} rain walk follows rain-soaked streets, reflections and the changing city atmosphere.',
+      rainNight: '{location}: this {quality} rainy night walk combines wet streets, reflections and illuminated city scenes after dark.',
+      drone: '{location}: this {quality} drone tour explores the area from above, revealing its overall layout, built environment and wider landscape from an aerial perspective.',
+      food: '{location}: this {quality} street-food walk focuses on local food settings, stalls, markets and the street activity around them.',
+      nature: '{location}: this {quality} nature walk follows trails, natural surroundings and the landscape encountered along the route.',
+      culture: '{location}: this {quality} cultural tour focuses on cultural spaces, architecture and the surrounding local setting.',
+      pov: '{location}: this {quality} POV journey follows roads and neighborhoods as the view changes naturally along the route.',
+      documentary: '{location}: this {quality} documentary presents the destination through its places, surroundings and local travel context.'
+    },
+    route: 'The route includes {route}, giving the video a clear geographic progression through the places shown.',
+    close: '{sourceLine} It offers a continuous visual experience for viewers who want to see {location} from this perspective.'
+  },
+  tr: {
+    intro: {
+      walk: '{location} bölgesindeki bu {quality} {category}, sokakları ve günlük şehir atmosferini yer seviyesinden gösteriyor.',
+      airport: '{location} bölgesindeki bu {quality} havalimanı yürüyüşü, terminal alanlarını, yolcu bölümlerini ve havalimanı içindeki günlük hareketi kesintisiz biçimde gösteriyor.',
+      beach: '{location} kıyısındaki bu {quality} plaj yürüyüşü, sahil şeridini, yürüyüş yollarını ve rota boyunca değişen kıyı atmosferini gösteriyor.',
+      night: '{location} bölgesindeki bu {quality} gece yürüyüşü, aydınlatılmış sokakları, akşam hareketini ve karanlık sonrası şehir atmosferini gösteriyor.',
+      rain: '{location} bölgesindeki bu {quality} yağmur yürüyüşü, yağmur altındaki sokakları, yansımaları ve değişen şehir atmosferini gösteriyor.',
+      rainNight: '{location} bölgesindeki bu {quality} yağmurlu gece yürüyüşü, ıslak sokakları, ışık yansımalarını ve gece şehir atmosferini bir arada gösteriyor.',
+      drone: '{location} bölgesini havadan keşfeden bu {quality} drone turu, bölgenin genel dokusunu, yapıları ve çevredeki geniş manzarayı yukarıdan gösteriyor.',
+      food: '{location} bölgesindeki bu {quality} sokak lezzetleri turu, yerel yemek ortamını, tezgâhları, pazarları ve çevredeki sokak hareketini gösteriyor.',
+      nature: '{location} bölgesindeki bu {quality} doğa yürüyüşü, patikaları, doğal çevreyi ve rota boyunca görülen manzaraları gösteriyor.',
+      culture: '{location} bölgesindeki bu {quality} kültür turu, kültürel mekânları, mimariyi ve çevredeki yerel dokuyu öne çıkarıyor.',
+      pov: '{location} bölgesindeki bu {quality} POV yolculuğu, yolları ve mahalleleri hareketli bir bakış açısından kesintisiz biçimde gösteriyor.',
+      documentary: '{location} üzerine hazırlanan bu {quality} belgesel, destinasyonu yerleri, çevresi ve yerel seyahat bağlamıyla birlikte gösteriyor.'
+    },
+    route: 'Rota {route} noktalarından geçiyor; böylece videodaki ilerleyiş gerçek konumlar üzerinden daha kolay takip edilebiliyor.',
+    close: '{sourceLine} Video, bu bölgeyi aynı bakış açısından görmek isteyenler için kesintisiz ve doğrudan bir görsel deneyim sunuyor.'
+  },
+  de: {
+    intro: {
+      walk: '{location}: dieser {quality} {category} zeigt Straßen und alltägliche Stadtatmosphäre aus der Fußgängerperspektive.',
+      airport: '{location}: dieser {quality} Flughafenspaziergang führt durch Terminalbereiche, Passagierzonen und den alltäglichen Ablauf im Flughafen.',
+      beach: '{location}: dieser {quality} Strandspaziergang folgt der Küste, den Promenaden und der wechselnden Atmosphäre am Meer.',
+      night: '{location}: dieser {quality} Nachtspaziergang zeigt beleuchtete Straßen, abendliches Treiben und die Atmosphäre nach Einbruch der Dunkelheit.',
+      rain: '{location}: dieser {quality} Regenspaziergang zeigt nasse Straßen, Spiegelungen und die wechselnde Stadtatmosphäre.',
+      rainNight: '{location}: dieser {quality} nächtliche Regenspaziergang verbindet nasse Straßen, Lichtreflexe und die Atmosphäre der Stadt bei Nacht.',
+      drone: '{location}: diese {quality} Drohnentour erkundet die Gegend aus der Luft und zeigt Struktur, Bebauung und die weitere Landschaft aus der Vogelperspektive.',
+      food: '{location}: diese {quality} Street-Food-Tour zeigt lokale Essensbereiche, Stände, Märkte und das Straßenleben rundherum.',
+      nature: '{location}: dieser {quality} Naturspaziergang folgt Wegen, natürlicher Umgebung und Landschaften entlang der Route.',
+      culture: '{location}: diese {quality} Kulturtour stellt kulturelle Orte, Architektur und das lokale Umfeld in den Mittelpunkt.',
+      pov: '{location}: diese {quality} POV-Fahrt folgt Straßen und Vierteln, während sich die Umgebung entlang der Strecke natürlich verändert.',
+      documentary: '{location}: diese {quality} Dokumentation zeigt das Reiseziel anhand seiner Orte, Umgebung und seines lokalen Reisekontexts.'
+    },
+    route: 'Die Route umfasst {route} und gibt dem Video damit einen klaren geografischen Verlauf durch die gezeigten Orte.',
+    close: '{sourceLine} Das Video bietet ein durchgehendes visuelles Erlebnis für alle, die {location} aus dieser Perspektive sehen möchten.'
+  },
+  es: {
+    intro: {
+      walk: '{location}: este {category} en {quality} muestra las calles y el ambiente urbano cotidiano desde una perspectiva a pie de calle.',
+      airport: '{location}: este recorrido a pie por el aeropuerto en {quality} atraviesa terminales, zonas de pasajeros y el movimiento cotidiano dentro del aeropuerto.',
+      beach: '{location}: este paseo por la playa en {quality} sigue la costa, los paseos marítimos y el ambiente costero a lo largo de la ruta.',
+      night: '{location}: este paseo nocturno en {quality} muestra calles iluminadas, actividad nocturna y el ambiente de la ciudad después del anochecer.',
+      rain: '{location}: este paseo bajo la lluvia en {quality} recorre calles mojadas, reflejos y un ambiente urbano cambiante.',
+      rainNight: '{location}: este paseo nocturno bajo la lluvia en {quality} combina calles mojadas, reflejos de luz y ambiente urbano nocturno.',
+      drone: '{location}: este recorrido con dron en {quality} explora la zona desde el aire y muestra su estructura general, el entorno construido y el paisaje más amplio.',
+      food: '{location}: este recorrido de comida callejera en {quality} se centra en puestos, mercados y la actividad local que los rodea.',
+      nature: '{location}: este paseo por la naturaleza en {quality} sigue senderos, entornos naturales y paisajes a lo largo de la ruta.',
+      culture: '{location}: este recorrido cultural en {quality} pone el foco en espacios culturales, arquitectura y el entorno local.',
+      pov: '{location}: este recorrido POV en {quality} sigue carreteras y barrios mientras la vista cambia de forma natural durante el trayecto.',
+      documentary: '{location}: este documental en {quality} presenta el destino a través de sus lugares, su entorno y su contexto de viaje.'
+    },
+    route: 'La ruta incluye {route}, lo que da al video una progresión geográfica clara por los lugares mostrados.',
+    close: '{sourceLine} Ofrece una experiencia visual continua para quienes quieran ver {location} desde esta perspectiva.'
+  },
+  it: {
+    intro: {
+      walk: '{location}: questo {category} in {quality} mostra strade e atmosfera urbana quotidiana da una prospettiva a livello della strada.',
+      airport: '{location}: questa passeggiata in aeroporto in {quality} attraversa terminal, aree passeggeri e il movimento quotidiano all’interno dello scalo.',
+      beach: '{location}: questa passeggiata sulla spiaggia in {quality} segue il litorale, le passeggiate e l’atmosfera costiera lungo il percorso.',
+      night: '{location}: questa passeggiata notturna in {quality} mostra strade illuminate, attività serale e atmosfera urbana dopo il tramonto.',
+      rain: '{location}: questa passeggiata sotto la pioggia in {quality} segue strade bagnate, riflessi e un’atmosfera urbana in continuo cambiamento.',
+      rainNight: '{location}: questa passeggiata notturna sotto la pioggia in {quality} unisce strade bagnate, riflessi di luce e atmosfera cittadina notturna.',
+      drone: '{location}: questo tour in drone in {quality} esplora l’area dall’alto, mostrando la struttura generale, l’ambiente costruito e il paesaggio circostante.',
+      food: '{location}: questo tour di street food in {quality} si concentra su bancarelle, mercati e attività locale intorno al cibo.',
+      nature: '{location}: questa passeggiata nella natura in {quality} segue sentieri, ambienti naturali e paesaggi lungo il percorso.',
+      culture: '{location}: questo tour culturale in {quality} mette in evidenza spazi culturali, architettura e contesto locale.',
+      pov: '{location}: questo viaggio POV in {quality} segue strade e quartieri mentre la visuale cambia naturalmente lungo il tragitto.',
+      documentary: '{location}: questo documentario in {quality} presenta la destinazione attraverso luoghi, ambiente e contesto di viaggio locale.'
+    },
+    route: 'Il percorso comprende {route}, dando al video una progressione geografica chiara tra i luoghi mostrati.',
+    close: '{sourceLine} Offre un’esperienza visiva continua per chi vuole vedere {location} da questa prospettiva.'
+  },
+  fr: {
+    intro: {
+      walk: '{location} : cette {category} en {quality} montre les rues et l’atmosphère urbaine quotidienne depuis le niveau de la rue.',
+      airport: '{location} : cette promenade dans l’aéroport en {quality} traverse les terminaux, les zones passagers et l’activité quotidienne à l’intérieur de l’aéroport.',
+      beach: '{location} : cette promenade sur la plage en {quality} suit le littoral, les promenades et l’atmosphère côtière au fil du parcours.',
+      night: '{location} : cette promenade nocturne en {quality} montre les rues éclairées, l’activité du soir et l’atmosphère de la ville après la tombée de la nuit.',
+      rain: '{location} : cette promenade sous la pluie en {quality} suit les rues mouillées, les reflets et l’atmosphère urbaine changeante.',
+      rainNight: '{location} : cette promenade nocturne sous la pluie en {quality} réunit rues mouillées, reflets lumineux et ambiance urbaine nocturne.',
+      drone: '{location} : ce tour en drone en {quality} explore la zone depuis les airs et montre sa structure générale, son environnement bâti et le paysage environnant.',
+      food: '{location} : ce parcours street food en {quality} met l’accent sur les stands, les marchés et l’activité locale autour de la cuisine de rue.',
+      nature: '{location} : cette promenade nature en {quality} suit les sentiers, les espaces naturels et les paysages rencontrés en chemin.',
+      culture: '{location} : ce parcours culturel en {quality} met en avant les espaces culturels, l’architecture et le cadre local.',
+      pov: '{location} : ce trajet POV en {quality} suit routes et quartiers tandis que le paysage évolue naturellement au fil du parcours.',
+      documentary: '{location} : ce documentaire en {quality} présente la destination à travers ses lieux, son environnement et son contexte de voyage.'
+    },
+    route: 'Le parcours comprend {route}, ce qui donne à la vidéo une progression géographique claire entre les lieux montrés.',
+    close: '{sourceLine} La vidéo offre une expérience visuelle continue à ceux qui souhaitent découvrir {location} sous cet angle.'
+  },
+  ja: {
+    intro: {
+      walk: '{location}のこの{quality}{category}では、街路と日常の街の雰囲気を歩行者目線で見ることができます。',
+      airport: '{location}のこの{quality}空港ウォークでは、ターミナル、旅客エリア、空港内の日常的な動きを連続して見ることができます。',
+      beach: '{location}のこの{quality}ビーチウォークでは、海岸線や遊歩道、ルート沿いの海辺の雰囲気を楽しめます。',
+      night: '{location}のこの{quality}ナイトウォークでは、ライトアップされた通りや夜の街の動き、日没後の雰囲気を見られます。',
+      rain: '{location}のこの{quality}レインウォークでは、雨に濡れた通りや反射、変化する街の雰囲気を追えます。',
+      rainNight: '{location}のこの{quality}雨の夜のウォークでは、濡れた通り、光の反射、夜の街の雰囲気が一体となって映し出されます。',
+      drone: '{location}を上空から巡るこの{quality}ドローン映像では、地域全体の構成、建物、周囲の広い景観を空中視点で見ることができます。',
+      food: '{location}のこの{quality}ストリートフード映像では、屋台や市場、その周辺のローカルな街の動きに焦点を当てています。',
+      nature: '{location}のこの{quality}ネイチャーウォークでは、ルート沿いの道、自然環境、景観を追っていきます。',
+      culture: '{location}のこの{quality}文化ツアーでは、文化施設、建築、周辺の地域環境に焦点を当てています。',
+      pov: '{location}のこの{quality}POV映像では、道路や地区を進みながら変化する景色を連続して見ることができます。',
+      documentary: '{location}を扱うこの{quality}ドキュメンタリーでは、場所、周辺環境、現地の旅行背景を通して目的地を紹介します。'
+    },
+    route: 'ルートには{route}が含まれ、映像の進行を実際の場所に沿って分かりやすく追うことができます。',
+    close: '{sourceLine} この視点から{location}を見たい人に、途切れのない視覚体験を提供します。'
+  },
+  pt: {
+    intro: {
+      walk: '{location}: este {category} em {quality} mostra ruas e a atmosfera cotidiana da cidade a partir do nível da rua.',
+      airport: '{location}: esta caminhada pelo aeroporto em {quality} percorre terminais, áreas de passageiros e o movimento cotidiano dentro do aeroporto.',
+      beach: '{location}: esta caminhada pela praia em {quality} acompanha a orla, os calçadões e a atmosfera costeira ao longo do percurso.',
+      night: '{location}: esta caminhada noturna em {quality} mostra ruas iluminadas, movimento à noite e a atmosfera da cidade depois de escurecer.',
+      rain: '{location}: esta caminhada na chuva em {quality} percorre ruas molhadas, reflexos e uma atmosfera urbana em transformação.',
+      rainNight: '{location}: esta caminhada noturna na chuva em {quality} reúne ruas molhadas, reflexos de luz e a atmosfera urbana da noite.',
+      drone: '{location}: este passeio de drone em {quality} explora a região do alto, mostrando sua estrutura geral, o ambiente construído e a paisagem ao redor.',
+      food: '{location}: este passeio de street food em {quality} destaca barracas, mercados e a atividade local ao redor da comida.',
+      nature: '{location}: esta caminhada na natureza em {quality} segue trilhas, ambientes naturais e paisagens ao longo da rota.',
+      culture: '{location}: este passeio cultural em {quality} destaca espaços culturais, arquitetura e o contexto local.',
+      pov: '{location}: este percurso POV em {quality} segue estradas e bairros enquanto a vista muda naturalmente ao longo do caminho.',
+      documentary: '{location}: este documentário em {quality} apresenta o destino por meio de seus lugares, ambiente e contexto local de viagem.'
+    },
+    route: 'A rota inclui {route}, dando ao vídeo uma progressão geográfica clara pelos lugares mostrados.',
+    close: '{sourceLine} O vídeo oferece uma experiência visual contínua para quem deseja ver {location} por essa perspectiva.'
+  },
+  ru: {
+    intro: {
+      walk: '{location}: этот {category} в {quality} показывает улицы и повседневную атмосферу города с уровня пешехода.',
+      airport: '{location}: эта прогулка по аэропорту в {quality} проходит через терминалы, пассажирские зоны и повседневное движение внутри аэропорта.',
+      beach: '{location}: эта пляжная прогулка в {quality} следует вдоль берега, набережных и меняющейся прибрежной атмосферы.',
+      night: '{location}: эта ночная прогулка в {quality} показывает освещённые улицы, вечернюю активность и атмосферу города после наступления темноты.',
+      rain: '{location}: эта прогулка под дождём в {quality} показывает мокрые улицы, отражения и меняющуюся городскую атмосферу.',
+      rainNight: '{location}: эта ночная прогулка под дождём в {quality} объединяет мокрые улицы, световые отражения и ночную атмосферу города.',
+      drone: '{location}: этот полёт на дроне в {quality} исследует местность с воздуха, показывая общую структуру, застройку и окружающий ландшафт.',
+      food: '{location}: этот тур по уличной еде в {quality} сосредоточен на торговых точках, рынках и местной активности вокруг еды.',
+      nature: '{location}: эта прогулка по природе в {quality} проходит по тропам, природному окружению и пейзажам вдоль маршрута.',
+      culture: '{location}: этот культурный тур в {quality} показывает культурные пространства, архитектуру и местное окружение.',
+      pov: '{location}: это POV-путешествие в {quality} следует по дорогам и районам, пока виды естественно меняются по ходу маршрута.',
+      documentary: '{location}: этот документальный фильм в {quality} раскрывает место через его локации, окружение и местный контекст путешествия.'
+    },
+    route: 'Маршрут включает {route}, благодаря чему продвижение по видео можно ясно проследить по реальным местам.',
+    close: '{sourceLine} Видео даёт непрерывный визуальный опыт для тех, кто хочет увидеть {location} с этой точки зрения.'
+  },
+  zh: {
+    intro: {
+      walk: '{location}：这段{quality}{category}从街道视角呈现城市街道与日常氛围。',
+      airport: '{location}：这段{quality}机场步行视频穿过航站楼和旅客区域，连续呈现机场内部的日常流动。',
+      beach: '{location}：这段{quality}海滩步行视频沿海岸线与滨海步道前进，呈现沿途不断变化的海边氛围。',
+      night: '{location}：这段{quality}夜间步行视频呈现灯光下的街道、夜间活动以及入夜后的城市氛围。',
+      rain: '{location}：这段{quality}雨中步行视频记录湿润的街道、倒影以及不断变化的城市氛围。',
+      rainNight: '{location}：这段{quality}雨夜步行视频将湿润街道、灯光倒影与夜间城市氛围结合在一起。',
+      drone: '{location}：这段{quality}无人机影像从空中探索该区域，展示整体格局、建筑环境与周边开阔景观。',
+      food: '{location}：这段{quality}街头美食视频聚焦摊位、市场以及围绕当地饮食展开的街头活动。',
+      nature: '{location}：这段{quality}自然步行视频沿步道前进，呈现沿途的自然环境与景观。',
+      culture: '{location}：这段{quality}文化之旅聚焦文化空间、建筑与周边的本地环境。',
+      pov: '{location}：这段{quality}POV旅程沿道路和街区前进，视野随着路线自然变化。',
+      documentary: '{location}：这段{quality}纪录片通过当地地点、环境与旅行背景呈现这一目的地。'
+    },
+    route: '路线包括{route}，使视频能够沿真实地点形成清晰的地理推进。',
+    close: '{sourceLine} 对希望从这一视角了解{location}的观众来说，这是一段连续而直接的视觉体验。'
+  },
+  ko: {
+    intro: {
+      walk: '{location}: 이 {quality} {category}은(는) 보행자 시점에서 거리와 일상의 도시 분위기를 보여 줍니다.',
+      airport: '{location}: 이 {quality} 공항 워크는 터미널과 승객 구역을 지나며 공항 내부의 일상적인 흐름을 연속적으로 보여 줍니다.',
+      beach: '{location}: 이 {quality} 해변 워크는 해안선과 산책로를 따라가며 경로에 따라 달라지는 바닷가 분위기를 보여 줍니다.',
+      night: '{location}: 이 {quality} 야간 워크는 불이 켜진 거리, 저녁 활동과 어두워진 뒤의 도시 분위기를 담습니다.',
+      rain: '{location}: 이 {quality} 빗속 워크는 젖은 거리, 반사되는 빛과 변화하는 도시 분위기를 보여 줍니다.',
+      rainNight: '{location}: 이 {quality} 비 오는 밤 워크는 젖은 거리, 빛의 반사와 야간 도시 분위기를 함께 담습니다.',
+      drone: '{location}: 이 {quality} 드론 투어는 지역을 상공에서 탐색하며 전체적인 구조, 건축 환경과 주변의 넓은 풍경을 보여 줍니다.',
+      food: '{location}: 이 {quality} 길거리 음식 투어는 노점, 시장과 음식 주변의 지역 활동에 초점을 맞춥니다.',
+      nature: '{location}: 이 {quality} 자연 워크는 트레일과 자연 환경, 경로를 따라 펼쳐지는 풍경을 보여 줍니다.',
+      culture: '{location}: 이 {quality} 문화 투어는 문화 공간, 건축과 주변의 지역 환경에 초점을 맞춥니다.',
+      pov: '{location}: 이 {quality} POV 여정은 도로와 동네를 따라 이동하며 경로에 따라 자연스럽게 달라지는 풍경을 보여 줍니다.',
+      documentary: '{location}: 이 {quality} 다큐멘터리는 장소, 주변 환경과 현지 여행 맥락을 통해 목적지를 소개합니다.'
+    },
+    route: '경로에는 {route}이(가) 포함되어 있어 실제 장소를 따라 영상의 진행을 쉽게 이해할 수 있습니다.',
+    close: '{sourceLine} 이 영상은 이러한 시점에서 {location}을 보고 싶은 시청자에게 연속적이고 직접적인 시각 경험을 제공합니다.'
+  },
+  ar: {
+    intro: {
+      walk: '{location}: تعرض هذه الجولة {category} بجودة {quality} الشوارع وأجواء المدينة اليومية من مستوى المشاة.',
+      airport: '{location}: تمر جولة المطار هذه بجودة {quality} عبر مباني المطار ومناطق المسافرين وتعرض الحركة اليومية داخله بصورة متصلة.',
+      beach: '{location}: تتبع جولة الشاطئ هذه بجودة {quality} الساحل والممرات البحرية والأجواء المتغيرة على امتداد الطريق.',
+      night: '{location}: تعرض هذه الجولة الليلية بجودة {quality} الشوارع المضاءة والنشاط المسائي وأجواء المدينة بعد حلول الظلام.',
+      rain: '{location}: تتبع جولة المطر هذه بجودة {quality} الشوارع المبتلة والانعكاسات وتغير أجواء المدينة.',
+      rainNight: '{location}: تجمع جولة الليل الماطر هذه بجودة {quality} بين الشوارع المبتلة وانعكاسات الأضواء وأجواء المدينة ليلاً.',
+      drone: '{location}: تستكشف جولة الدرون هذه بجودة {quality} المنطقة من الجو وتعرض بنيتها العامة والبيئة العمرانية والمشهد الواسع المحيط بها.',
+      food: '{location}: تركز جولة طعام الشارع هذه بجودة {quality} على الأكشاك والأسواق والنشاط المحلي المحيط بالطعام.',
+      nature: '{location}: تتبع جولة الطبيعة هذه بجودة {quality} المسارات والبيئة الطبيعية والمناظر الممتدة على طول الطريق.',
+      culture: '{location}: تركز الجولة الثقافية هذه بجودة {quality} على المساحات الثقافية والعمارة والمحيط المحلي.',
+      pov: '{location}: تتبع رحلة POV هذه بجودة {quality} الطرق والأحياء بينما يتغير المشهد بصورة طبيعية على امتداد المسار.',
+      documentary: '{location}: يقدم هذا الفيلم الوثائقي بجودة {quality} الوجهة من خلال أماكنها وبيئتها وسياق السفر المحلي.'
+    },
+    route: 'يشمل المسار {route}، ما يمنح الفيديو تقدماً جغرافياً واضحاً عبر المواقع الظاهرة.',
+    close: '{sourceLine} يقدم الفيديو تجربة بصرية متصلة لمن يريد رؤية {location} من هذا المنظور.'
+  },
+  hi: {
+    intro: {
+      walk: '{location}: यह {quality} {category} सड़क स्तर से गलियों और रोज़मर्रा के शहरी माहौल को दिखाता है।',
+      airport: '{location}: यह {quality} एयरपोर्ट वॉक टर्मिनल और यात्री क्षेत्रों से गुजरते हुए हवाई अड्डे के भीतर की रोज़मर्रा की गतिविधि दिखाता है।',
+      beach: '{location}: यह {quality} बीच वॉक तटरेखा, सैरगाह और रास्ते के साथ बदलते समुद्री माहौल को दिखाता है।',
+      night: '{location}: यह {quality} नाइट वॉक रोशन सड़कों, शाम की गतिविधि और अंधेरा होने के बाद शहर के माहौल को दिखाता है।',
+      rain: '{location}: यह {quality} रेन वॉक भीगी सड़कों, प्रतिबिंबों और बदलते शहरी माहौल को दिखाता है।',
+      rainNight: '{location}: यह {quality} बरसाती नाइट वॉक भीगी सड़कों, रोशनी के प्रतिबिंब और रात के शहरी माहौल को साथ दिखाता है।',
+      drone: '{location}: यह {quality} ड्रोन टूर ऊपर से क्षेत्र का अन्वेषण करता है और उसकी समग्र बनावट, निर्मित परिवेश तथा आसपास के विस्तृत दृश्य दिखाता है।',
+      food: '{location}: यह {quality} स्ट्रीट-फूड टूर स्टॉल, बाज़ार और भोजन के आसपास की स्थानीय गतिविधि पर केंद्रित है।',
+      nature: '{location}: यह {quality} नेचर वॉक रास्तों, प्राकृतिक परिवेश और मार्ग के साथ दिखाई देने वाले दृश्यों को दिखाता है।',
+      culture: '{location}: यह {quality} सांस्कृतिक टूर सांस्कृतिक स्थानों, वास्तुकला और आसपास के स्थानीय परिवेश पर केंद्रित है।',
+      pov: '{location}: यह {quality} POV यात्रा सड़कों और मोहल्लों से गुजरती है और रास्ते के साथ बदलते दृश्य दिखाती है।',
+      documentary: '{location}: यह {quality} डॉक्यूमेंट्री स्थानों, परिवेश और स्थानीय यात्रा संदर्भ के माध्यम से गंतव्य को प्रस्तुत करती है।'
+    },
+    route: 'मार्ग में {route} शामिल हैं, जिससे वीडियो की प्रगति को वास्तविक स्थानों के माध्यम से स्पष्ट रूप से समझा जा सकता है।',
+    close: '{sourceLine} यह वीडियो उन दर्शकों के लिए एक निरंतर दृश्य अनुभव देता है जो {location} को इस दृष्टिकोण से देखना चाहते हैं।'
+  },
+  nl: {
+    intro: {
+      walk: '{location}: deze {quality} {category} toont straten en de dagelijkse stadssfeer vanuit het perspectief van een voetganger.',
+      airport: '{location}: deze luchthavenwandeling in {quality} voert door terminals, passagierszones en de dagelijkse beweging binnen de luchthaven.',
+      beach: '{location}: deze strandwandeling in {quality} volgt de kustlijn, promenades en de veranderende sfeer langs zee.',
+      night: '{location}: deze avondwandeling in {quality} toont verlichte straten, avondactiviteit en de stadssfeer na zonsondergang.',
+      rain: '{location}: deze regenwandeling in {quality} volgt natte straten, weerspiegelingen en een veranderende stadssfeer.',
+      rainNight: '{location}: deze regenachtige avondwandeling in {quality} combineert natte straten, lichtreflecties en de nachtelijke stadssfeer.',
+      drone: '{location}: deze dronetocht in {quality} verkent het gebied vanuit de lucht en toont de algemene structuur, bebouwing en het ruimere landschap.',
+      food: '{location}: deze streetfoodtour in {quality} richt zich op kraampjes, markten en de lokale activiteit rond eten.',
+      nature: '{location}: deze natuurwandeling in {quality} volgt paden, natuurlijke omgevingen en landschappen langs de route.',
+      culture: '{location}: deze culturele tour in {quality} richt zich op culturele plekken, architectuur en de lokale omgeving.',
+      pov: '{location}: deze POV-reis in {quality} volgt wegen en wijken terwijl het uitzicht onderweg natuurlijk verandert.',
+      documentary: '{location}: deze documentaire in {quality} presenteert de bestemming via locaties, omgeving en lokale reiscontext.'
+    },
+    route: 'De route omvat {route}, waardoor de video een duidelijke geografische voortgang langs de getoonde plaatsen krijgt.',
+    close: '{sourceLine} De video biedt een doorlopende visuele ervaring voor wie {location} vanuit dit perspectief wil bekijken.'
+  },
+  pl: {
+    intro: {
+      walk: '{location}: ten {category} w {quality} pokazuje ulice i codzienną atmosferę miasta z perspektywy pieszego.',
+      airport: '{location}: ten spacer po lotnisku w {quality} prowadzi przez terminale, strefy pasażerskie i codzienny ruch wewnątrz lotniska.',
+      beach: '{location}: ten spacer po plaży w {quality} prowadzi wzdłuż wybrzeża, promenad i zmieniającej się atmosfery nad morzem.',
+      night: '{location}: ten nocny spacer w {quality} pokazuje oświetlone ulice, wieczorną aktywność i atmosferę miasta po zmroku.',
+      rain: '{location}: ten spacer w deszczu w {quality} pokazuje mokre ulice, odbicia i zmieniającą się miejską atmosferę.',
+      rainNight: '{location}: ten nocny spacer w deszczu w {quality} łączy mokre ulice, świetlne odbicia i nocną atmosferę miasta.',
+      drone: '{location}: ten lot dronem w {quality} pokazuje obszar z góry, jego ogólny układ, zabudowę i szerszy krajobraz.',
+      food: '{location}: ten spacer ze street foodem w {quality} skupia się na stoiskach, targach i lokalnej aktywności wokół jedzenia.',
+      nature: '{location}: ten spacer przyrodniczy w {quality} prowadzi przez szlaki, naturalne otoczenie i krajobrazy wzdłuż trasy.',
+      culture: '{location}: ta wycieczka kulturalna w {quality} skupia się na przestrzeniach kultury, architekturze i lokalnym otoczeniu.',
+      pov: '{location}: ta podróż POV w {quality} prowadzi drogami i dzielnicami, a widok naturalnie zmienia się w trakcie trasy.',
+      documentary: '{location}: ten dokument w {quality} przedstawia miejsce poprzez jego lokalizacje, otoczenie i lokalny kontekst podróży.'
+    },
+    route: 'Trasa obejmuje {route}, co nadaje filmowi wyraźny geograficzny przebieg przez pokazane miejsca.',
+    close: '{sourceLine} Film zapewnia ciągłe doświadczenie wizualne osobom, które chcą zobaczyć {location} z tej perspektywy.'
+  },
+  sv: {
+    intro: {
+      walk: '{location}: denna {quality} {category} visar gator och vardaglig stadsatmosfär ur fotgängarperspektiv.',
+      airport: '{location}: denna flygplatspromenad i {quality} går genom terminaler, passagerarområden och den dagliga rörelsen inne på flygplatsen.',
+      beach: '{location}: denna strandpromenad i {quality} följer kustlinjen, promenaderna och den skiftande atmosfären vid havet.',
+      night: '{location}: denna kvällspromenad i {quality} visar upplysta gator, kvällsliv och stadens atmosfär efter mörkrets inbrott.',
+      rain: '{location}: denna regnpromenad i {quality} följer våta gator, reflektioner och en skiftande stadsatmosfär.',
+      rainNight: '{location}: denna regniga kvällspromenad i {quality} kombinerar våta gator, ljusreflektioner och nattlig stadsatmosfär.',
+      drone: '{location}: denna drönartur i {quality} utforskar området från luften och visar dess övergripande struktur, bebyggelse och omgivande landskap.',
+      food: '{location}: denna streetfoodtur i {quality} fokuserar på stånd, marknader och den lokala aktiviteten kring maten.',
+      nature: '{location}: denna naturpromenad i {quality} följer stigar, naturmiljöer och landskap längs rutten.',
+      culture: '{location}: denna kulturtur i {quality} fokuserar på kulturella platser, arkitektur och den lokala omgivningen.',
+      pov: '{location}: denna POV-resa i {quality} följer vägar och stadsdelar medan utsikten förändras naturligt under färden.',
+      documentary: '{location}: denna dokumentär i {quality} presenterar destinationen genom dess platser, omgivning och lokala resekontekst.'
+    },
+    route: 'Rutten omfattar {route}, vilket ger videon en tydlig geografisk utveckling genom platserna som visas.',
+    close: '{sourceLine} Videon ger en sammanhängande visuell upplevelse för den som vill se {location} ur detta perspektiv.'
+  },
+  id: {
+    intro: {
+      walk: '{location}: {category} {quality} ini menampilkan jalan dan suasana kota sehari-hari dari sudut pandang pejalan kaki.',
+      airport: '{location}: jelajah bandara {quality} ini melewati terminal, area penumpang, dan aktivitas sehari-hari di dalam bandara.',
+      beach: '{location}: jalan kaki pantai {quality} ini mengikuti garis pantai, promenade, dan suasana pesisir yang berubah sepanjang rute.',
+      night: '{location}: jalan malam {quality} ini menampilkan jalan yang diterangi, aktivitas malam, dan suasana kota setelah gelap.',
+      rain: '{location}: jalan kaki saat hujan {quality} ini menampilkan jalan basah, pantulan, dan suasana kota yang berubah.',
+      rainNight: '{location}: jalan malam saat hujan {quality} ini memadukan jalan basah, pantulan cahaya, dan suasana kota pada malam hari.',
+      drone: '{location}: tur drone {quality} ini menjelajahi area dari udara, menampilkan susunan keseluruhan, lingkungan bangunan, dan lanskap luas di sekitarnya.',
+      food: '{location}: tur street food {quality} ini berfokus pada kios, pasar, dan aktivitas lokal di sekitar makanan.',
+      nature: '{location}: jalan alam {quality} ini mengikuti jalur, lingkungan alami, dan lanskap sepanjang rute.',
+      culture: '{location}: tur budaya {quality} ini menyoroti ruang budaya, arsitektur, dan lingkungan lokal di sekitarnya.',
+      pov: '{location}: perjalanan POV {quality} ini mengikuti jalan dan kawasan saat pemandangan berubah secara alami sepanjang rute.',
+      documentary: '{location}: dokumenter {quality} ini memperkenalkan destinasi melalui tempat, lingkungan, dan konteks perjalanan lokalnya.'
+    },
+    route: 'Rute mencakup {route}, sehingga perkembangan video dapat diikuti dengan jelas melalui lokasi nyata yang ditampilkan.',
+    close: '{sourceLine} Video ini menawarkan pengalaman visual berkelanjutan bagi siapa pun yang ingin melihat {location} dari perspektif ini.'
+  },
+  vi: {
+    intro: {
+      walk: '{location}: {category} {quality} này cho thấy đường phố và nhịp sống đô thị thường ngày từ góc nhìn của người đi bộ.',
+      airport: '{location}: chuyến đi bộ sân bay {quality} này đi qua các nhà ga, khu vực hành khách và nhịp hoạt động thường ngày bên trong sân bay.',
+      beach: '{location}: chuyến đi bộ bãi biển {quality} này men theo bờ biển, lối dạo và bầu không khí ven biển thay đổi dọc tuyến.',
+      night: '{location}: chuyến đi bộ ban đêm {quality} này ghi lại những con phố sáng đèn, hoạt động buổi tối và bầu không khí thành phố sau khi trời tối.',
+      rain: '{location}: chuyến đi bộ dưới mưa {quality} này ghi lại đường phố ướt, các phản chiếu và bầu không khí đô thị thay đổi.',
+      rainNight: '{location}: chuyến đi bộ đêm mưa {quality} này kết hợp đường phố ướt, phản chiếu ánh sáng và bầu không khí thành phố về đêm.',
+      drone: '{location}: chuyến bay drone {quality} này khám phá khu vực từ trên cao, cho thấy bố cục tổng thể, môi trường xây dựng và cảnh quan rộng xung quanh.',
+      food: '{location}: chuyến khám phá ẩm thực đường phố {quality} này tập trung vào quầy hàng, chợ và hoạt động địa phương xung quanh món ăn.',
+      nature: '{location}: chuyến đi bộ thiên nhiên {quality} này men theo các lối mòn, môi trường tự nhiên và cảnh quan dọc tuyến.',
+      culture: '{location}: chuyến tham quan văn hóa {quality} này tập trung vào không gian văn hóa, kiến trúc và bối cảnh địa phương xung quanh.',
+      pov: '{location}: hành trình POV {quality} này đi qua các con đường và khu phố trong khi khung cảnh thay đổi tự nhiên theo tuyến.',
+      documentary: '{location}: phim tài liệu {quality} này giới thiệu điểm đến thông qua các địa điểm, môi trường và bối cảnh du lịch địa phương.'
+    },
+    route: 'Tuyến đường gồm {route}, giúp tiến trình của video được theo dõi rõ ràng qua các địa điểm thực tế xuất hiện trong hành trình.',
+    close: '{sourceLine} Video mang lại trải nghiệm hình ảnh liên tục cho những ai muốn nhìn {location} từ góc độ này.'
+  }
+};
+
+const naturalSourceText: Record<string, { date: string; basic: string }> = {
+  en: {
+    date: 'Published by {source} on {date}, the video offers a continuous visual experience for viewers who want to see {location} from this perspective.',
+    basic: 'Published by {source}, the video offers a continuous visual experience for viewers who want to see {location} from this perspective.'
+  },
+  tr: {
+    date: '{source} tarafından {date} tarihinde yayımlanan video, bu bölgeyi aynı bakış açısından görmek isteyenler için kesintisiz ve doğrudan bir görsel deneyim sunuyor.',
+    basic: '{source} tarafından yayımlanan video, bu bölgeyi aynı bakış açısından görmek isteyenler için kesintisiz ve doğrudan bir görsel deneyim sunuyor.'
+  },
+  de: {
+    date: 'Das am {date} von {source} veröffentlichte Video bietet ein durchgehendes visuelles Erlebnis für alle, die {location} aus dieser Perspektive sehen möchten.',
+    basic: 'Das von {source} veröffentlichte Video bietet ein durchgehendes visuelles Erlebnis für alle, die {location} aus dieser Perspektive sehen möchten.'
+  },
+  es: {
+    date: 'Publicado por {source} el {date}, el video ofrece una experiencia visual continua para quienes quieran ver {location} desde esta perspectiva.',
+    basic: 'Publicado por {source}, el video ofrece una experiencia visual continua para quienes quieran ver {location} desde esta perspectiva.'
+  },
+  it: {
+    date: 'Pubblicato da {source} il {date}, il video offre un’esperienza visiva continua per chi vuole vedere {location} da questa prospettiva.',
+    basic: 'Pubblicato da {source}, il video offre un’esperienza visiva continua per chi vuole vedere {location} da questa prospettiva.'
+  },
+  fr: {
+    date: 'Publiée par {source} le {date}, la vidéo offre une expérience visuelle continue à ceux qui souhaitent découvrir {location} sous cet angle.',
+    basic: 'Publiée par {source}, la vidéo offre une expérience visuelle continue à ceux qui souhaitent découvrir {location} sous cet angle.'
+  },
+  ja: {
+    date: '{date}に{source}から公開されたこの映像は、この視点から{location}を見たい人に途切れのない視覚体験を提供します。',
+    basic: '{source}から公開されたこの映像は、この視点から{location}を見たい人に途切れのない視覚体験を提供します。'
+  },
+  pt: {
+    date: 'Publicado por {source} em {date}, o vídeo oferece uma experiência visual contínua para quem deseja ver {location} por essa perspectiva.',
+    basic: 'Publicado por {source}, o vídeo oferece uma experiência visual contínua para quem deseja ver {location} por essa perspectiva.'
+  },
+  ru: {
+    date: 'Опубликованное каналом {source} {date}, видео даёт непрерывный визуальный опыт тем, кто хочет увидеть {location} с этой точки зрения.',
+    basic: 'Опубликованное каналом {source}, видео даёт непрерывный визуальный опыт тем, кто хочет увидеть {location} с этой точки зрения.'
+  },
+  zh: {
+    date: '这段视频由{source}于{date}发布，为希望从这一视角了解{location}的观众提供连续而直接的视觉体验。',
+    basic: '这段视频由{source}发布，为希望从这一视角了解{location}的观众提供连续而直接的视觉体验。'
+  },
+  ko: {
+    date: '{date}에 {source}에서 공개한 이 영상은 이러한 시점에서 {location}을 보고 싶은 시청자에게 연속적이고 직접적인 시각 경험을 제공합니다.',
+    basic: '{source}에서 공개한 이 영상은 이러한 시점에서 {location}을 보고 싶은 시청자에게 연속적이고 직접적인 시각 경험을 제공합니다.'
+  },
+  ar: {
+    date: 'يقدم الفيديو الذي نشرته {source} بتاريخ {date} تجربة بصرية متصلة لمن يريد رؤية {location} من هذا المنظور.',
+    basic: 'يقدم الفيديو الذي نشرته {source} تجربة بصرية متصلة لمن يريد رؤية {location} من هذا المنظور.'
+  },
+  hi: {
+    date: '{source} द्वारा {date} को प्रकाशित यह वीडियो उन दर्शकों के लिए एक निरंतर दृश्य अनुभव देता है जो {location} को इस दृष्टिकोण से देखना चाहते हैं।',
+    basic: '{source} द्वारा प्रकाशित यह वीडियो उन दर्शकों के लिए एक निरंतर दृश्य अनुभव देता है जो {location} को इस दृष्टिकोण से देखना चाहते हैं।'
+  },
+  nl: {
+    date: 'De video, op {date} gepubliceerd door {source}, biedt een doorlopende visuele ervaring voor wie {location} vanuit dit perspectief wil bekijken.',
+    basic: 'De door {source} gepubliceerde video biedt een doorlopende visuele ervaring voor wie {location} vanuit dit perspectief wil bekijken.'
+  },
+  pl: {
+    date: 'Film opublikowany przez {source} dnia {date} zapewnia ciągłe doświadczenie wizualne osobom, które chcą zobaczyć {location} z tej perspektywy.',
+    basic: 'Film opublikowany przez {source} zapewnia ciągłe doświadczenie wizualne osobom, które chcą zobaczyć {location} z tej perspektywy.'
+  },
+  sv: {
+    date: 'Videon, publicerad av {source} den {date}, ger en sammanhängande visuell upplevelse för den som vill se {location} ur detta perspektiv.',
+    basic: 'Videon, publicerad av {source}, ger en sammanhängande visuell upplevelse för den som vill se {location} ur detta perspektiv.'
+  },
+  id: {
+    date: 'Video yang diterbitkan oleh {source} pada {date} menawarkan pengalaman visual berkelanjutan bagi siapa pun yang ingin melihat {location} dari perspektif ini.',
+    basic: 'Video yang diterbitkan oleh {source} menawarkan pengalaman visual berkelanjutan bagi siapa pun yang ingin melihat {location} dari perspektif ini.'
+  },
+  vi: {
+    date: 'Được {source} đăng vào {date}, video mang lại trải nghiệm hình ảnh liên tục cho những ai muốn nhìn {location} từ góc độ này.',
+    basic: 'Được {source} đăng tải, video mang lại trải nghiệm hình ảnh liên tục cho những ai muốn nhìn {location} từ góc độ này.'
+  }
+};
+
+function buildNarrative(context: NarrativeContext) {
+  const pack = naturalNarrativeText[context.lang] || naturalNarrativeText.en;
+  const sourcePack = naturalSourceText[context.lang] || naturalSourceText.en;
+  const values = {
+    location: context.location,
+    category: context.category,
+    scene: context.scene,
+    detail: context.detail,
+    route: context.route,
+    source: context.source,
+    date: context.date,
+    quality: context.quality || ''
+  };
+
+  const introTemplate = pack.intro[context.mode] || pack.intro.walk;
+  const sourceTemplate = context.date ? sourcePack.date : sourcePack.basic;
+  const paragraphs = [
+    fillNarrative(introTemplate, values),
+    context.route ? fillNarrative(pack.route, values) : '',
+    fillNarrative(sourceTemplate, values)
+  ];
+
+  return paragraphs
+    .map((paragraph) => paragraph.replace(/\s+/g, ' ').replace(/\s+([,.;:!?])/g, '$1').trim())
+    .filter(Boolean);
+}
+
+const detailLabel = extractVideoSpecificDetail(
+  resolvedVideo,
+  seoTitle,
+  currentLang
+);
+
+const routePlaces = extractRoutePlaces(video.description);
+const routeLabel = formatRouteList(routePlaces, currentLang);
+const publishedLabel = formatVideoDate(video.publishedAt, currentLang);
+const narrativeQuality = normalizeNarrativeQuality(video.badge);
+const sceneKey = getNarrativeSceneKey(resolvedVideo);
+const languageScenes = safeSceneText[currentLang] || safeSceneText.en;
+const sceneLabel = languageScenes[sceneKey] || languageScenes.walk;
+
+const narrativeContext: NarrativeContext = {
+  lang: currentLang,
+  mode: sceneKey,
+  location:
+    locationLabel ||
+    video.city ||
+    video.country ||
+    'Old Towns Walks',
+  category: descriptionStyleLabel || categoryLabel,
+  scene: sceneLabel,
+  detail: detailLabel,
+  route: routeLabel,
+  source: sourceName,
+  date: publishedLabel,
+  quality: narrativeQuality,
+  seed: hashText(video.id || seoTitle)
+};
+
+const pageDescription = seoContent.paragraphs;
+
+const metaDescription = seoContent.metaDescription;
+
+const videoSchema = seoContent.videoObject;
+
+const defaultAlternateUrl =
+  seoContent.sitemap.alternates.find((alternate) => alternate.lang === defaultLang)?.href ||
+  seoContent.canonicalUrl;
+
+const breadcrumbSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'BreadcrumbList',
+  itemListElement: [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Old Towns',
+      item: new URL(`/${currentLang}/`, seoContent.canonicalUrl).toString()
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: seoTitle,
+      item: seoContent.canonicalUrl
+    }
+  ]
+};
 
 ---
 
@@ -826,6 +3090,40 @@ const metaDescription =
   description={metaDescription}
 
 >
+
+  <Fragment slot="head">
+
+    <link
+
+      rel="canonical"
+
+      href={seoContent.canonicalUrl}
+
+    />
+
+    <meta
+
+      name="robots"
+
+      content={seoContent.robots}
+
+    />
+
+    {seoContent.sitemap.alternates.map((alternate) => (
+      <link
+        rel="alternate"
+        hreflang={alternate.lang}
+        href={alternate.href}
+      />
+    ))}
+
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={defaultAlternateUrl}
+    />
+
+  </Fragment>
 
   <div class="walk-page">
 
@@ -853,29 +3151,91 @@ const metaDescription =
 
       <aside class="left-rail">
 
-        <section class="side-module">
-
-          <div class="module-icon">⌖</div>
-
-          <div>
-
-            <h2>{label('map')}</h2>
-
-            <p>{label('planned')}</p>
-
-          </div>
-
-        </section>
-
-        <section class="side-module">
+        <section class="side-module hotel-module">
 
           <div class="module-icon">⌂</div>
 
-          <div>
+          <div class="hotel-module-content">
 
-            <h2>{label('hotels')}</h2>
+            <div class="hotel-module-heading">
 
-            <p>{label('planned')}</p>
+              <h2>{label('hotels')}</h2>
+
+              {nearbyHotelsTotal > nearbyHotels.length && (
+
+                <span class="hotel-more-count">
+                  +{nearbyHotelsTotal - nearbyHotels.length}
+                </span>
+
+              )}
+
+            </div>
+
+            {nearbyHotels.length > 0 ? (
+
+              <ol class="hotel-preview-list">
+
+                {nearbyHotels.map((hotel) => (
+
+                  <li>
+
+                    {hotel.bookingUrl ? (
+
+                      <a
+                        href={hotel.bookingUrl}
+                        target="_blank"
+                        rel="nofollow sponsored noopener"
+                      >
+
+                        <span class="hotel-preview-name">
+                          {resolveHotelDisplayName(hotel, currentLang)}
+                        </span>
+
+                        <span class="hotel-preview-meta">
+                          {formatHotelDistance(
+                            hotel.distanceMeters,
+                            currentLang
+                          )}
+                          {typeof hotel.guestRating === 'number' && (
+                            <> · ★ {hotel.guestRating}</>
+                          )}
+                        </span>
+
+                      </a>
+
+                    ) : (
+
+                      <div>
+
+                        <span class="hotel-preview-name">
+                          {resolveHotelDisplayName(hotel, currentLang)}
+                        </span>
+
+                        <span class="hotel-preview-meta">
+                          {formatHotelDistance(
+                            hotel.distanceMeters,
+                            currentLang
+                          )}
+                          {typeof hotel.guestRating === 'number' && (
+                            <> · ★ {hotel.guestRating}</>
+                          )}
+                        </span>
+
+                      </div>
+
+                    )}
+
+                  </li>
+
+                ))}
+
+              </ol>
+
+            ) : (
+
+              <p>{label('planned')}</p>
+
+            )}
 
           </div>
 
@@ -989,7 +3349,7 @@ const metaDescription =
 
           )}
 
-          {video.category && (
+          {resolvedCategory && (
 
             <div class="meta-item">
 
@@ -1093,7 +3453,7 @@ const metaDescription =
 
         <div class="related-scroll">
 
-          {relatedVideos.map((item) => (
+          {relatedVideos.map((item: Video) => (
 
             <a
 
@@ -1169,6 +3529,11 @@ const metaDescription =
 
   />
 
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify(breadcrumbSchema)}
+  />
+
 </BaseLayout>
 
 <style>
@@ -1187,7 +3552,7 @@ const metaDescription =
 
   .page-top {
 
-    width: min(1660px, calc(100% - 24px));
+    width: min(1720px, calc(100% - 24px));
 
     margin: 0 auto 16px;
 
@@ -1233,7 +3598,7 @@ const metaDescription =
 
   .discovery-layout {
 
-    width: min(1660px, calc(100% - 24px));
+    width: min(1720px, calc(100% - 24px));
 
     margin: 0 auto;
 
@@ -1241,7 +3606,7 @@ const metaDescription =
 
     grid-template-columns:
 
-      260px
+      390px
 
       minmax(700px, 900px)
 
@@ -1336,6 +3701,170 @@ const metaDescription =
     font-size: 12px;
 
     line-height: 1.45;
+
+  }
+
+  .hotel-module {
+
+    align-items: flex-start;
+
+    height: calc(100vh - 122px);
+
+    min-height: 340px;
+
+    overflow: hidden;
+
+  }
+
+  .hotel-module-content {
+
+    width: 100%;
+
+    min-width: 0;
+
+    height: 100%;
+
+    display: flex;
+
+    flex-direction: column;
+
+  }
+
+  .hotel-module-heading {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 8px;
+
+  }
+
+  .hotel-more-count {
+
+    flex: 0 0 auto;
+
+    padding: 2px 6px;
+
+    border-radius: 999px;
+
+    background: #1b2430;
+
+    color: #98a6b8;
+
+    font-size: 10px;
+
+    font-weight: 700;
+
+  }
+
+  .hotel-preview-list {
+
+    margin: 1px 0 0;
+
+    padding: 0 4px 0 0;
+
+    list-style: none;
+
+    display: grid;
+
+    gap: 6px;
+
+    min-height: 0;
+
+    overflow-y: auto;
+
+    scrollbar-width: thin;
+
+    scrollbar-color: #343d49 transparent;
+
+  }
+
+  .hotel-preview-list::-webkit-scrollbar {
+
+    width: 6px;
+
+  }
+
+  .hotel-preview-list::-webkit-scrollbar-track {
+
+    background: transparent;
+
+  }
+
+  .hotel-preview-list::-webkit-scrollbar-thumb {
+
+    background: #343d49;
+
+    border-radius: 10px;
+
+  }
+
+  .hotel-preview-list li {
+
+    min-width: 0;
+
+  }
+
+  .hotel-preview-list a,
+  .hotel-preview-list li > div {
+
+    display: block;
+
+    min-width: 0;
+
+    padding: 6px 7px;
+
+    border-radius: 7px;
+
+    background: #0e141c;
+
+    text-decoration: none;
+
+  }
+
+  .hotel-preview-list a:hover {
+
+    background: #18212c;
+
+  }
+
+  .hotel-preview-name,
+  .hotel-preview-meta {
+
+    display: block;
+
+    overflow: hidden;
+
+    text-overflow: ellipsis;
+
+    white-space: nowrap;
+
+  }
+
+  .hotel-preview-name {
+
+    color: #eef2f7;
+
+    font-size: 11px;
+
+    font-weight: 650;
+
+    line-height: 1.35;
+
+  }
+
+  .hotel-preview-meta {
+
+    margin-top: 2px;
+
+    color: #8b98a8;
+
+    font-size: 10px;
+
+    line-height: 1.3;
 
   }
 
@@ -1792,6 +4321,16 @@ const metaDescription =
         repeat(2, minmax(0, 1fr));
 
       margin-top: 2px;
+
+    }
+
+    .hotel-module {
+
+      grid-column: 1 / -1;
+
+      height: 260px;
+
+      min-height: 260px;
 
     }
 

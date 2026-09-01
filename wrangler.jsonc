@@ -1,0 +1,31 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "compatibility_date": "2026-08-27",
+  "compatibility_flags": [
+    "global_fetch_strictly_public"
+  ],
+  "name": "oldtowns-website",
+  "main": "@astrojs/cloudflare/entrypoints/server",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "oldtownswalks.com/*",
+      "zone_name": "oldtownswalks.com"
+    }
+  ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true
+  },
+  "d1_databases": [
+    {
+      "binding": "oldtowns_db",
+      "database_name": "oldtowns-db",
+      "database_id": "7a761973-7867-4ecd-b621-64b95650faa9",
+      "migrations_dir": "../../migrations"
+    }
+  ]
+}

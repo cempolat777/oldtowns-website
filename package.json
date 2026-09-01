@@ -10,10 +10,16 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "update-videos": "node fetch-videos.js && node categorize.js && node enrich-locations.js"
+    "audit:integrity": "node audit-video-integrity.mjs",
+    "audit:seo": "node audit-video-seo.mjs",
+    "repair:integrity": "node repair-video-integrity.mjs",
+    "update-videos": "node fetch-videos.js && node categorize.js && node enrich-locations.js",
+    "generate-types": "wrangler types"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^14.2.5",
     "@astrojs/sitemap": "^3.7.3",
-    "astro": "^7.2.0"
+    "astro": "^7.2.0",
+    "wrangler": "^4.127.0"
   }
 }

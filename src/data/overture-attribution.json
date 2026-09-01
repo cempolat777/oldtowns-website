@@ -1,0 +1,29 @@
+{
+  "generatedAt": "2026-08-30T22:14:08.715Z",
+  "provider": "Overture Maps Foundation",
+  "release": "2026-08-19.0",
+  "themes": {
+    "places": {
+      "source": "Overture Maps Places",
+      "licenses": [
+        "CDLA-Permissive-2.0",
+        "Apache-2.0",
+        "CC0-1.0"
+      ],
+      "notices": [
+        "Foursquare data is available under Apache-2.0 and includes a NOTICE file."
+      ]
+    },
+    "divisions": {
+      "source": "Overture Maps Divisions",
+      "license": "ODbL-1.0",
+      "attribution": "© OpenStreetMap contributors, Overture Maps Foundation"
+    }
+  },
+  "links": {
+    "attribution": "https://docs.overturemaps.org/attribution/",
+    "cdlaPermissive20": "https://cdla.dev/permissive-2-0/",
+    "apache20": "https://www.apache.org/licenses/LICENSE-2.0",
+    "odbl10": "https://opendatacommons.org/licenses/odbl/1-0/"
+  }
+}
