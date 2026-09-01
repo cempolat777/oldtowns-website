@@ -1,3 +1,5 @@
+import { transliterate } from 'transliteration';
+
 export type NearbyHotel = {
   id: string;
   name: string;
@@ -244,6 +246,30 @@ const localNamePreferredLanguages = new Set([
   'ar', 'hi', 'ja', 'ko', 'ru', 'zh'
 ]);
 
+function hasNonLatinLetters(value: string) {
+  return [...value].some(
+    (character) =>
+      /\p{L}/u.test(character) &&
+      !/\p{Script=Latin}/u.test(character)
+  );
+}
+
+function romanizeHotelName(value: string) {
+  const original = String(value || '').trim();
+
+  if (!original || !hasNonLatinLetters(original)) {
+    return original;
+  }
+
+  try {
+    return transliterate(original)
+      .replace(/\s+/g, ' ')
+      .trim() || original;
+  } catch {
+    return original;
+  }
+}
+
 export function resolveHotelDisplayName(
   hotel: Pick<NearbyHotel, 'name' | 'latinName' | 'localName'>,
   lang: string
@@ -257,7 +283,12 @@ export function resolveHotelDisplayName(
     return local;
   }
 
-  return latin || primary || local;
+  if (latin) {
+    return latin;
+  }
+
+  const fallback = primary || local;
+  return romanizeHotelName(fallback);
 }
 
 export function formatHotelDistance(
