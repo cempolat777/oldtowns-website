@@ -857,6 +857,28 @@ const labels: Record<string, Record<string, string>> = {
 
     vi: 'Khu vực dự kiến'
 
+  },
+
+  share: {
+    en: 'Share', tr: 'Paylaş', de: 'Teilen', es: 'Compartir', it: 'Condividi',
+    fr: 'Partager', ja: '共有', pt: 'Compartilhar', ru: 'Поделиться', zh: '分享',
+    ko: '공유', ar: 'مشاركة', hi: 'साझा करें', nl: 'Delen', pl: 'Udostępnij',
+    sv: 'Dela', id: 'Bagikan', vi: 'Chia sẻ'
+  },
+
+  copied: {
+    en: 'Copied', tr: 'Kopyalandı', de: 'Kopiert', es: 'Copiado', it: 'Copiato',
+    fr: 'Copié', ja: 'コピー済み', pt: 'Copiado', ru: 'Скопировано', zh: '已复制',
+    ko: '복사됨', ar: 'تم النسخ', hi: 'कॉपी किया गया', nl: 'Gekopieerd', pl: 'Skopiowano',
+    sv: 'Kopierad', id: 'Disalin', vi: 'Đã sao chép'
+  },
+
+  viewHotel: {
+    en: 'View hotel', tr: 'Oteli incele', de: 'Hotel ansehen', es: 'Ver hotel',
+    it: 'Vedi hotel', fr: 'Voir l’hôtel', ja: 'ホテルを見る', pt: 'Ver hotel',
+    ru: 'Посмотреть отель', zh: '查看酒店', ko: '호텔 보기', ar: 'عرض الفندق',
+    hi: 'होटल देखें', nl: 'Bekijk hotel', pl: 'Zobacz hotel', sv: 'Visa hotell',
+    id: 'Lihat hotel', vi: 'Xem khách sạn'
   }
 
 };
@@ -3185,6 +3207,15 @@ const breadcrumbSchema = {
                         rel="nofollow sponsored noopener"
                       >
 
+                        {hotel.thumbnailUrl && (
+                          <img
+                            class="hotel-preview-image"
+                            src={hotel.thumbnailUrl}
+                            alt={resolveHotelDisplayName(hotel, currentLang)}
+                            loading="lazy"
+                          />
+                        )}
+
                         <span class="hotel-preview-name">
                           {resolveHotelDisplayName(hotel, currentLang)}
                         </span>
@@ -3194,9 +3225,19 @@ const breadcrumbSchema = {
                             hotel.distanceMeters,
                             currentLang
                           )}
-                          {typeof hotel.guestRating === 'number' && (
-                            <> · ★ {hotel.guestRating}</>
+                          {typeof hotel.starRating === 'number' && (
+                            <> · {hotel.starRating}★</>
                           )}
+                          {typeof hotel.guestRating === 'number' && (
+                            <> · {hotel.guestRating}/10</>
+                          )}
+                          {typeof hotel.reviewCount === 'number' && hotel.reviewCount > 0 && (
+                            <> · {hotel.reviewCount}</>
+                          )}
+                        </span>
+
+                        <span class="hotel-preview-cta">
+                          {label('viewHotel')} <span aria-hidden="true">→</span>
                         </span>
 
                       </a>
@@ -3205,6 +3246,15 @@ const breadcrumbSchema = {
 
                       <div>
 
+                        {hotel.thumbnailUrl && (
+                          <img
+                            class="hotel-preview-image"
+                            src={hotel.thumbnailUrl}
+                            alt={resolveHotelDisplayName(hotel, currentLang)}
+                            loading="lazy"
+                          />
+                        )}
+
                         <span class="hotel-preview-name">
                           {resolveHotelDisplayName(hotel, currentLang)}
                         </span>
@@ -3214,8 +3264,14 @@ const breadcrumbSchema = {
                             hotel.distanceMeters,
                             currentLang
                           )}
+                          {typeof hotel.starRating === 'number' && (
+                            <> · {hotel.starRating}★</>
+                          )}
                           {typeof hotel.guestRating === 'number' && (
-                            <> · ★ {hotel.guestRating}</>
+                            <> · {hotel.guestRating}/10</>
+                          )}
+                          {typeof hotel.reviewCount === 'number' && hotel.reviewCount > 0 && (
+                            <> · {hotel.reviewCount}</>
                           )}
                         </span>
 
@@ -3273,7 +3329,23 @@ const breadcrumbSchema = {
 
         </div>
 
-        <h1 class="video-page-title">{seoTitle}</h1>
+        <div class="video-title-row">
+
+          <h1 class="video-page-title">{seoTitle}</h1>
+
+          <button
+            type="button"
+            class="share-button"
+            data-share-button
+            aria-label={label('share')}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18 16a3 3 0 0 0-2.4 1.2L8.9 13.7a3.3 3.3 0 0 0 0-3.4l6.7-3.5A3 3 0 1 0 15 5a3 3 0 0 0 .1.8L8.4 9.3a3 3 0 1 0 0 5.4l6.7 3.5A3 3 0 1 0 18 16Z" />
+            </svg>
+            <span data-share-label>{label('share')}</span>
+          </button>
+
+        </div>
 
         <div class="meta-row">
 
@@ -3534,6 +3606,48 @@ const breadcrumbSchema = {
     set:html={JSON.stringify(breadcrumbSchema)}
   />
 
+  <script
+    is:inline
+    define:vars={{
+      shareTitle: seoTitle,
+      shareLabel: label('share'),
+      copiedLabel: label('copied')
+    }}
+  >
+    const shareButton = document.querySelector('[data-share-button]');
+
+    if (shareButton instanceof HTMLButtonElement) {
+      const shareButtonLabel = shareButton.querySelector('[data-share-label]');
+
+      shareButton.addEventListener('click', async () => {
+        const shareUrl = `${window.location.origin}${window.location.pathname}`;
+        const useNativeShare =
+          navigator.maxTouchPoints > 0 &&
+          typeof navigator.share === 'function';
+
+        try {
+          if (useNativeShare) {
+            await navigator.share({ title: shareTitle, url: shareUrl });
+            return;
+          }
+
+          await navigator.clipboard.writeText(shareUrl);
+
+          if (shareButtonLabel) {
+            shareButtonLabel.textContent = copiedLabel;
+            window.setTimeout(() => {
+              shareButtonLabel.textContent = shareLabel;
+            }, 1800);
+          }
+        } catch (error) {
+          if (error instanceof Error && error.name !== 'AbortError') {
+            console.error('Share failed.', error);
+          }
+        }
+      });
+    }
+  </script>
+
 </BaseLayout>
 
 <style>
@@ -3546,7 +3660,7 @@ const breadcrumbSchema = {
 
     color: #f5f7fa;
 
-    padding: 24px 16px 60px;
+    padding: 16px 16px 60px;
 
   }
 
@@ -3554,7 +3668,7 @@ const breadcrumbSchema = {
 
     width: min(1720px, calc(100% - 24px));
 
-    margin: 0 auto 16px;
+    margin: 0 auto 10px;
 
   }
 
@@ -3562,11 +3676,19 @@ const breadcrumbSchema = {
 
     display: inline-flex;
 
-    margin-bottom: 10px;
+    margin-bottom: 6px;
+
+    padding: 7px 10px;
+
+    background: #121821;
+
+    border: 1px solid #26303c;
+
+    border-radius: 8px;
 
     color: #8993a1;
 
-    font-size: 12px;
+    font-size: 14px;
 
     font-weight: 600;
 
@@ -3580,9 +3702,25 @@ const breadcrumbSchema = {
 
   }
 
+  .video-title-row {
+
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-top: 14px;
+
+  }
+
   .video-page-title {
 
-    margin: 14px 0 0;
+    flex: 1;
+
+    margin: 0;
 
     color: #f8fafc;
 
@@ -3596,6 +3734,62 @@ const breadcrumbSchema = {
 
   }
 
+  .share-button {
+
+    min-height: 38px;
+
+    flex: 0 0 auto;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 7px;
+
+    padding: 8px 12px;
+
+    border: 1px solid #3a4655;
+
+    border-radius: 9px;
+
+    background: #171e27;
+
+    color: #f3f6fa;
+
+    font: inherit;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: background .2s ease, border-color .2s ease, color .2s ease;
+
+  }
+
+  .share-button:hover {
+
+    background: #202a36;
+
+    border-color: #d7b675;
+
+    color: #ffffff;
+
+  }
+
+  .share-button svg {
+
+    width: 17px;
+
+    height: 17px;
+
+    fill: currentColor;
+
+  }
+
   .discovery-layout {
 
     width: min(1720px, calc(100% - 24px));
@@ -3606,11 +3800,11 @@ const breadcrumbSchema = {
 
     grid-template-columns:
 
-      390px
+      400px
 
       minmax(700px, 900px)
 
-      390px;
+      400px;
 
     justify-content: center;
 
@@ -3632,7 +3826,7 @@ const breadcrumbSchema = {
 
     position: sticky;
 
-    top: 94px;
+    top: 82px;
 
   }
 
@@ -3650,7 +3844,7 @@ const breadcrumbSchema = {
 
     background: #121821;
 
-    border: 1px solid #232b36;
+    border: 1px solid #2b3542;
 
     border-radius: 13px;
 
@@ -3672,9 +3866,9 @@ const breadcrumbSchema = {
 
     border-radius: 9px;
 
-    background: #1b2430;
+    background: rgba(245, 158, 11, .12);
 
-    color: #dce4ee;
+    color: #f5bd55;
 
     font-size: 18px;
 
@@ -3686,7 +3880,7 @@ const breadcrumbSchema = {
 
     color: #eef2f7;
 
-    font-size: 14px;
+    font-size: 16px;
 
     font-weight: 700;
 
@@ -3752,9 +3946,9 @@ const breadcrumbSchema = {
 
     background: #1b2430;
 
-    color: #98a6b8;
+    color: #d7b675;
 
-    font-size: 10px;
+    font-size: 11px;
 
     font-weight: 700;
 
@@ -3770,7 +3964,7 @@ const breadcrumbSchema = {
 
     display: grid;
 
-    gap: 6px;
+    gap: 8px;
 
     min-height: 0;
 
@@ -3815,9 +4009,11 @@ const breadcrumbSchema = {
 
     min-width: 0;
 
-    padding: 6px 7px;
+    padding: 9px 10px;
 
-    border-radius: 7px;
+    border: 1px solid transparent;
+
+    border-radius: 9px;
 
     background: #0e141c;
 
@@ -3827,7 +4023,9 @@ const breadcrumbSchema = {
 
   .hotel-preview-list a:hover {
 
-    background: #18212c;
+    background: #19232f;
+
+    border-color: rgba(245, 158, 11, .45);
 
   }
 
@@ -3848,7 +4046,7 @@ const breadcrumbSchema = {
 
     color: #eef2f7;
 
-    font-size: 11px;
+    font-size: 13px;
 
     font-weight: 650;
 
@@ -3862,7 +4060,52 @@ const breadcrumbSchema = {
 
     color: #8b98a8;
 
-    font-size: 10px;
+    font-size: 11px;
+
+    line-height: 1.3;
+
+  }
+
+  .hotel-preview-image {
+
+    width: 56px;
+
+    height: 56px;
+
+    float: left;
+
+    margin: 0 10px 2px 0;
+
+    border-radius: 7px;
+
+    object-fit: cover;
+
+    background: #202833;
+
+  }
+
+  .hotel-preview-list a::after,
+  .hotel-preview-list li > div::after {
+
+    content: '';
+
+    display: block;
+
+    clear: both;
+
+  }
+
+  .hotel-preview-cta {
+
+    display: block;
+
+    margin-top: 5px;
+
+    color: #e3bb69;
+
+    font-size: 11px;
+
+    font-weight: 750;
 
     line-height: 1.3;
 
@@ -3960,7 +4203,7 @@ const breadcrumbSchema = {
 
     color: #778291;
 
-    font-size: 9px;
+    font-size: 10px;
 
     font-weight: 800;
 
@@ -3974,7 +4217,7 @@ const breadcrumbSchema = {
 
     color: #e5e9ef;
 
-    font-size: 11px;
+    font-size: 12px;
 
     font-weight: 600;
 
@@ -4016,7 +4259,7 @@ const breadcrumbSchema = {
 
     color: #f3f6fa;
 
-    font-size: 17px;
+    font-size: 18px;
 
     font-weight: 700;
 
@@ -4028,7 +4271,7 @@ const breadcrumbSchema = {
 
     color: #adb6c2;
 
-    font-size: 13px;
+    font-size: 14px;
 
     line-height: 1.75;
 
@@ -4054,7 +4297,7 @@ const breadcrumbSchema = {
 
     position: sticky;
 
-    top: 94px;
+    top: 82px;
 
   }
 
@@ -4082,7 +4325,7 @@ const breadcrumbSchema = {
 
     color: #f3f6fa;
 
-    font-size: 15px;
+    font-size: 16px;
 
     font-weight: 700;
 
@@ -4094,7 +4337,7 @@ const breadcrumbSchema = {
 
     color: #738090;
 
-    font-size: 11px;
+    font-size: 12px;
 
   }
 
@@ -4158,7 +4401,7 @@ const breadcrumbSchema = {
 
     grid-template-columns:
 
-      150px
+      160px
 
       minmax(0, 1fr);
 
@@ -4186,7 +4429,7 @@ const breadcrumbSchema = {
 
     position: relative;
 
-    width: 150px;
+    width: 160px;
 
     aspect-ratio: 16 / 9;
 
@@ -4254,7 +4497,7 @@ const breadcrumbSchema = {
 
     color: #e8edf3;
 
-    font-size: 12px;
+    font-size: 13px;
 
     font-weight: 650;
 
@@ -4276,7 +4519,7 @@ const breadcrumbSchema = {
 
     color: #747f8e;
 
-    font-size: 10px;
+    font-size: 11px;
 
     line-height: 1.4;
 
@@ -4427,6 +4670,20 @@ const breadcrumbSchema = {
     .video-page-title {
 
       font-size: 19px;
+
+    }
+
+    .video-title-row {
+
+      flex-direction: column;
+
+      gap: 10px;
+
+    }
+
+    .share-button {
+
+      align-self: flex-start;
 
     }
 

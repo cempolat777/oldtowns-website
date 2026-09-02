@@ -1,5 +1,6 @@
 ---
 import LanguagePicker from '../components/LanguagePicker.astro';
+import { languages, defaultLang } from '../i18n/ui';
 
 interface Props {
   title?: string;
@@ -10,10 +11,14 @@ const {
   title = "OLD TOWNS | Global Walking Tours & Cinematic Urban Exploration",
   description = "Experience immersive 4K 60fps walking tours across historic cities, ancient streets, and modern metropolis routes around the world."
 } = Astro.props;
+
+const pathnameLang = Astro.url.pathname.split('/').filter(Boolean)[0];
+const currentLang = Astro.currentLocale ||
+  (pathnameLang && pathnameLang in languages ? pathnameLang : defaultLang);
 ---
 
 <!DOCTYPE html>
-<html lang={Astro.currentLocale || "en"}>
+<html lang={currentLang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -54,7 +59,7 @@ const {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Roboto:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
 
@@ -83,51 +88,118 @@ const {
         left: 0;
         right: 0;
         z-index: 50;
-        background: rgba(11, 15, 23, 0.85);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        background: #0f0f0f;
+        border-bottom: 1px solid #222222;
       }
 
       .nav-container {
-        max-width: 1200px;
-        margin: 0 auto;
+        width: 100%;
         padding: 0 24px;
-        height: 72px;
+        height: 56px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        position: relative;
       }
 
       .nav-actions {
         display: flex;
         align-items: center;
         gap: 16px;
+        margin-left: auto;
       }
 
-      .logo {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        font-weight: 700;
-        letter-spacing: 3px;
-        color: #ffffff;
+      .brand-logo {
         display: flex;
         align-items: center;
-        gap: 10px;
+        overflow: hidden;
+        border-radius: 3px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: .5px;
+        text-decoration: none;
       }
 
-      .badge {
-        font-size: 10px;
-        font-weight: 700;
-        letter-spacing: 1.5px;
-        padding: 3px 8px;
-        border-radius: 4px;
-        background: rgba(245, 158, 11, 0.15);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.3);
+      .logo-box-1 {
+        padding: 4px 8px;
+        background: #0f0f0f;
+        border: 1px solid rgba(245, 180, 0, .35);
+        border-right: 0;
+        color: #f5b400;
+      }
+
+      .logo-box-2 {
+        padding: 4px 8px;
+        background: #f5b400;
+        border: 1px solid #f5b400;
+        color: #0f0f0f;
+      }
+
+      .nav-center {
+        width: 45%;
+        max-width: 650px;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .search-box {
+        width: 100%;
+        display: flex;
+      }
+
+      .search-input {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 16px;
+        background: #121212;
+        border: 1px solid #303030;
+        border-radius: 40px 0 0 40px;
+        color: #f1f1f1;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .search-input::placeholder {
+        color: #9ca3af;
+        opacity: 1;
+      }
+
+      .search-input:focus {
+        border-color: #aaaaaa;
+      }
+
+      .search-button {
+        min-width: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #222222;
+        border: 1px solid #303030;
+        border-left: 0;
+        border-radius: 0 40px 40px 0;
+        color: #f1f1f1;
+        cursor: pointer;
+      }
+
+      .search-button:hover {
+        background: #2b2b2b;
+      }
+
+      .search-button svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
       }
 
       .site-main {
-        padding-top: 72px;
+        padding-top: 56px;
       }
 
       footer {
@@ -141,20 +213,15 @@ const {
 
       @media (max-width: 700px) {
         .nav-container {
-          height: 64px;
+          height: 56px;
           padding: 0 14px;
         }
 
         .site-main {
-          padding-top: 64px;
+          padding-top: 56px;
         }
 
-        .logo {
-          font-size: 17px;
-          letter-spacing: 2px;
-        }
-
-        .badge {
+        .nav-center {
           display: none;
         }
       }
@@ -177,9 +244,28 @@ const {
   <body>
     <header>
       <div class="nav-container">
-        <a href="/" class="logo">
-          OLD TOWNS <span class="badge">POV TV</span>
+        <a href={`/${currentLang}/`} class="brand-logo" aria-label="Old Towns">
+          <span class="logo-box-1">OLD</span>
+          <span class="logo-box-2">TOWNS</span>
         </a>
+
+        <form class="nav-center" action={`/${currentLang}/`} method="get" role="search">
+          <div class="search-box">
+            <input
+              class="search-input"
+              type="search"
+              name="q"
+              placeholder="Search cities, countries, or walking tours..."
+              aria-label="Search videos"
+            />
+            <button class="search-button" type="submit" aria-label="Search">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4"></path>
+              </svg>
+            </button>
+          </div>
+        </form>
 
         <div class="nav-actions">
           <LanguagePicker />

@@ -17,6 +17,20 @@ const t = translations[lang] || translations.en || translations.tr;
 const pageSeo = getPageSeo(lang);
 
 const emptyStateText = t['state.videosComingSoon'] || 'Videos coming soon';
+const shareLabels: Record<string, string> = {
+  en: 'Share', tr: 'Paylaş', de: 'Teilen', es: 'Compartir', it: 'Condividi',
+  fr: 'Partager', ja: '共有', pt: 'Compartilhar', ru: 'Поделиться', zh: '分享',
+  ko: '공유', ar: 'مشاركة', hi: 'साझा करें', nl: 'Delen', pl: 'Udostępnij',
+  sv: 'Dela', id: 'Bagikan', vi: 'Chia sẻ'
+};
+const copiedLabels: Record<string, string> = {
+  en: 'Copied', tr: 'Kopyalandı', de: 'Kopiert', es: 'Copiado', it: 'Copiato',
+  fr: 'Copié', ja: 'コピー済み', pt: 'Copiado', ru: 'Скопировано', zh: '已复制',
+  ko: '복사됨', ar: 'تم النسخ', hi: 'कॉपी किया गया', nl: 'Gekopieerd', pl: 'Skopiowano',
+  sv: 'Kopierad', id: 'Disalin', vi: 'Đã sao chép'
+};
+const shareLabel = shareLabels[lang] || shareLabels.en;
+const copiedLabel = copiedLabels[lang] || copiedLabels.en;
 const categories = [
   { id: 'All', label: t['cat.all'] || 'All' },
   { id: 'Walking Tours', label: t['cat.walkingTours'] || 'Walking Tours' },
@@ -122,6 +136,38 @@ const videoSchema = {
         display: flex;
         align-items: center;
         gap: 16px;
+      }
+
+      .nav-right {
+        display: flex;
+        align-items: center;
+        margin-left: auto;
+      }
+
+      .site-share-button {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 7px 12px;
+        background: #222222;
+        border: 1px solid #353535;
+        border-radius: 8px;
+        color: #f1f1f1;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .site-share-button:hover {
+        background: #303030;
+        border-color: #f5b400;
+      }
+
+      .site-share-button .material-symbols-outlined {
+        font-size: 19px;
       }
 
       .icon-btn {
@@ -561,6 +607,15 @@ const videoSchema = {
           margin-left: auto;
         }
 
+        .site-share-button {
+          width: 36px;
+          padding: 7px;
+        }
+
+        .site-share-text {
+          display: none;
+        }
+
         .content-area {
           padding-bottom: 80px;
         }
@@ -688,6 +743,18 @@ const videoSchema = {
           </button>
 
         </div>
+      </div>
+
+      <div class="nav-right">
+        <button
+          type="button"
+          class="site-share-button"
+          data-site-share-button
+          aria-label={shareLabel}
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">share</span>
+          <span class="site-share-text" data-site-share-label>{shareLabel}</span>
+        </button>
       </div>
     </header>
 
@@ -927,6 +994,12 @@ const videoSchema = {
         const videoGrid = document.querySelector('.video-grid');
         const emptyState = document.getElementById('emptyState');
         const searchInput = document.getElementById('searchInput');
+
+        const initialSearch = new URLSearchParams(window.location.search).get('q');
+
+        if (searchInput instanceof HTMLInputElement && initialSearch) {
+          searchInput.value = initialSearch;
+        }
 
         if (!chips.length && !videoCards.length) return;
 
@@ -1176,6 +1249,44 @@ const videoSchema = {
 
       }
 
+    </script>
+
+    <script
+      is:inline
+      define:vars={{ shareLabel, copiedLabel }}
+    >
+      const siteShareButton = document.querySelector('[data-site-share-button]');
+
+      if (siteShareButton instanceof HTMLButtonElement) {
+        const siteShareLabel = siteShareButton.querySelector('[data-site-share-label]');
+
+        siteShareButton.addEventListener('click', async () => {
+          const shareUrl = `${window.location.origin}${window.location.pathname}`;
+          const useNativeShare =
+            navigator.maxTouchPoints > 0 &&
+            typeof navigator.share === 'function';
+
+          try {
+            if (useNativeShare) {
+              await navigator.share({ title: document.title, url: shareUrl });
+              return;
+            }
+
+            await navigator.clipboard.writeText(shareUrl);
+
+            if (siteShareLabel) {
+              siteShareLabel.textContent = copiedLabel;
+              window.setTimeout(() => {
+                siteShareLabel.textContent = shareLabel;
+              }, 1800);
+            }
+          } catch (error) {
+            if (error instanceof Error && error.name !== 'AbortError') {
+              console.error('Share failed.', error);
+            }
+          }
+        });
+      }
     </script>
 
 
