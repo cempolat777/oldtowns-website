@@ -1,0 +1,79 @@
+{
+  "generatedAt": "2026-08-30T22:14:21.072Z",
+  "mode": "write",
+  "inputPath": "./src/data/videos.json",
+  "evidence": {
+    "generatedAt": "2026-08-30T22:14:04.825Z",
+    "mode": "offline",
+    "writeRequested": true,
+    "inputPath": "C:\\Users\\cempo\\AppData\\Local\\Temp\\oldtowns-integrity-pEenNw\\videos.json",
+    "videos": 313,
+    "sourceVerified": 0,
+    "unavailable": 0,
+    "descriptionsWithLineBreaks": 309,
+    "videosWithChapters": 140,
+    "totalChapters": 2037,
+    "videosWithRoutePoints": 136,
+    "totalRoutePoints": 1924
+  },
+  "overture": {
+    "generatedAt": "2026-08-30T22:14:08.715Z",
+    "mode": "overture-duckdb",
+    "writeRequested": true,
+    "inputPath": "C:\\Users\\cempo\\AppData\\Local\\Temp\\oldtowns-integrity-pEenNw\\videos.json",
+    "release": "2026-08-19.0",
+    "videos": 313,
+    "noApiKey": true,
+    "noRequestQuota": true,
+    "cityContextsVerified": 20,
+    "cityContextsUnresolved": 0,
+    "routePointsGeoVerified": 271,
+    "routePointsGeoUnresolved": 1628,
+    "titlePlacesGeoVerified": 0,
+    "videosWithGeoAnchor": 83,
+    "videosWithNearbyHotels": 79,
+    "hotelsVerified": 2031,
+    "cacheHits": 2002,
+    "duckDbQueries": 0
+  },
+  "integrity": {
+    "inputPath": "C:\\Users\\cempo\\AppData\\Local\\Temp\\oldtowns-integrity-pEenNw\\videos.json",
+    "videos": 313,
+    "trustedVideos": 83,
+    "hotels": 2031,
+    "latinHotelNameCoverage": 0.91,
+    "criticalCount": 0,
+    "warningCount": 0,
+    "issueCounts": {},
+    "warningCounts": {},
+    "criticalExamples": [],
+    "warningExamples": []
+  },
+  "seo": {
+    "inputPath": "C:\\Users\\cempo\\AppData\\Local\\Temp\\oldtowns-integrity-pEenNw\\videos.json",
+    "videos": 313,
+    "languages": 18,
+    "renderedDescriptions": 5634,
+    "indexable": 203,
+    "noindex": 110,
+    "averageWords": 57,
+    "reasonCounts": {
+      "insufficient-unique-value": 110
+    },
+    "signalCounts": {
+      "duration": 313,
+      "publisher": 313,
+      "publication-date": 313,
+      "specific-place": 194,
+      "verified-chapters": 140,
+      "verified-route": 83,
+      "measured-nearby-hotels": 79
+    },
+    "duplicateDescriptionGroups": 0,
+    "duplicateTitleGroups": 0,
+    "duplicateDescriptionExamples": [],
+    "duplicateTitleExamples": [],
+    "failures": [],
+    "failureCount": 0
+  }
+}

@@ -1,0 +1,37 @@
+SYSTEMIC ROOT CAUSES FIXED
+
+1. City contexts now use division bounding-box centers instead of southwest
+   corners.
+2. Generic labels such as "Full Walk" and unsafe title tokens such as "long"
+   are removed from verified route evidence.
+3. Title-derived place guessing is disabled.
+4. Route matches are rejected outside city-aware distance limits.
+5. Nearby hotels require a trusted video anchor and are checked against the
+   anchor again at render time.
+6. Hotel category matching is strict and Latin hotel names are preferred when
+   available.
+7. Old incompatible location caches are invalidated.
+8. Repeated publication dates are removed from generated H1 titles.
+9. A transaction-like repair command audits all videos before changing the
+   source data.
+
+BASELINE AUDIT OF THE PROVIDED 313 VIDEOS
+
+Videos: 313
+Hotels: 3,198
+Critical field-level findings: 4,118
+
+The 4,118 value is not a video count. It includes 3,198 hotel rows attached to
+untrusted coordinates, 541 route points without city-distance verification,
+164 untrusted video anchors, and generic or unsafe generated evidence.
+
+OFFLINE SANITIZATION TEST
+
+Videos: 313
+Integrity findings after unsafe generated data removal: 0
+SEO languages tested: 18
+Rendered descriptions tested: 5,634
+SEO failures: 0
+
+The live Overture rebuild must still be run on the project machine so verified
+locations and hotels can be repopulated from current source data.

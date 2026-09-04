@@ -1,0 +1,902 @@
+[
+  {
+    "id": "osm-node-11060928475",
+    "name": "Hotel Keihan",
+    "lat": 35.6868255,
+    "lon": 139.7274329,
+    "address": "",
+    "website": null,
+    "distanceMeters": 351
+  },
+  {
+    "id": "osm-node-5808307253",
+    "name": "Tokyu Stay Yotsuya",
+    "lat": 35.6864888,
+    "lon": 139.7267915,
+    "address": "",
+    "website": "https://www.tokyustay.co.jp/",
+    "distanceMeters": 397
+  },
+  {
+    "id": "osm-node-12508918601",
+    "name": "ホテルグランドヒル市ヶ谷",
+    "lat": 35.6917878,
+    "lon": 139.7331691,
+    "address": "",
+    "website": null,
+    "distanceMeters": 531
+  },
+  {
+    "id": "osm-node-12383941001",
+    "name": "ホテルグランドヒル市ヶ谷",
+    "lat": 35.6917665,
+    "lon": 139.73325,
+    "address": "",
+    "website": null,
+    "distanceMeters": 537
+  },
+  {
+    "id": "osm-node-10270014197",
+    "name": "ファーストキャビン市ヶ谷",
+    "lat": 35.6922375,
+    "lon": 139.7345609,
+    "address": "新宿区",
+    "website": "https://first-cabin.jp/hotels/33",
+    "distanceMeters": 667
+  },
+  {
+    "id": "osm-node-6894610236",
+    "name": "Pearl Hotels",
+    "lat": 35.694267,
+    "lon": 139.7208752,
+    "address": "",
+    "website": null,
+    "distanceMeters": 781
+  },
+  {
+    "id": "osm-node-4546326389",
+    "name": "Unnamed hotel",
+    "lat": 35.682878,
+    "lon": 139.7267855,
+    "address": "",
+    "website": null,
+    "distanceMeters": 794
+  },
+  {
+    "id": "osm-node-475090893",
+    "name": "ホテルウィングインターナショナル プレミアム東京四谷",
+    "lat": 35.688,
+    "lon": 139.718399,
+    "address": "",
+    "website": null,
+    "distanceMeters": 870
+  },
+  {
+    "id": "osm-way-144384684",
+    "name": "アルカディア 市ヶ谷 私学 会館",
+    "lat": 35.6919032,
+    "lon": 139.7376286,
+    "address": "千代田区",
+    "website": "https://www.arcadia-jp.org/top.htm",
+    "distanceMeters": 920
+  },
+  {
+    "id": "osm-way-122343572",
+    "name": "ホテルニューオータニ ザ・メイン",
+    "lat": 35.6809232,
+    "lon": 139.7340303,
+    "address": "1 千代田区",
+    "website": "https://www.newotani.co.jp/tokyo/stay/main/",
+    "distanceMeters": 1156
+  },
+  {
+    "id": "osm-way-174757570",
+    "name": "京王プレッソイン",
+    "lat": 35.687948,
+    "lon": 139.7701171,
+    "address": "",
+    "website": null,
+    "distanceMeters": 122
+  },
+  {
+    "id": "osm-node-5792840091",
+    "name": "トーセイホテル ココネ神田",
+    "lat": 35.6895171,
+    "lon": 139.7690473,
+    "address": "10 千代田区",
+    "website": "https://tosei-hotel.co.jp/kanda/",
+    "distanceMeters": 289
+  },
+  {
+    "id": "osm-node-1734716412",
+    "name": "神田ステーションホテル (Kanda Station Hotel)",
+    "lat": 35.6894907,
+    "lon": 139.770565,
+    "address": "",
+    "website": null,
+    "distanceMeters": 297
+  },
+  {
+    "id": "osm-node-573261208",
+    "name": "マンダリンオリエンタル",
+    "lat": 35.687145,
+    "lon": 139.772888,
+    "address": "",
+    "website": null,
+    "distanceMeters": 303
+  },
+  {
+    "id": "osm-node-4465721893",
+    "name": "Capsule Value Kanda",
+    "lat": 35.6896543,
+    "lon": 139.7707497,
+    "address": "",
+    "website": null,
+    "distanceMeters": 319
+  },
+  {
+    "id": "osm-way-92243924",
+    "name": "三井ガーデンホテル大手町",
+    "lat": 35.6891553,
+    "lon": 139.767072,
+    "address": "",
+    "website": null,
+    "distanceMeters": 332
+  },
+  {
+    "id": "osm-node-6535384408",
+    "name": "ホテルメトロポリタン丸の内",
+    "lat": 35.6837551,
+    "lon": 139.7684989,
+    "address": "12 千代田区",
+    "website": "https://www.hotelmetropolitanmarunouchi.jp/",
+    "distanceMeters": 368
+  },
+  {
+    "id": "osm-node-13580015411",
+    "name": "三井ガーデンホテル日本橋プレミア",
+    "lat": 35.6882291,
+    "lon": 139.7734659,
+    "address": "",
+    "website": "https://go-gardenhotels.reservation.jp/en/hotels/mgh003",
+    "distanceMeters": 381
+  },
+  {
+    "id": "osm-node-13585773984",
+    "name": "アマン東京",
+    "lat": 35.6855948,
+    "lon": 139.7653865,
+    "address": "",
+    "website": "https://www.aman.com/book/aman-tokyo",
+    "distanceMeters": 405
+  },
+  {
+    "id": "osm-node-10225282430",
+    "name": "星のや東京",
+    "lat": 35.6877173,
+    "lon": 139.7650151,
+    "address": "1 千代田区",
+    "website": "https://hoshinoresorts.com/ja/hotels/hoshinoyatokyo/",
+    "distanceMeters": 418
+  },
+  {
+    "id": "osm-way-1150192552",
+    "name": "オリックス嵐山荘",
+    "lat": 35.0167572,
+    "lon": 135.676511,
+    "address": "",
+    "website": null,
+    "distanceMeters": 194
+  },
+  {
+    "id": "osm-node-12125107601",
+    "name": "Arashiyama Benkei hotel",
+    "lat": 35.0136368,
+    "lon": 135.675175,
+    "address": "",
+    "website": "https://benkei.biz",
+    "distanceMeters": 316
+  },
+  {
+    "id": "osm-node-6702423833",
+    "name": "First cabin",
+    "lat": 35.0150675,
+    "lon": 135.6776767,
+    "address": "",
+    "website": null,
+    "distanceMeters": 332
+  },
+  {
+    "id": "osm-way-319185030",
+    "name": "MUNI KYOTO",
+    "lat": 35.0138624,
+    "lon": 135.6767679,
+    "address": "",
+    "website": null,
+    "distanceMeters": 355
+  },
+  {
+    "id": "osm-node-5165183215",
+    "name": "ペンション マインドゲーム",
+    "lat": 35.0165889,
+    "lon": 135.6801385,
+    "address": "",
+    "website": "https://www.mind-games.jp/",
+    "distanceMeters": 521
+  },
+  {
+    "id": "osm-node-8602547411",
+    "name": "旅宿あたごや",
+    "lat": 35.0170973,
+    "lon": 135.68086,
+    "address": "",
+    "website": null,
+    "distanceMeters": 591
+  },
+  {
+    "id": "osm-way-305219640",
+    "name": "星のや京都 舟待合",
+    "lat": 35.0113699,
+    "lon": 135.6769503,
+    "address": "",
+    "website": "https://hoshinoresorts.com/ja/brands/hoshinoya/",
+    "distanceMeters": 606
+  },
+  {
+    "id": "osm-node-5301570422",
+    "name": "嵐山温泉花筏",
+    "lat": 35.0112877,
+    "lon": 135.677182,
+    "address": "嵐山 渡月橋南詰 京都市",
+    "website": "http://www.hanaikada.co.jp",
+    "distanceMeters": 622
+  },
+  {
+    "id": "osm-way-162150752",
+    "name": "渡月亭",
+    "lat": 35.0110748,
+    "lon": 135.6774209,
+    "address": "",
+    "website": null,
+    "distanceMeters": 653
+  },
+  {
+    "id": "osm-node-9536440917",
+    "name": "渡月亭 (碧川閣)",
+    "lat": 35.0112093,
+    "lon": 135.6777859,
+    "address": "4 京都市",
+    "website": "https://www.togetsutei.co.jp/",
+    "distanceMeters": 654
+  },
+  {
+    "id": "osm-node-5108703817",
+    "name": "ホテル梶が谷プラザ",
+    "lat": 35.5924713,
+    "lon": 139.6010968,
+    "address": "",
+    "website": null,
+    "distanceMeters": 650
+  },
+  {
+    "id": "osm-way-878915743",
+    "name": "川崎第一ホテル",
+    "lat": 35.599707,
+    "lon": 139.6095737,
+    "address": "",
+    "website": null,
+    "distanceMeters": 1014
+  },
+  {
+    "id": "osm-way-1394140677",
+    "name": "JR-EAST HOTEL METS Mizonokuchi",
+    "lat": 35.5993632,
+    "lon": 139.6104352,
+    "address": "",
+    "website": null,
+    "distanceMeters": 1085
+  },
+  {
+    "id": "osm-node-6320255923",
+    "name": "Sadie",
+    "lat": 35.608641,
+    "lon": 139.5899961,
+    "address": "",
+    "website": null,
+    "distanceMeters": 1419
+  },
+  {
+    "id": "osm-way-844558198",
+    "name": "パールホテル溝ノ口",
+    "lat": 35.6013975,
+    "lon": 139.6169323,
+    "address": "",
+    "website": null,
+    "distanceMeters": 1704
+  },
+  {
+    "id": "osm-node-2082753878",
+    "name": "Unnamed hotel",
+    "lat": 35.5951962,
+    "lon": 139.6204562,
+    "address": "",
+    "website": null,
+    "distanceMeters": 2003
+  },
+  {
+    "id": "osm-node-6320255927",
+    "name": "Satomi",
+    "lat": 35.5807172,
+    "lon": 139.5858847,
+    "address": "",
+    "website": null,
+    "distanceMeters": 2233
+  },
+  {
+    "id": "osm-node-6320255922",
+    "name": "Wabisuke",
+    "lat": 35.6119197,
+    "lon": 139.5735025,
+    "address": "",
+    "website": null,
+    "distanceMeters": 2747
+  },
+  {
+    "id": "osm-node-6320255926",
+    "name": "Seven",
+    "lat": 35.5738107,
+    "lon": 139.6084407,
+    "address": "",
+    "website": null,
+    "distanceMeters": 2828
+  },
+  {
+    "id": "osm-node-6320255935",
+    "name": "WANG CHENGWEI",
+    "lat": 35.5784853,
+    "lon": 139.5781082,
+    "address": "",
+    "website": null,
+    "distanceMeters": 2847
+  },
+  {
+    "id": "osm-way-48638224",
+    "name": "South Place Hotel",
+    "lat": 51.5192735,
+    "lon": -0.0862751,
+    "address": "",
+    "website": null,
+    "distanceMeters": 129
+  },
+  {
+    "id": "osm-node-6698562085",
+    "name": "The Montcalm Royal London House",
+    "lat": 51.5215949,
+    "lon": -0.0857045,
+    "address": "",
+    "website": null,
+    "distanceMeters": 196
+  },
+  {
+    "id": "osm-way-158054343",
+    "name": "Point A Hotels",
+    "lat": 51.5226069,
+    "lon": -0.0840955,
+    "address": "Paul Street 8-10 London",
+    "website": "https://www.pointahotels.com/",
+    "distanceMeters": 300
+  },
+  {
+    "id": "osm-node-308847205",
+    "name": "Travelodge",
+    "lat": 51.5225673,
+    "lon": -0.0868331,
+    "address": "City Road 1-23 London",
+    "website": "https://www.travelodge.co.uk/hotels/340/London-Central-City-Road-hotel",
+    "distanceMeters": 326
+  },
+  {
+    "id": "osm-way-30806422",
+    "name": "Andaz Liverpool Street",
+    "lat": 51.5173707,
+    "lon": -0.081576,
+    "address": "Liverpool Street 40 London",
+    "website": "https://www.hyatt.com/andaz/en-US/longe-andaz-london-liverpool-street",
+    "distanceMeters": 360
+  },
+  {
+    "id": "osm-node-11528200707",
+    "name": "The Montcalm",
+    "lat": 51.5205953,
+    "lon": -0.0911766,
+    "address": "Chiswell Street 52 London",
+    "website": "https://www.themontcalmlondoncity.co.uk/",
+    "distanceMeters": 451
+  },
+  {
+    "id": "osm-way-273848515",
+    "name": "Maldron Hotel Shoreditch",
+    "lat": 51.524206,
+    "lon": -0.0844555,
+    "address": "Paul Street 49 London",
+    "website": "https://www.maldronhotels.com/shoreditch/",
+    "distanceMeters": 475
+  },
+  {
+    "id": "osm-node-9691948117",
+    "name": "Batty Langley's 1724",
+    "lat": 51.520953,
+    "lon": -0.077969,
+    "address": "",
+    "website": null,
+    "distanceMeters": 482
+  },
+  {
+    "id": "osm-node-1779504042",
+    "name": "City of London Flats",
+    "lat": 51.5182651,
+    "lon": -0.0781456,
+    "address": "Widegate Street 20 London",
+    "website": null,
+    "distanceMeters": 493
+  },
+  {
+    "id": "osm-way-160140566",
+    "name": "Clayton Hotel  London Wall",
+    "lat": 51.5160479,
+    "lon": -0.0881813,
+    "address": "Copthall Avenue 7-9 London",
+    "website": "https://www.claytonhotels.com/london-wall/",
+    "distanceMeters": 494
+  },
+  {
+    "id": "osm-way-83632655",
+    "name": "Hilton London Bankside",
+    "lat": 51.5055931,
+    "lon": -0.1015801,
+    "address": "Great Suffolk Street 2-8 London",
+    "website": "https://www.hilton.com/en/hotels/lonsbhi-hilton-london-bankside/?WT.mc_id=zELWAKN0EMEA1HI2DMH3LocalSearch4DGGenericx6LONSBHI",
+    "distanceMeters": 36
+  },
+  {
+    "id": "osm-way-207285933",
+    "name": "Premier Inn",
+    "lat": 51.5050626,
+    "lon": -0.1009371,
+    "address": "Great Suffolk Street 15a London",
+    "website": "https://www.premierinn.com/gb/en/hotels/england/greater-london/london/london-southwark-tate-modern.html",
+    "distanceMeters": 60
+  },
+  {
+    "id": "osm-node-931993053",
+    "name": "Holiday Inn Express",
+    "lat": 51.506096,
+    "lon": -0.102055,
+    "address": "Southwark street 103-109",
+    "website": "https://www.hiexpress.com/hotels/gb/en/london/lonsw/hoteldetail",
+    "distanceMeters": 93
+  },
+  {
+    "id": "osm-way-77765233",
+    "name": "Travelodge",
+    "lat": 51.5038513,
+    "lon": -0.1025052,
+    "address": "Union Street 202-206 London",
+    "website": "https://www.travelodge.co.uk/hotels/342/London-Central-Southwark-hotel",
+    "distanceMeters": 168
+  },
+  {
+    "id": "osm-way-810617498",
+    "name": "Mercure London Bridge",
+    "lat": 51.5053405,
+    "lon": -0.0991329,
+    "address": "Southwark Street 71-79 London",
+    "website": null,
+    "distanceMeters": 180
+  },
+  {
+    "id": "osm-node-10576363076",
+    "name": "The Hoxton Hotel",
+    "lat": 51.5058441,
+    "lon": -0.1047575,
+    "address": "Blackfriars Road 40 London",
+    "website": "https://thehoxton.com/london/southwark/",
+    "distanceMeters": 218
+  },
+  {
+    "id": "osm-way-77739550",
+    "name": "Ibis Blackfriars",
+    "lat": 51.5049518,
+    "lon": -0.1050843,
+    "address": "Blackfriars Road 49 London",
+    "website": null,
+    "distanceMeters": 235
+  },
+  {
+    "id": "osm-way-476077469",
+    "name": "Novotel London Blackfriars",
+    "lat": 51.5050936,
+    "lon": -0.1051097,
+    "address": "Blackfriars Road 46 London",
+    "website": "https://all.accor.com/hotel/7942/index.en.shtml",
+    "distanceMeters": 235
+  },
+  {
+    "id": "osm-way-753788713",
+    "name": "citizenM hotel London Bankside",
+    "lat": 51.5049575,
+    "lon": -0.0982572,
+    "address": "Lavington Street 20 London",
+    "website": "https://www.citizenm.com/destinations/london/london-bankside-hotel",
+    "distanceMeters": 243
+  },
+  {
+    "id": "osm-way-659501771",
+    "name": "Bankside Hotel Autograph Collection",
+    "lat": 51.5076691,
+    "lon": -0.1052845,
+    "address": "Blackfriars Road 2 London",
+    "website": "https://www.marriott.com/en-us/hotels/lonkb-bankside-hotel-autograph-collection/overview/",
+    "distanceMeters": 362
+  },
+  {
+    "id": "osm-way-157771378",
+    "name": "Z Hotels",
+    "lat": 51.5135808,
+    "lon": -0.129742,
+    "address": "",
+    "website": null,
+    "distanceMeters": 168
+  },
+  {
+    "id": "osm-way-96237046",
+    "name": "Radisson Blu Hotel, London Mercer Street",
+    "lat": 51.5141033,
+    "lon": -0.1272296,
+    "address": "Mercer Street 20 London",
+    "website": "https://www.radissonhotels.com/en-us/hotels/radisson-blu-london-mercer-street",
+    "distanceMeters": 178
+  },
+  {
+    "id": "osm-way-180594288",
+    "name": "Victory House Hotel",
+    "lat": 51.5111325,
+    "lon": -0.1298659,
+    "address": "Leicester Square 14 London",
+    "website": null,
+    "distanceMeters": 207
+  },
+  {
+    "id": "osm-node-2005106057",
+    "name": "Premier Inn",
+    "lat": 51.5110711,
+    "lon": -0.1302533,
+    "address": "Leicester Place 1 London",
+    "website": "https://www.premierinn.com/gb/en/hotels/england/greater-london/london/london-leicester-square.html",
+    "distanceMeters": 230
+  },
+  {
+    "id": "osm-way-175156893",
+    "name": "Covent Garden Hotel",
+    "lat": 51.5145847,
+    "lon": -0.1271985,
+    "address": "Monmouth Street 10 London",
+    "website": null,
+    "distanceMeters": 231
+  },
+  {
+    "id": "osm-way-32919209",
+    "name": "St Martins Lane Hotel",
+    "lat": 51.5104884,
+    "lon": -0.1263005,
+    "address": "St Martin's Lane 45 London",
+    "website": "https://all.accor.com/hotel/B5D3/index.fr.shtml",
+    "distanceMeters": 258
+  },
+  {
+    "id": "osm-node-603119962",
+    "name": "Seven Dials Hotel",
+    "lat": 51.5148427,
+    "lon": -0.1267321,
+    "address": "",
+    "website": "http://www.sevendialshotel.com",
+    "distanceMeters": 267
+  },
+  {
+    "id": "osm-node-13462905161",
+    "name": "Montcalm",
+    "lat": 51.5121723,
+    "lon": -0.1318223,
+    "address": "",
+    "website": null,
+    "distanceMeters": 271
+  },
+  {
+    "id": "osm-way-350073272",
+    "name": "The Piccadilly London West End Hotel",
+    "lat": 51.512215,
+    "lon": -0.1318597,
+    "address": "Shaftesbury Avenue 65-73 London",
+    "website": "https://www.thepiccadillywestend.co.uk/",
+    "distanceMeters": 273
+  },
+  {
+    "id": "osm-node-6060366410",
+    "name": "Hotel Indigo",
+    "lat": 51.5108057,
+    "lon": -0.1309163,
+    "address": "Leicester Square 1 London",
+    "website": "https://www.ihg.com/hotelindigo/hotels/gb/en/london/lonls/hoteldetail",
+    "distanceMeters": 283
+  },
+  {
+    "id": "osm-node-12831637001",
+    "name": "Streatham Common B&B",
+    "lat": 51.4177777,
+    "lon": -0.1377804,
+    "address": "Donnybrook Road 12/14",
+    "website": "https://www.streathamcommonbnb.com/en",
+    "distanceMeters": 817
+  },
+  {
+    "id": "osm-way-1304892590",
+    "name": "Leigham Court Hotel",
+    "lat": 51.435355,
+    "lon": -0.1244734,
+    "address": "",
+    "website": null,
+    "distanceMeters": 1922
+  },
+  {
+    "id": "osm-node-4314441174",
+    "name": "Travelodge",
+    "lat": 51.4428417,
+    "lon": -0.1529261,
+    "address": "Balham High Road 177 London",
+    "website": "https://www.travelodge.co.uk/hotels/555/London-Balham-hotel",
+    "distanceMeters": 2206
+  },
+  {
+    "id": "osm-way-490761485",
+    "name": "Pelican House",
+    "lat": 51.4259381,
+    "lon": -0.1782514,
+    "address": "Blackshaw Road 203 London",
+    "website": "https://www.pelican-london.com",
+    "distanceMeters": 2328
+  },
+  {
+    "id": "osm-way-488752417",
+    "name": "Holiday Inn Express",
+    "lat": 51.4177491,
+    "lon": -0.1791033,
+    "address": "High Street Colliers Wood 200 London",
+    "website": null,
+    "distanceMeters": 2462
+  },
+  {
+    "id": "osm-way-96064886",
+    "name": "Premier Inn",
+    "lat": 51.4139258,
+    "lon": -0.1802798,
+    "address": "Chapter Way 27 London",
+    "website": "https://www.premierinn.com/gb/en/hotels/england/greater-london/london/london-wimbledon-south.html",
+    "distanceMeters": 2683
+  },
+  {
+    "id": "osm-node-4374453088",
+    "name": "Gateway Hotel",
+    "lat": 51.4509716,
+    "lon": -0.1480326,
+    "address": "",
+    "website": null,
+    "distanceMeters": 3046
+  },
+  {
+    "id": "osm-node-757459267",
+    "name": "Euro Lodge Clapham",
+    "lat": 51.4546813,
+    "lon": -0.1454482,
+    "address": "Clapham South Side Road 89 London",
+    "website": "www.eurohotelgroup.co.uk",
+    "distanceMeters": 3451
+  },
+  {
+    "id": "osm-way-480477239",
+    "name": "Antoinette Hotel",
+    "lat": 51.4192383,
+    "lon": -0.1949747,
+    "address": "The Broadway 249-263 London",
+    "website": "https://www.antoinettehotel.com/wimbledon/",
+    "distanceMeters": 3508
+  },
+  {
+    "id": "osm-node-1314925443",
+    "name": "Euro Hotel Clapham",
+    "lat": 51.4553637,
+    "lon": -0.1446562,
+    "address": "Clapham South Side Road",
+    "website": null,
+    "distanceMeters": 3527
+  },
+  {
+    "id": "osm-node-7007594786",
+    "name": "Villa de l’APA",
+    "lat": 48.8275592,
+    "lon": 2.179951,
+    "address": "",
+    "website": null,
+    "distanceMeters": 140
+  },
+  {
+    "id": "osm-node-1843076853",
+    "name": "Hôtel Spa Les Étangs de Corot",
+    "lat": 48.8219258,
+    "lon": 2.1831902,
+    "address": "",
+    "website": "https://www.etangs-corot.com",
+    "distanceMeters": 545
+  },
+  {
+    "id": "osm-way-1327048315",
+    "name": "Forest Hill",
+    "lat": 48.8348615,
+    "lon": 2.1663226,
+    "address": "",
+    "website": null,
+    "distanceMeters": 1425
+  },
+  {
+    "id": "osm-node-1798131766",
+    "name": "Campanile",
+    "lat": 48.8133632,
+    "lon": 2.1925763,
+    "address": "",
+    "website": "https://chaville.campanile.com/",
+    "distanceMeters": 1694
+  },
+  {
+    "id": "osm-node-6846465294",
+    "name": "Unnamed hotel",
+    "lat": 48.8046474,
+    "lon": 2.1868428,
+    "address": "Avenue de Louvois 8",
+    "website": null,
+    "distanceMeters": 2482
+  },
+  {
+    "id": "osm-node-10847818305",
+    "name": "Guitou et Emilie",
+    "lat": 48.8436245,
+    "lon": 2.2046864,
+    "address": "Rue de Garches 22",
+    "website": null,
+    "distanceMeters": 2546
+  },
+  {
+    "id": "osm-node-2162468109",
+    "name": "Le Quorum",
+    "lat": 48.8426718,
+    "lon": 2.2073443,
+    "address": "",
+    "website": null,
+    "distanceMeters": 2608
+  },
+  {
+    "id": "osm-node-7973729786",
+    "name": "Novotel Paris Pont de Sèvres",
+    "lat": 48.8268182,
+    "lon": 2.2211959,
+    "address": "",
+    "website": null,
+    "distanceMeters": 2921
+  },
+  {
+    "id": "osm-node-1795147592",
+    "name": "Novotel",
+    "lat": 48.8268742,
+    "lon": 2.2214638,
+    "address": "",
+    "website": "http://www.novotel.com/fr/hotel-1979-novotel-paris-pont-de-sevres/index.shtml",
+    "distanceMeters": 2940
+  },
+  {
+    "id": "osm-node-12825813416",
+    "name": "Best Western Villa Henri IV",
+    "lat": 48.8447699,
+    "lon": 2.2113093,
+    "address": "",
+    "website": null,
+    "distanceMeters": 2979
+  },
+  {
+    "id": "osm-node-12750599921",
+    "name": "Domaine de Marguerite",
+    "lat": 48.6599666,
+    "lon": 2.1395039,
+    "address": "",
+    "website": null,
+    "distanceMeters": 4226
+  },
+  {
+    "id": "osm-node-8998655719",
+    "name": "appart hôtels les vignes",
+    "lat": 48.6776033,
+    "lon": 2.1313888,
+    "address": "",
+    "website": null,
+    "distanceMeters": 6127
+  },
+  {
+    "id": "osm-way-131138905",
+    "name": "Le Nouveau Monde",
+    "lat": 48.5777241,
+    "lon": 2.1936416,
+    "address": "Route d'Arpajon 42 Breuillet",
+    "website": "https://lenouveaumonde.eu",
+    "distanceMeters": 6850
+  },
+  {
+    "id": "osm-node-5238467327",
+    "name": "Appart'City",
+    "lat": 48.6781938,
+    "lon": 2.1745057,
+    "address": "",
+    "website": null,
+    "distanceMeters": 7012
+  },
+  {
+    "id": "osm-node-10142525720",
+    "name": "Hôtel fixme",
+    "lat": 48.6788499,
+    "lon": 2.1736749,
+    "address": "",
+    "website": null,
+    "distanceMeters": 7048
+  },
+  {
+    "id": "osm-node-1056760529",
+    "name": "Le Château de la Vierge",
+    "lat": 48.6894022,
+    "lon": 2.1551118,
+    "address": "",
+    "website": null,
+    "distanceMeters": 7668
+  },
+  {
+    "id": "osm-way-79145678",
+    "name": "Hôtel Kyriad Les Ulis",
+    "lat": 48.6770294,
+    "lon": 2.1941665,
+    "address": "Avenue des Andes 14 Les Ulis",
+    "website": null,
+    "distanceMeters": 7693
+  },
+  {
+    "id": "osm-way-79145686",
+    "name": "Hôtel Campanile Les Ulis",
+    "lat": 48.6776522,
+    "lon": 2.1938818,
+    "address": "Avenue des Andes 10 Les Ulis",
+    "website": null,
+    "distanceMeters": 7734
+  },
+  {
+    "id": "osm-node-12187017886",
+    "name": "Ulis Hotel",
+    "lat": 48.6764654,
+    "lon": 2.1993692,
+    "address": "",
+    "website": null,
+    "distanceMeters": 7886
+  },
+  {
+    "id": "osm-way-79145703",
+    "name": "hotelF1",
+    "lat": 48.6791805,
+    "lon": 2.1982256,
+    "address": "",
+    "website": "https://all.accor.com/hotel/2259/index.en.shtml",
+    "distanceMeters": 8065
+  }
+]

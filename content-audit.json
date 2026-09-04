@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2026-08-25T01:04:09.909Z",
+  "summary": {
+    "totalVideos": 313,
+    "thinVideoPages": 0,
+    "criticalThinVideoPages": 0,
+    "missingDescriptions": 0,
+    "descriptionsUnder80Chars": 0,
+    "missingCity": 0,
+    "missingCountry": 0,
+    "missingCategory": 0,
+    "missingSource": 0,
+    "missingPublishedAt": 0,
+    "videosWithRouteMarkers": 5,
+    "duplicateDescriptionGroups": 0,
+    "videosInsideDuplicateDescriptionGroups": 0,
+    "cityHubsWithOneVideo": 0,
+    "countryHubsWithOneVideo": 0
+  },
+  "thinVideos": [],
+  "criticalThinVideos": [],
+  "duplicateDescriptionGroups": [],
+  "thinCityHubs": [],
+  "thinCountryHubs": []
+}

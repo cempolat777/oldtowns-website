@@ -1,0 +1,941 @@
+{
+  "35.66_139.71": [
+    {
+      "type": "node",
+      "id": 597692326,
+      "lat": 35.6631863,
+      "lon": 139.6989863,
+      "tags": {
+        "air_conditioning": "yes",
+        "name": "渋谷東武ホテル (Tobu Hotel)",
+        "name:en": "Tobu Hotel",
+        "name:ja": "渋谷東武ホテル",
+        "tourism": "hotel",
+        "wikidata": "Q111406670"
+      }
+    },
+    {
+      "type": "node",
+      "id": 744436432,
+      "lat": 35.6558289,
+      "lon": 139.7039691,
+      "tags": {
+        "air_conditioning": "yes",
+        "check_date": "2026-05-05",
+        "internet_access": "wlan",
+        "internet_access:fee": "no",
+        "internet_access:ssid": "hotelmetswifi",
+        "name": "JR東日本ホテルメッツ渋谷",
+        "name:en": "JR-EAST Hotel Mets Shibuya",
+        "name:ja": "JR東日本ホテルメッツ渋谷",
+        "phone": "+81 3-3409-0011",
+        "smoking": "no",
+        "swimming_pool": "no",
+        "tourism": "hotel",
+        "website": "https://www.hotelmets.jp/shibuya"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1681422026,
+      "lat": 35.660113,
+      "lon": 139.7021214,
+      "tags": {
+        "name": "Tokyu Inn",
+        "name:en": "Tokyu Inn",
+        "source": "survey　2012/03/18",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2167481504,
+      "lat": 35.662592,
+      "lon": 139.698337,
+      "tags": {
+        "addr:block_number": "3",
+        "addr:city": "渋谷区",
+        "addr:neighbourhood": "4",
+        "addr:postcode": "150-0042",
+        "addr:province": "東京都",
+        "addr:quarter": "宇田川町",
+        "brand": "lyf",
+        "brand:wikidata": "Q132680230",
+        "email": "enquiry.shibuya@the-ascott.com",
+        "internet_access": "yes",
+        "name": "lyf Shibuya Tokyo",
+        "name:en": "lyf Shibuya Tokyo",
+        "name:ja": "lyf渋谷東京",
+        "phone": "+81-3-6433-7865",
+        "rooms": "200",
+        "tourism": "hotel",
+        "website": "https://www.discoverasr.com/en/sign-up?referralCode=JPLST"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2212615112,
+      "lat": 35.658487,
+      "lon": 139.713156,
+      "tags": {
+        "name": "島根イン 青山",
+        "name:en": "Shimane Inn Aoyama",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4134783189,
+      "lat": 35.6656558,
+      "lon": 139.7022533,
+      "tags": {
+        "name": "Premium Dormy Inn Hotel",
+        "phone": "0357745489",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5088377221,
+      "lat": 35.6544501,
+      "lon": 139.7053356,
+      "tags": {
+        "addr:block_number": "26",
+        "addr:city": "渋谷区",
+        "addr:floor": "1階",
+        "addr:housenumber": "21",
+        "addr:neighbourhood": "渋谷三丁目",
+        "addr:postcode": "150-0002",
+        "addr:province": "東京都",
+        "brand": "Tokyu Resorts & Stays Co;Ltd",
+        "name": "東急ステイ 渋谷新南口",
+        "name:en": "Tokyu Stay Shibuya Shin-Minamiguchi",
+        "name:ja": "東急ステイ 渋谷新南口",
+        "phone": "+81 3-5466-0109",
+        "stars": "3",
+        "tourism": "hotel",
+        "website": "https://www.tokyustay.co.jp/hotel/SIM",
+        "wikidata": "Q111866030"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6191909382,
+      "lat": 35.6586784,
+      "lon": 139.6997166,
+      "tags": {
+        "assembly_point:unable_to_move": "yes",
+        "emergency": "assembly_point",
+        "name": "渋谷エクセルホテル東急",
+        "name:en": "Shibuya Excel Hotel Tokyu",
+        "name:ja": "渋谷エクセルホテル東急",
+        "tourism": "hotel",
+        "wheelchair": "limited",
+        "wikidata": "Q111406672",
+        "wikimedia_commons": "Category:Shibuya Excel Hotel Tokyu"
+      }
+    },
+    {
+      "type": "node",
+      "id": 7975766428,
+      "lat": 35.663358,
+      "lon": 139.70186,
+      "tags": {
+        "addr:block_number": "20",
+        "addr:city": "渋谷区",
+        "addr:housenumber": "10",
+        "addr:neighbourhood": "神宮前六丁目",
+        "addr:postcode": "150-0001",
+        "addr:province": "東京都",
+        "check_date": "2024-06-08",
+        "check_in": "17:00",
+        "check_out": "14:00",
+        "contact:facebook": "https://www.facebook.com/sequencemiyashitapark",
+        "contact:instagram": "https://www.instagram.com/sequence_miyashitapark",
+        "internet_access": "wlan",
+        "internet_access:fee": "customers",
+        "internet_access:ssid": "sequencehotels",
+        "level": "3",
+        "name": "sequence MIYASHITA PARK",
+        "payment:alipay": "yes",
+        "payment:cash": "no",
+        "payment:coins": "no",
+        "payment:credit_cards": "yes",
+        "payment:line_pay": "yes",
+        "payment:paypay": "yes",
+        "payment:wechat": "yes",
+        "tourism": "hotel",
+        "website": "https://www.sequencehotels.com/miyashita-park",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "node",
+      "id": 10269997783,
+      "lat": 35.6534922,
+      "lon": 139.7071144,
+      "tags": {
+        "addr:block_number": "29",
+        "addr:city": "渋谷区",
+        "addr:housename": "SHIBUYA BRIDGE B。",
+        "addr:housenumber": "3",
+        "addr:neighbourhood": "東一丁目",
+        "addr:postcode": "150-0011",
+        "addr:province": "東京都",
+        "brand": "Mustard Hotel",
+        "name": "Mustard Hotel Shibuya",
+        "phone": "+81 3-64592842",
+        "tourism": "hotel",
+        "website": "https://mustardhotel.com/"
+      }
+    }
+  ],
+  "35.60_139.60": [
+    {
+      "type": "node",
+      "id": 5108703817,
+      "lat": 35.5924713,
+      "lon": 139.6010968,
+      "tags": {
+        "name": "ホテル梶が谷プラザ",
+        "tourism": "hotel"
+      }
+    }
+  ],
+  "51.50_-0.13": [
+    {
+      "type": "node",
+      "id": 346430283,
+      "lat": 51.5083992,
+      "lon": -0.124718,
+      "tags": {
+        "addr:city": "London",
+        "addr:housename": "Charing Cross Hotel",
+        "addr:postcode": "WC2N 5HR",
+        "addr:suburb": "Strand",
+        "check_date": "2025-08-20",
+        "fhrs:id": "1402098",
+        "level": "0",
+        "name": "The Clermont",
+        "source:addr": "FHRS Open Data",
+        "toilets:wheelchair": "yes",
+        "tourism": "hotel",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 347151757,
+      "lat": 51.5013601,
+      "lon": -0.1160331,
+      "tags": {
+        "addr:city": "London",
+        "addr:housenumber": "1",
+        "addr:postcode": "SE1 7RY",
+        "addr:street": "Addington Street",
+        "brand": "Park Plaza",
+        "brand:wikidata": "Q2052550",
+        "brand:wikipedia": "en:Park Plaza Hotels & Resorts",
+        "fhrs:id": "483351",
+        "name": "Park Plaza County Hall London",
+        "phone": "+44 20 7021 1800",
+        "source:addr": "FHRS Open Data",
+        "tourism": "hotel",
+        "website": "https://www.radissonhotels.com/en-us/hotels/park-plaza-county-hall-london",
+        "wikidata": "Q111368974"
+      }
+    },
+    {
+      "type": "node",
+      "id": 479736311,
+      "lat": 51.501709,
+      "lon": -0.1188586,
+      "tags": {
+        "addr:city": "London",
+        "addr:housename": "County Hall Riverside Building",
+        "addr:postcode": "SE1 7PB",
+        "addr:street": "Westminster Bridge Road",
+        "fhrs:id": "483079",
+        "name": "London Marriott Hotel County Hall",
+        "source:addr": "FHRS Open Data",
+        "tourism": "hotel",
+        "wheelchair": "limited",
+        "wikidata": "Q6772978"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1549975320,
+      "lat": 51.4991158,
+      "lon": -0.112579,
+      "tags": {
+        "check_date": "2025-09-04",
+        "internet_access": "wlan",
+        "name": "Point.a",
+        "tourism": "hotel",
+        "website": "https://www.pointahotels.com/our-hotels/westminster/",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2736129045,
+      "lat": 51.5058001,
+      "lon": -0.124251,
+      "tags": {
+        "addr:city": "London",
+        "addr:housenumber": "2",
+        "addr:postcode": "SW1A 2EJ",
+        "addr:street": "Whitehall Court",
+        "brand": "Guoman",
+        "email": "stay.royalhorseguards@guoman.com",
+        "fhrs:id": "412589",
+        "name": "The Royal Horseguards Hotel, London",
+        "phone": "+44 20 7523 5062",
+        "source": "lccal_knowledge",
+        "source:addr": "FHRS Open Data",
+        "tourism": "hotel",
+        "website": "https://www.royalhorseguardshotel.com/",
+        "wikidata": "Q7374293"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5031714610,
+      "lat": 51.5069341,
+      "lon": -0.1259733,
+      "tags": {
+        "addr:city": "London",
+        "name": "Hotel The Grand at Trafalgar Square",
+        "toilets:wheelchair": "yes",
+        "tourism": "hotel",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5031714611,
+      "lat": 51.5068835,
+      "lon": -0.1258069,
+      "tags": {
+        "name": "Club Quarters Hotel",
+        "tourism": "hotel",
+        "wikidata": "Q111368936"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5143149300,
+      "lat": 51.4995883,
+      "lon": -0.1314606,
+      "tags": {
+        "addr:city": "London",
+        "addr:country": "GB",
+        "addr:housenumber": "21",
+        "addr:postcode": "SW1H 9LL",
+        "addr:street": "Tothill Street",
+        "brand": "Premier Inn",
+        "brand:wikidata": "Q2108626",
+        "brand:wikipedia": "en:Premier Inn",
+        "contact:website": "https://www.premierinn.com/gb/en/hotels/england/greater-london/london/hub-london-westminster-abbey.html",
+        "fhrs:id": "997233",
+        "internet_access": "wlan",
+        "internet_access:fee": "customers",
+        "internet_access:operator": "Virgin Media",
+        "internet_access:ssid": "Premier Inn Free Wi-Fi",
+        "name": "hub by Premier Inn London Westminster Abbey",
+        "tourism": "hotel",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5172631222,
+      "lat": 51.5024782,
+      "lon": -0.1182526,
+      "tags": {
+        "addr:city": "London",
+        "addr:housename": "County Hall Riverside Building",
+        "addr:postcode": "SE1 7PB",
+        "addr:street": "Belvedere Road",
+        "air_conditioning": "yes",
+        "bar": "yes",
+        "branch": "London County Hall",
+        "brand": "Premier Inn",
+        "brand:wikidata": "Q2108626",
+        "brand:wikipedia": "en:Premier Inn",
+        "check_date": "2026-03-15",
+        "fhrs:id": "483061",
+        "fhrs:local_authority_id": "05/00155/COMM",
+        "internet_access": "wlan",
+        "internet_access:fee": "customers",
+        "internet_access:operator": "Virgin Media",
+        "internet_access:ssid": "Premier Inn Free Wi-Fi",
+        "name": "Premier Inn London County Hall",
+        "phone": "+44 871 527 8648",
+        "tourism": "hotel",
+        "website": "https://www.premierinn.com/gb/en/hotels/england/greater-london/london/london-county-hall.html"
+      }
+    },
+    {
+      "type": "node",
+      "id": 10798047256,
+      "lat": 51.5011609,
+      "lon": -0.1123214,
+      "tags": {
+        "addr:city": "London",
+        "addr:housenumber": "104",
+        "addr:postcode": "SE1 7AB",
+        "addr:street": "Lower Marsh",
+        "fhrs:id": "1223864",
+        "name": "Ruby Lucy",
+        "tourism": "hotel",
+        "wikidata": "Q111874391"
+      }
+    }
+  ],
+  "41.01_28.98": [
+    {
+      "type": "node",
+      "id": 275600519,
+      "lat": 41.0059174,
+      "lon": 28.9691511,
+      "tags": {
+        "created_by": "Potlatch 0.9c",
+        "name": "Hotel Grand Yavuz",
+        "name:ar": "فندق جراند يافوز",
+        "tourism": "hotel",
+        "wikidata": "Q111400358"
+      }
+    },
+    {
+      "type": "node",
+      "id": 278004998,
+      "lat": 41.0069969,
+      "lon": 28.9813746,
+      "tags": {
+        "name": "Mavi Guesthouse",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 415156587,
+      "lat": 41.0057,
+      "lon": 28.9791309,
+      "tags": {
+        "addr:housenumber": "16",
+        "addr:street": "Dalbasti Sokak",
+        "name": "Aşkin Hotel",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 415156588,
+      "lat": 41.005534,
+      "lon": 28.9790454,
+      "tags": {
+        "name": "Blue House Hotel",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 500060394,
+      "lat": 41.0144076,
+      "lon": 28.977219,
+      "tags": {
+        "name": "Hürriyet",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 904611372,
+      "lat": 41.0063214,
+      "lon": 28.9692225,
+      "tags": {
+        "name": "Hotel Aziyadé",
+        "name:ar": "فندق ازييادي",
+        "stars": "4",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1000021823,
+      "lat": 41.0054141,
+      "lon": 28.9799391,
+      "tags": {
+        "addr:city": "İstanbul",
+        "addr:district": "Fatih",
+        "addr:housenumber": "52",
+        "addr:postcode": "34100",
+        "addr:street": "Akbıyık Caddesi",
+        "contact:mobile": "+90 532 284 51 31",
+        "name": "Güleç Konak Hotel",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1106083650,
+      "lat": 41.0043453,
+      "lon": 28.9802508,
+      "tags": {
+        "name": "Sumengen Hotel",
+        "name:ar": "فندق سومينجين",
+        "tourism": "hotel",
+        "wikidata": "Q111856804"
+      }
+    }
+  ],
+  "41.02_28.65": [
+    {
+      "type": "node",
+      "id": 4891500804,
+      "lat": 41.0176516,
+      "lon": 28.637178,
+      "tags": {
+        "addr:city": "İstanbul",
+        "addr:housenumber": "9",
+        "addr:neighbourhood": "Barbaros Hayrettin Pasa Mah",
+        "addr:postcode": "34522",
+        "addr:street": "1999 Sk",
+        "brand": "Hilton Garden Inn",
+        "brand:wikidata": "Q1162859",
+        "contact:instagram": "https://instagram.com/hiltongardeninnbeylikduzu/",
+        "contact:twitter": "https://twitter.com/hgibeylikduzu",
+        "email": "zerrin.temeltas@hilton.com",
+        "internet_access": "wlan",
+        "name": "Hilton Garden Inn Istanbul Beylikduzu",
+        "operator": "Hilton",
+        "phone": "+90 212 867 1900",
+        "rooms": "144",
+        "stars": "4",
+        "tourism": "hotel",
+        "website": "https://www.hilton.com/en/hotels/istbegi-hilton-garden-inn-istanbul-beylikduzu/",
+        "wheelchair": "yes",
+        "wikidata": "Q111857430"
+      }
+    },
+    {
+      "type": "way",
+      "id": 218996915,
+      "center": {
+        "lat": 41.0162052,
+        "lon": 28.6418777
+      },
+      "nodes": [
+        2282015161,
+        10649878381,
+        2282015163,
+        2282015162,
+        2282015160,
+        2282015165,
+        10649878380,
+        10649878379,
+        10649878378,
+        10649878377,
+        2282015161
+      ],
+      "tags": {
+        "building": "yes",
+        "name": "Beynova Hotel",
+        "tourism": "hotel"
+      }
+    }
+  ],
+  "40.77_-73.98": [
+    {
+      "type": "node",
+      "id": 999526140,
+      "lat": 40.7690103,
+      "lon": -73.982912,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "80",
+        "addr:postcode": "10023",
+        "addr:state": "NY",
+        "addr:street": "Columbus Circle",
+        "air_conditioning": "yes",
+        "bar": "yes",
+        "branch": "New York",
+        "brand": "Mandarin Oriental Hotel",
+        "brand:wikidata": "Q1236521",
+        "email": "MONYC-RESERVATIONS@MOHG.COM",
+        "name": "Mandarin Oriental",
+        "operator": "Mandarin Oriental Hotel Group",
+        "operator:type": "private",
+        "operator:wikidata": "Q1236521",
+        "phone": "+1-212-805-8800",
+        "reservation": "yes",
+        "smoking": "no",
+        "tourism": "hotel",
+        "website": "https://www.mandarinoriental.com/en/new-york/manhattan",
+        "wheelchair": "yes",
+        "wikidata": "Q6747858",
+        "wikipedia": "en:Mandarin Oriental, New York"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1428427564,
+      "lat": 40.7612458,
+      "lon": -73.9743323,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "2",
+        "addr:postcode": "10022",
+        "addr:state": "NY",
+        "addr:street": "East 55th Street",
+        "alt_name": "Saint Regis",
+        "brand": "St. Regis",
+        "brand:wikidata": "Q30715430",
+        "internet_access": "yes",
+        "name": "St Regis",
+        "operator": "Marriott International",
+        "phone": "+1-212-753-4500",
+        "smoking": "no",
+        "tourism": "hotel",
+        "website": "http://www.stregisnewyork.com/",
+        "wikidata": "Q2322983"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2610440255,
+      "lat": 40.7621727,
+      "lon": -73.9829659,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "790",
+        "addr:postcode": "10019",
+        "addr:state": "NY",
+        "addr:street": "7th Avenue",
+        "email": "reservations@mtshotel.com",
+        "internet_access": "yes",
+        "internet_access:fee": "no",
+        "name": "The Manhattan at Times Square Hotel",
+        "phone": "+1 212 581 3300",
+        "rooms": "685",
+        "tourism": "hotel",
+        "website": "https://www.manhattanhoteltimessquare.com/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2639531871,
+      "lat": 40.7597371,
+      "lon": -73.9845837,
+      "tags": {
+        "brand": "Renaissance",
+        "brand:wikidata": "Q2143252",
+        "name": "Renaissance New York Times Square Hotel",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2708083600,
+      "lat": 40.7646529,
+      "lon": -73.9774764,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "101",
+        "addr:postcode": "10019",
+        "addr:street": "West 57th Street",
+        "brand": "Hilton",
+        "brand:wikidata": "Q598884",
+        "check_date": "2025-04-10",
+        "dof": "no",
+        "fitness_centre": "yes",
+        "internet_access": "wlan",
+        "internet_access:fee": "no",
+        "name": "The Quin",
+        "official_name": "The Quin Central Park by Hilton Club",
+        "operator": "Hilton",
+        "phone": "+1-212-245-7846",
+        "rooms": "208",
+        "smoking": "no",
+        "tourism": "hotel",
+        "website": "http://www.thequinhotel.com",
+        "wheelchair": "yes",
+        "wikidata": "Q19878233",
+        "wikipedia": "en:The Quin"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2708164841,
+      "lat": 40.7643756,
+      "lon": -73.9810992,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "201",
+        "addr:postcode": "10019",
+        "addr:state": "NY",
+        "addr:street": "West 55th Street",
+        "brand": "Hilton",
+        "brand:wikidata": "Q598884",
+        "email": "welcome@westhousehotelnewyork.com",
+        "internet_access": "wlan",
+        "name": "WestHouse Hotel New York, an SLH Hotel",
+        "phone": "+1 212 707 4888",
+        "tourism": "hotel",
+        "website": "https://www.hilton.com/en/hotels/jfkwhlx-westhouse-hotel-new-york/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 2717355355,
+      "lat": 40.7627592,
+      "lon": -73.9835908,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "226",
+        "addr:postcode": "10019",
+        "addr:state": "NY",
+        "addr:street": "West 52nd Street",
+        "email": "info@msocialhotelnewyork.com",
+        "internet_access": "wlan",
+        "internet_access:fee": "no",
+        "level": "33",
+        "name": "M Social Hotel New York Times Square",
+        "phone": "+1 212 315 0100",
+        "rooms": "480",
+        "tourism": "hotel",
+        "website": "https://www.msocial.com/en/new-york/m-social-new-york/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3116191043,
+      "lat": 40.7654216,
+      "lon": -73.9793143,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "153",
+        "addr:postcode": "10019",
+        "addr:state": "NY",
+        "addr:street": "West 57th Street",
+        "brand": "Park Hyatt",
+        "brand:wikidata": "Q115794911",
+        "name": "Park Hyatt New York",
+        "phone": "+1 646-774-1234",
+        "tourism": "hotel",
+        "website": "https://newyork.park.hyatt.com/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3973268195,
+      "lat": 40.7629278,
+      "lon": -73.9753651,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "15",
+        "addr:postcode": "10019",
+        "addr:state": "NY",
+        "addr:street": "West 56th Street",
+        "breakfast": "yes",
+        "contact:facebook": "https://www.facebook.com/ChambersHotelNYC",
+        "contact:instagram": "https://www.instagram.com/chambershotelny/",
+        "contact:pinterest": "https://www.pinterest.com/chambersnewyork/",
+        "contact:twitter": "https://twitter.com/ChambersHotelNY",
+        "dog": "yes",
+        "email": "info@chambershotel.com",
+        "fax": "+1 212-974-5657",
+        "internet_access": "wlan",
+        "internet_access:fee": "no",
+        "name": "Chambers Hotel",
+        "operator": "Lifestyle Preferred Hotels & Resorts",
+        "phone": "+1 212-974-5656",
+        "rooms": "72",
+        "tourism": "hotel",
+        "website": "https://www.chambershotel.com/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4257985392,
+      "lat": 40.7600158,
+      "lon": -73.9829482,
+      "tags": {
+        "addr:city": "New York",
+        "addr:housenumber": "142",
+        "addr:postcode": "10019",
+        "addr:street": "West 49th Street",
+        "name": "Radio City Apartment",
+        "phone": "+1-212-730-0728",
+        "tourism": "hotel",
+        "website": "https://www.radiocityapartments.com/"
+      }
+    }
+  ],
+  "41.90_12.48": [
+    {
+      "type": "node",
+      "id": 668952085,
+      "lat": 41.9051237,
+      "lon": 12.4788451,
+      "tags": {
+        "addr:housenumber": "126",
+        "addr:street": "Via del Corso",
+        "name": "Grand Hotel Plaza Rome",
+        "name:es": "tienda Zara",
+        "phone": "+39 06 6992 1111",
+        "stars": "5",
+        "tourism": "hotel",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 685957641,
+      "lat": 41.8978576,
+      "lon": 12.4746972,
+      "tags": {
+        "addr:housenumber": "8",
+        "addr:street": "Via dei Sediari",
+        "check_date": "2026-05-13",
+        "name": "Hotel Navona",
+        "phone": "+390668301252",
+        "stars": "3",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 696078932,
+      "lat": 41.9010332,
+      "lon": 12.4779468,
+      "tags": {
+        "addr:city": "Roma",
+        "addr:housenumber": "131",
+        "addr:postcode": "00186",
+        "addr:street": "Piazza di Montecitorio",
+        "name": "Hotel Nazionale",
+        "tourism": "hotel",
+        "website": "https://www.hotelnazionale.it/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 708898438,
+      "lat": 41.8976597,
+      "lon": 12.4769406,
+      "tags": {
+        "addr:city": "Roma",
+        "addr:country": "IT",
+        "addr:housenumber": "21",
+        "addr:postcode": "00186",
+        "addr:street": "Via Santa Chiara",
+        "check_date": "2024-03-16",
+        "email": "info@albergosantachiara.com",
+        "fax": "+39 06 6873144",
+        "name": "Hotel Santa Chiara",
+        "phone": "+39 06 6872979",
+        "tourism": "hotel",
+        "website": "https://www.albergosantachiara.com/",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 961818637,
+      "lat": 41.9041615,
+      "lon": 12.4823779,
+      "tags": {
+        "addr:housenumber": "71",
+        "addr:street": "Via della Vite",
+        "email": "info@hotelhoms.it",
+        "fax": "+39 06 6780482",
+        "name": "Hotel Homs",
+        "phone": "+39 06 6792976",
+        "stars": "4",
+        "tourism": "hotel",
+        "website": "https://hotelhoms.it/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 984885716,
+      "lat": 41.8933147,
+      "lon": 12.4750871,
+      "tags": {
+        "name": "Locanda Cairoli",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1243321894,
+      "lat": 41.9076906,
+      "lon": 12.4807216,
+      "tags": {
+        "addr:city": "Roma",
+        "addr:country": "IT",
+        "addr:housenumber": "56",
+        "addr:postcode": "00187",
+        "addr:street": "Via Margutta",
+        "check_date": "2025-06-21",
+        "email": "info@hotelart.it",
+        "name": "Hotel Art by the Spanish Steps",
+        "stars": "4",
+        "tourism": "hotel",
+        "website": "http://www.hotelart.it/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1248116068,
+      "lat": 41.9003134,
+      "lon": 12.4840953,
+      "tags": {
+        "addr:city": "Roma",
+        "addr:country": "IT",
+        "addr:housenumber": "20/21A",
+        "addr:postcode": "00187",
+        "addr:street": "Vicolo del Babuccio",
+        "check_date": "2024-10-09",
+        "email": "info@hoteltrevirome.com",
+        "fax": "+39 06 69941407",
+        "name": "Hotel Trevi",
+        "phone": "+39 06 6789563",
+        "stars": "3",
+        "tourism": "hotel",
+        "website": "https://www.hoteltrevirome.com/"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1261144273,
+      "lat": 41.9023028,
+      "lon": 12.4757543,
+      "tags": {
+        "name": "Hotel Adriano",
+        "source": "survey",
+        "tourism": "hotel"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1273322574,
+      "lat": 41.9026955,
+      "lon": 12.4830686,
+      "tags": {
+        "addr:city": "Roma",
+        "addr:housenumber": "126",
+        "addr:postcode": "00187",
+        "addr:street": "Via del Bufalo",
+        "email": "info@hotelborgognoni.it",
+        "name": "Hotel Dei Borgognoni",
+        "phone": "+39 06 69941505",
+        "tourism": "hotel",
+        "website": "https://www.hotelborgognoni.com/"
+      }
+    }
+  ]
+}

@@ -1,9 +1,9 @@
----
+﻿---
 import LanguagePicker from './LanguagePicker.astro';
 import { ui } from '../i18n/ui';
 import { getPageSeo, getVideoCardTitle, getVideoSchema } from '../lib/videoSeo';
 
-// Dışarıdan gelecek verileri (props) tanımlıyoruz
+// DÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸arÃƒâ€žÃ‚Â±dan gelecek verileri (props) tanÃƒâ€žÃ‚Â±mlÃƒâ€žÃ‚Â±yoruz
 interface Props {
   videos: Array<any>;
   lang?: string;
@@ -11,7 +11,7 @@ interface Props {
 
 const { videos = [], lang = 'en' } = Astro.props;
 
-// Dil çevirisi için ui.ts dosyasından ilgili dili çekiyoruz
+// Dil ÃƒÆ’Ã‚Â§evirisi iÃƒÆ’Ã‚Â§in ui.ts dosyasÃƒâ€žÃ‚Â±ndan ilgili dili ÃƒÆ’Ã‚Â§ekiyoruz
 const translations = ui as Record<string, Record<string, string>>;
 const t = translations[lang] || translations.en || translations.tr;
 const pageSeo = getPageSeo(lang);
@@ -19,15 +19,15 @@ const pageSeo = getPageSeo(lang);
 const emptyStateText = t['state.videosComingSoon'] || 'Videos coming soon';
 const shareLabels: Record<string, string> = {
   en: 'Share', tr: 'Paylaş', de: 'Teilen', es: 'Compartir', it: 'Condividi',
-  fr: 'Partager', ja: '共有', pt: 'Compartilhar', ru: 'Поделиться', zh: '分享',
-  ko: '공유', ar: 'مشاركة', hi: 'साझा करें', nl: 'Delen', pl: 'Udostępnij',
-  sv: 'Dela', id: 'Bagikan', vi: 'Chia sẻ'
+  fr: 'Partager', ja: 'ÃƒÂ¥Ã¢â‚¬Â¦Ã‚Â±ÃƒÂ¦Ã…â€œÃ¢â‚¬Â°', pt: 'Compartilhar', ru: 'ÃƒÂÃ…Â¸ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â´ÃƒÂÃ‚ÂµÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã…â€™Ãƒâ€˜Ã‚ÂÃƒâ€˜Ã‚Â', zh: 'ÃƒÂ¥Ã‹â€ Ã¢â‚¬Â ÃƒÂ¤Ã‚ÂºÃ‚Â«',
+  ko: 'ÃƒÂªÃ‚Â³Ã‚ÂµÃƒÂ¬Ã…â€œÃ‚Â ', ar: 'Ãƒâ„¢Ã¢â‚¬Â¦ÃƒËœÃ‚Â´ÃƒËœÃ‚Â§ÃƒËœÃ‚Â±Ãƒâ„¢Ã†â€™ÃƒËœÃ‚Â©', hi: 'ÃƒÂ Ã‚Â¤Ã‚Â¸ÃƒÂ Ã‚Â¤Ã‚Â¾ÃƒÂ Ã‚Â¤Ã‚ÂÃƒÂ Ã‚Â¤Ã‚Â¾ ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¤Ã‚Â°ÃƒÂ Ã‚Â¥Ã¢â‚¬Â¡ÃƒÂ Ã‚Â¤Ã¢â‚¬Å¡', nl: 'Delen', pl: 'UdostÃƒâ€žÃ¢â€žÂ¢pnij',
+  sv: 'Dela', id: 'Bagikan', vi: 'Chia sÃƒÂ¡Ã‚ÂºÃ‚Â»'
 };
 const copiedLabels: Record<string, string> = {
-  en: 'Copied', tr: 'Kopyalandı', de: 'Kopiert', es: 'Copiado', it: 'Copiato',
-  fr: 'Copié', ja: 'コピー済み', pt: 'Copiado', ru: 'Скопировано', zh: '已复制',
-  ko: '복사됨', ar: 'تم النسخ', hi: 'कॉपी किया गया', nl: 'Gekopieerd', pl: 'Skopiowano',
-  sv: 'Kopierad', id: 'Disalin', vi: 'Đã sao chép'
+  en: 'Copied', tr: 'KopyalandÃƒâ€žÃ‚Â±', de: 'Kopiert', es: 'Copiado', it: 'Copiato',
+  fr: 'CopiÃƒÆ’Ã‚Â©', ja: 'ÃƒÂ£Ã¢â‚¬Å¡Ã‚Â³ÃƒÂ£Ã†â€™Ã¢â‚¬ÂÃƒÂ£Ã†â€™Ã‚Â¼ÃƒÂ¦Ã‚Â¸Ã‹â€ ÃƒÂ£Ã‚ÂÃ‚Â¿', pt: 'Copiado', ru: 'ÃƒÂÃ‚Â¡ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â¿ÃƒÂÃ‚Â¸Ãƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â¾', zh: 'ÃƒÂ¥Ã‚Â·Ã‚Â²ÃƒÂ¥Ã‚Â¤Ã‚ÂÃƒÂ¥Ã‹â€ Ã‚Â¶',
+  ko: 'ÃƒÂ«Ã‚Â³Ã‚ÂµÃƒÂ¬Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ«Ã‚ÂÃ‚Â¨', ar: 'ÃƒËœÃ‚ÂªÃƒâ„¢Ã¢â‚¬Â¦ ÃƒËœÃ‚Â§Ãƒâ„¢Ã¢â‚¬Å¾Ãƒâ„¢Ã¢â‚¬Â ÃƒËœÃ‚Â³ÃƒËœÃ‚Â®', hi: 'ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¥Ã¢â‚¬Â°ÃƒÂ Ã‚Â¤Ã‚ÂªÃƒÂ Ã‚Â¥Ã¢â€šÂ¬ ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¤Ã‚Â¿ÃƒÂ Ã‚Â¤Ã‚Â¯ÃƒÂ Ã‚Â¤Ã‚Â¾ ÃƒÂ Ã‚Â¤Ã¢â‚¬â€ÃƒÂ Ã‚Â¤Ã‚Â¯ÃƒÂ Ã‚Â¤Ã‚Â¾', nl: 'Gekopieerd', pl: 'Skopiowano',
+  sv: 'Kopierad', id: 'Disalin', vi: 'Ãƒâ€žÃ‚ÂÃƒÆ’Ã‚Â£ sao chÃƒÆ’Ã‚Â©p'
 };
 const shareLabel = shareLabels[lang] || shareLabels.en;
 const copiedLabel = copiedLabels[lang] || copiedLabels.en;
@@ -64,7 +64,7 @@ const videoSchema = {
       content={pageSeo.description}
     />
 
-    <!-- Video preview bağlantısını önceden hazırla -->
+    <!-- Video preview baÃƒâ€žÃ…Â¸lantÃƒâ€žÃ‚Â±sÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± ÃƒÆ’Ã‚Â¶nceden hazÃƒâ€žÃ‚Â±rla -->
     <link rel="preconnect" href="https://www.youtube-nocookie.com" />
     <link rel="preconnect" href="https://www.youtube.com" />
     <link rel="preconnect" href="https://i.ytimg.com" />
@@ -355,7 +355,7 @@ const videoSchema = {
         width: 100%;
       }
 
-      /* AdSense henüz içerik yerleştirmediyse sol reklam alanını tamamen gizle. */
+      /* AdSense henÃƒÆ’Ã‚Â¼z iÃƒÆ’Ã‚Â§erik yerleÃƒâ€¦Ã…Â¸tirmediyse sol reklam alanÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± tamamen gizle. */
       .sidebar-ad-container:empty {
         display: none;
       }
@@ -368,7 +368,7 @@ const videoSchema = {
         margin-bottom: 24px;
       }
 
-      /* AdSense henüz içerik yerleştirmediyse üst reklam alanını tamamen gizle. */
+      /* AdSense henÃƒÆ’Ã‚Â¼z iÃƒÆ’Ã‚Â§erik yerleÃƒâ€¦Ã…Â¸tirmediyse ÃƒÆ’Ã‚Â¼st reklam alanÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± tamamen gizle. */
       .ad-banner-top:empty {
         display: none;
       }
@@ -445,7 +445,7 @@ const videoSchema = {
         gap: 24px 20px;
       }
 
-      /* Fragment yerine kullanılan wrapper */
+      /* Fragment yerine kullanÃƒâ€žÃ‚Â±lan wrapper */
       .video-card-wrapper {
         display: contents;
       }
@@ -784,7 +784,7 @@ const videoSchema = {
           <span>{t['nav.map'] || 'World Map'}</span>
         </a>
 
-        <a href="/hotels" class="nav-link">
+        <a href={`/${lang}/hotels`} class="nav-link">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
             <path d="M9 6h6"/>
@@ -793,24 +793,6 @@ const videoSchema = {
             <path d="M9 18h6"/>
           </svg>
           <span>{t['nav.hotels'] || 'Hotels'}</span>
-        </a>
-
-        <a href="/photos" class="nav-link">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-            <circle cx="12" cy="13" r="4"/>
-          </svg>
-          <span>{t['nav.photos'] || 'World Photos'}</span>
-        </a>
-
-        <a href="/historic" class="nav-link">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="4" y1="22" x2="20" y2="22"/>
-            <line x1="10" y1="2" x2="14" y2="2"/>
-            <path d="M6 18V11M10 18V11M14 18V11M18 18V11"/>
-            <polygon points="12 2 4 7 20 7 12 2"/>
-          </svg>
-          <span>{t['nav.historic'] || 'Historic & Boutique'}</span>
         </a>
 
         <hr class="sidebar-divider" />
@@ -1054,9 +1036,9 @@ const videoSchema = {
           });
 
 
-          // Her 5 görünür videodan sonra 1 reklam alanı oluştur.
-          // Böylece Tümü veya herhangi bir kategori seçildiğinde
-          // reklamlar sadece o anda görünen videolara göre yeniden dizilir.
+          // Her 5 gÃƒÆ’Ã‚Â¶rÃƒÆ’Ã‚Â¼nÃƒÆ’Ã‚Â¼r videodan sonra 1 reklam alanÃƒâ€žÃ‚Â± oluÃƒâ€¦Ã…Â¸tur.
+          // BÃƒÆ’Ã‚Â¶ylece TÃƒÆ’Ã‚Â¼mÃƒÆ’Ã‚Â¼ veya herhangi bir kategori seÃƒÆ’Ã‚Â§ildiÃƒâ€žÃ…Â¸inde
+          // reklamlar sadece o anda gÃƒÆ’Ã‚Â¶rÃƒÆ’Ã‚Â¼nen videolara gÃƒÆ’Ã‚Â¶re yeniden dizilir.
           if (videoGrid) {
 
             videoGrid
@@ -1124,7 +1106,7 @@ const videoSchema = {
         }
 
 
-        // İlk açılışta da 5 video + 1 reklam düzenini kur.
+        // Ãƒâ€žÃ‚Â°lk aÃƒÆ’Ã‚Â§Ãƒâ€žÃ‚Â±lÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸ta da 5 video + 1 reklam dÃƒÆ’Ã‚Â¼zenini kur.
         filterVideos();
 
 
@@ -1134,8 +1116,8 @@ const videoSchema = {
           document.querySelectorAll('.thumbnail-wrapper')
         );
 
-        // İlk ekrandaki videoların YouTube bağlantısını tarayıcı boşta iken
-        // önceden ısıtır. Böylece ilk hover daha hızlı başlayabilir.
+        // Ãƒâ€žÃ‚Â°lk ekrandaki videolarÃƒâ€žÃ‚Â±n YouTube baÃƒâ€žÃ…Â¸lantÃƒâ€žÃ‚Â±sÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± tarayÃƒâ€žÃ‚Â±cÃƒâ€žÃ‚Â± boÃƒâ€¦Ã…Â¸ta iken
+        // ÃƒÆ’Ã‚Â¶nceden Ãƒâ€žÃ‚Â±sÃƒâ€žÃ‚Â±tÃƒâ€žÃ‚Â±r. BÃƒÆ’Ã‚Â¶ylece ilk hover daha hÃƒâ€žÃ‚Â±zlÃƒâ€žÃ‚Â± baÃƒâ€¦Ã…Â¸layabilir.
         const prewarmPreviewConnections = () => {
 
           previewWrappers
@@ -1227,7 +1209,7 @@ const videoSchema = {
           wrapper.addEventListener('mouseenter', startPreview);
           wrapper.addEventListener('mouseleave', stopPreview);
 
-          // Smart TV / klavye: kumanda odağı karta geldiğinde aynı önizleme davranışı
+          // Smart TV / klavye: kumanda odaÃƒâ€žÃ…Â¸Ãƒâ€žÃ‚Â± karta geldiÃƒâ€žÃ…Â¸inde aynÃƒâ€žÃ‚Â± ÃƒÆ’Ã‚Â¶nizleme davranÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸Ãƒâ€žÃ‚Â±
           wrapper.addEventListener('focus', startPreview);
           wrapper.addEventListener('blur', stopPreview);
 
@@ -1299,3 +1281,5 @@ const videoSchema = {
 
   </body>
 </html>
+
+

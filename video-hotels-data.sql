@@ -1,0 +1,4 @@
+PRAGMA defer_foreign_keys=TRUE;
+INSERT INTO "video_hotels" ("video_id","hotel_id","distance_meters","selection_score","rank","match_method","verified","active","created_at","updated_at") VALUES('pON9O5Ski8U','hotel-metropolitan-tokyo-ikebukuro',200,100,1,'landmark',1,1,'2026-08-29 12:16:36','2026-08-29 12:16:36');
+INSERT INTO "video_hotels" ("video_id","hotel_id","distance_meters","selection_score","rank","match_method","verified","active","created_at","updated_at") VALUES('pON9O5Ski8U','the-b-ikebukuro',350,90,2,'landmark',1,1,'2026-08-29 12:16:36','2026-08-29 12:16:36');
+INSERT INTO "video_hotels" ("video_id","hotel_id","distance_meters","selection_score","rank","match_method","verified","active","created_at","updated_at") VALUES('pON9O5Ski8U','sunshine-city-prince-hotel',800,80,3,'landmark',1,1,'2026-08-29 12:16:36','2026-08-29 12:16:36');
