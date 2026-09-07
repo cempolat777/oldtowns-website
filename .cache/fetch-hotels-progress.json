@@ -120,6 +120,126 @@
       "osm-way-79145686",
       "osm-node-12187017886",
       "osm-way-79145703"
+    ],
+    "FD1ae3fKBKo": [
+      "osm-way-63156680",
+      "osm-node-13081678526",
+      "osm-way-109025580",
+      "osm-node-296925002",
+      "osm-node-1154612641",
+      "osm-node-2286167197",
+      "osm-node-2717801381",
+      "osm-way-1065877423",
+      "osm-way-83655832",
+      "osm-node-2700414543"
+    ],
+    "JFodCefgbuU": [
+      "osm-way-1327048315",
+      "osm-node-7007594786",
+      "osm-node-1843076853",
+      "osm-node-4281928716",
+      "osm-node-1798131766",
+      "osm-node-1989829576",
+      "osm-way-1550121571",
+      "osm-node-441579640",
+      "osm-node-6846465294",
+      "osm-node-441579637"
+    ],
+    "nnm6qsXOnEk": [
+      "osm-node-5015370235",
+      "osm-node-11793920470",
+      "osm-node-8862200517",
+      "osm-node-4126338427",
+      "osm-way-544868838",
+      "osm-node-3898100602",
+      "osm-node-3898100603",
+      "osm-node-5932445802",
+      "osm-node-5015370234",
+      "osm-node-11053319158"
+    ],
+    "npTBK0VmhxI": [
+      "osm-node-4356681250",
+      "osm-node-11826478969",
+      "osm-node-4317993994",
+      "osm-way-622469038",
+      "osm-node-6761742290",
+      "osm-way-1088108983",
+      "osm-node-9924887517",
+      "osm-node-4429703893",
+      "osm-node-5695809621",
+      "osm-way-201265843"
+    ],
+    "KAEU4MMrCCo": [
+      "osm-node-5110345261",
+      "osm-node-9457760518",
+      "osm-node-10556440309",
+      "osm-node-9560644978",
+      "osm-node-9283646105",
+      "osm-node-9775466857",
+      "osm-node-5110347275",
+      "osm-node-11613065369",
+      "osm-node-5108837434",
+      "osm-node-11816727569"
+    ],
+    "OdJILdx2Q_E": [
+      "osm-node-6757896186",
+      "osm-way-719605578",
+      "osm-way-573810708",
+      "osm-way-566606010",
+      "osm-node-5048599926",
+      "osm-way-1024285074",
+      "osm-way-1024285073",
+      "osm-node-2482928508",
+      "osm-node-4391565090",
+      "osm-way-1193233336"
+    ],
+    "jSwhjaRho0c": [
+      "osm-node-12510989069",
+      "osm-node-3143473543",
+      "osm-node-12510981397",
+      "osm-node-12510981395",
+      "osm-node-9975515900",
+      "osm-node-12510981393",
+      "osm-node-12510989073",
+      "osm-node-12510989071",
+      "osm-node-9975515899",
+      "osm-node-9988276718"
+    ],
+    "Sr4U55AYPx0": [
+      "osm-node-4539937490",
+      "osm-node-5103810811",
+      "osm-node-3499112264",
+      "osm-node-5113470958",
+      "osm-node-5113470959",
+      "osm-node-5103810794",
+      "osm-node-5103810792",
+      "osm-node-5103810800",
+      "osm-node-5103810791",
+      "osm-way-498185039"
+    ],
+    "ZBeWTVckQFw": [
+      "osm-way-218996915",
+      "osm-node-4891500804",
+      "osm-way-1168255744",
+      "osm-way-218996993",
+      "osm-way-298129131",
+      "osm-way-443076539",
+      "osm-node-3157937952",
+      "osm-node-12270489802",
+      "osm-node-9708691130",
+      "osm-node-7217316485"
+    ],
+    "FlFDB1rMOX8": [
+      "osm-node-5048599926",
+      "osm-node-6757896186",
+      "osm-way-566606010",
+      "osm-way-573810708",
+      "osm-way-545901621",
+      "osm-node-5667640059",
+      "osm-node-4539937490",
+      "osm-node-5113470959",
+      "osm-node-3499112264",
+      "osm-node-5113470958"
     ]
   }
 }

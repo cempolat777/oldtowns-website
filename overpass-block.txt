@@ -1,0 +1,97 @@
+// Overpass querying
+// ---------------------------------------------------------------------------
+
+function buildOverpassQuery(lat, lon, radiusMeters) {
+  return `
+    [out:json][timeout:25];
+    (
+      node["tourism"="hotel"](around:${radiusMeters},${lat},${lon});
+      way["tourism"="hotel"](around:${radiusMeters},${lat},${lon});
+      node["tourism"="guest_house"](around:${radiusMeters},${lat},${lon});
+      way["tourism"="guest_house"](around:${radiusMeters},${lat},${lon});
+    );
+    out center tags;
+  `.trim();
+}
+
+async function queryOverpassEndpoint(endpoint, query) {
+  for (let attempt = 1; attempt <= MAX_RETRIES_PER_ENDPOINT; attempt++) {
+    try {
+      await sleep(REQUEST_DELAY_MS);
+      const res = await fetchWithTimeout(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "User-Agent": USER_AGENT,
+        },
+        body: `data=${encodeURIComponent(query)}`,
+      });
+
+      if (res.status === 429 || res.status === 504) {
+        throw new Error(`rate-limited or gateway timeout (HTTP ${res.status})`);
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      return await res.json();
+    } catch (err) {
+      console.warn(`    [overpass:${new URL(endpoint).hostname}] attempt ${attempt}/${MAX_RETRIES_PER_ENDPOINT} failed: ${err.message}`);
+      if (attempt < MAX_RETRIES_PER_ENDPOINT) {
+        await sleep(RETRY_BASE_DELAY_MS * attempt);
+      }
+    }
+  }
+  return null;
+}
+
+async function queryOverpassAllMirrors(lat, lon, radiusMeters) {
+  const cacheKey = coordCacheKey(lat, lon, radiusMeters);
+  if (overpassCache[cacheKey]) return overpassCache[cacheKey];
+
+  const query = buildOverpassQuery(lat, lon, radiusMeters);
+
+  for (const endpoint of OVERPASS_ENDPOINTS) {
+    const result = await queryOverpassEndpoint(endpoint, query);
+    if (result && Array.isArray(result.elements)) {
+      overpassCache[cacheKey] = result.elements;
+      await saveOverpassCache();
+      return result.elements;
+    }
+  }
+
+  console.error(`    [overpass] all mirrors failed for radius ${radiusMeters}m`);
+  return [];
+}
+
+async function findNearestHotels(lat, lon) {
+  let elements = [];
+
+  for (const radius of SEARCH_RADII_METERS) {
+    elements = await queryOverpassAllMirrors(lat, lon, radius);
+    if (elements.length >= HOTELS_PER_VIDEO) break;
+  }
+
+  const hotels = elements
+    .map((el) => {
+      const hLat = el.lat ?? el.center?.lat;
+      const hLon = el.lon ?? el.center?.lon;
+      if (!Number.isFinite(hLat) || !Number.isFinite(hLon)) return null;
+
+      const tags = el.tags || {};
+      return {
+        id: `osm-${el.type}-${el.id}`,
+        name: tags.name || "Unnamed hotel",
+        lat: hLat,
+        lon: hLon,
+        address: [tags["addr:street"], tags["addr:housenumber"], tags["addr:city"]]
+          .filter(Boolean)
+          .join(" "),
+        website: tags.website || tags["contact:website"] || null,
+        distanceMeters: Math.round(distanceMeters(lat, lon, hLat, hLon)),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.distanceMeters - b.distanceMeters)
+    .slice(0, HOTELS_PER_VIDEO);
+
+  return hotels;
+}

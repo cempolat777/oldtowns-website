@@ -44,7 +44,7 @@ const SEARCH_QUERIES = [
 
 const CATEGORY_PATTERNS = {
   'Walking Tours': /\b(?:walk|walking|stroll|promenade)\b/i,
-  'Airport Walks': /\b(?:airport|terminal|aeropuerto|aéroport|flughafen|aeroporto)\b/i,
+  'Airport Walks': /\b(?:airport|terminal|aeropuerto|aÃƒÆ’Ã‚Â©roport|flughafen|aeroporto)\b/i,
   'Beach Walking Tours': /\b(?:beach|seaside|seafront|coastal|coastline|oceanfront)\b/i,
   'Night & Rain': /\b(?:night|rain|rainy|evening|after dark|storm)\b/i,
   'Drone & Aerial': /\b(?:drone|aerial|fpv|from above|flying over|fly over)\b/i,
@@ -103,7 +103,7 @@ function parseTimestamp(value) {
 
 function normalizeEvidenceLabel(value) {
   return cleanTitle(value)
-    .replace(/^[\s\-–—|•:]+|[\s\-–—|•:]+$/g, '')
+    .replace(/^[\s\-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â|ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢:]+|[\s\-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â|ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢:]+$/g, '')
     .replace(/\s*\([^)]*\)\s*$/g, '')
     .trim();
 }
@@ -130,7 +130,7 @@ export function extractUniqueEvidence(description) {
     if (!line) continue;
 
     const leadingTimestamp = line.match(
-      /^[^\p{L}\p{N}:]*((?:\d{1,2}:)?\d{1,2}:\d{2})\s*(?:AM|PM)?\s*(?:[-–—|•:]\s*)?(.+)$/iu
+      /^[^\p{L}\p{N}:]*((?:\d{1,2}:)?\d{1,2}:\d{2})\s*(?:AM|PM)?\s*(?:[-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â|ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢:]\s*)?(.+)$/iu
     );
     const trailingTimestamp = line.match(
       /^(.+?)\s*[\[(]((?:\d{1,2}:)?\d{1,2}:\d{2})[\])]\s*$/u
@@ -237,13 +237,17 @@ async function fetchYouTubeVideos() {
     categoryMismatch: 0,
     insufficientUniqueValue: 0
   };
+  const TARGET_VIDEO_COUNT = 100000;
+  
   let acceptedVideos = 0;
 
   for (const item of SEARCH_QUERIES) {
     console.log(`Searching: "${item.query}"`);
 
     try {
+      if (existingVideos.length + acceptedVideos >= TARGET_VIDEO_COUNT) break;
       const searchData = await searchYouTube(item.query);
+      
       const ids = (searchData.items || [])
         .map((video) => video.id?.videoId)
         .filter(Boolean);

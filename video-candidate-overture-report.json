@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-09-06T23:58:14.473Z",
+  "mode": "overture-duckdb",
+  "writeRequested": true,
+  "inputPath": "./video-candidates.locations.json",
+  "release": "2026-08-19.0",
+  "videos": 152,
+  "noApiKey": true,
+  "noRequestQuota": true,
+  "cityContextsVerified": 22,
+  "cityContextsUnresolved": 0,
+  "routePointsGeoVerified": 159,
+  "routePointsGeoUnresolved": 1217,
+  "titlePlacesGeoVerified": 0,
+  "videosWithGeoAnchor": 47,
+  "videosWithNearbyHotels": 43,
+  "hotelsVerified": 1023,
+  "cacheHits": 0,
+  "duckDbQueries": 76
+}

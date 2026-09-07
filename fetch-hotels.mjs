@@ -22,6 +22,7 @@ const GEOCODE_CACHE_PATH = path.join(CACHE_DIR, "geocode-cache.json");
 const PROGRESS_PATH = path.join(CACHE_DIR, "fetch-hotels-progress.json");
 
 const HOTELS_PER_VIDEO = 10;
+const LOCATION_GRID_DEGREES = 0.02;
 const SEARCH_RADII_METERS = [3000, 6000, 12000, 25000];
 const REQUEST_DELAY_MS = 1200;
 const MAX_RETRIES_PER_ENDPOINT = 3;
@@ -309,59 +310,109 @@ async function main() {
     process.exit(1);
   }
 
-  const videos = Array.isArray(rawData) ? rawData : rawData.videos || [];
-  const allHotelsById = {};
+  const videos = (Array.isArray(rawData) ? rawData : rawData.videos || []).slice(0, 100000);
+  const CONCURRENCY = 3;
+  const SAVE_EVERY = 25;
+
+  const existingHotels = await readJsonSafe(HOTELS_OUT_PATH, []);
+  const allHotelsById = Object.fromEntries(
+    (Array.isArray(existingHotels) ? existingHotels : []).map((hotel) => [hotel.id, hotel])
+  );
+
+  let cursor = 0;
+  let completed = 0;
   let processed = 0;
   let skipped = 0;
+  let dirty = 0;
 
-  for (const video of videos) {
+  async function checkpoint(force = false) {
+    if (!force && dirty < SAVE_EVERY) return;
+
+    await Promise.all([
+      saveProgress(),
+      writeJson(HOTELS_OUT_PATH, Object.values(allHotelsById)),
+      writeJson(VIDEOS_PATH, rawData),
+    ]);
+
+    dirty = 0;
+  }
+
+  async function processVideo(video, index) {
     const videoId = video.id || video.slug || video.title;
 
     if (!videoId) {
-      console.warn("[skip] video has no id/slug/title:", video);
+      console.warn(`[${index + 1}/${videos.length}] [skip] no video id`);
       skipped++;
-      continue;
+      completed++;
+      dirty++;
+      await checkpoint();
+      return;
     }
 
-    if (progress.done[videoId]) {
+    if (Object.prototype.hasOwnProperty.call(progress.done, videoId)) {
       video.nearbyHotelIds = progress.done[videoId];
       processed++;
-      continue;
+      completed++;
+      return;
     }
 
-    console.log(`\n[${processed + skipped + 1}/${videos.length}] ${videoId}`);
+    console.log(`[${index + 1}/${videos.length}] ${videoId}`);
 
     const coords = await extractCoordinates(video);
+
     if (!coords) {
       console.warn(`  [skip] no usable coordinates for "${videoId}"`);
       video.nearbyHotelIds = [];
       progress.done[videoId] = [];
-      await saveProgress();
       skipped++;
-      continue;
+      completed++;
+      dirty++;
+      await checkpoint();
+      return;
     }
 
-    console.log(`  coords: ${coords.lat.toFixed(5)}, ${coords.lon.toFixed(5)} (via ${coords.source})`);
-
     const hotels = await findNearestHotels(coords.lat, coords.lon);
-    console.log(`  found ${hotels.length} hotel(s)`);
 
     for (const hotel of hotels) {
       allHotelsById[hotel.id] = hotel;
     }
 
-    const hotelIds = hotels.map((h) => h.id);
+    const hotelIds = hotels.map((hotel) => hotel.id);
     video.nearbyHotelIds = hotelIds;
     progress.done[videoId] = hotelIds;
 
-    await saveProgress();
-    await writeJson(HOTELS_OUT_PATH, Object.values(allHotelsById));
-    await writeJson(VIDEOS_PATH, rawData);
-
     processed++;
+    completed++;
+    dirty++;
+
+    console.log(`  found ${hotels.length} hotel(s) | completed ${completed}/${videos.length}`);
+    await checkpoint();
   }
 
-  console.log(`\nDone. Processed: ${processed}, skipped: ${skipped}, total unique hotels: ${Object.keys(allHotelsById).length}`);
+  async function worker() {
+    while (true) {
+      const index = cursor++;
+      if (index >= videos.length) return;
+
+      try {
+        await processVideo(videos[index], index);
+      } catch (err) {
+        console.error(`[${index + 1}/${videos.length}] failed: ${err.message}`);
+      }
+    }
+  }
+
+  console.log(`Starting hotel fetch: ${videos.length} videos, ${CONCURRENCY} workers`);
+
+  await Promise.all(
+    Array.from({ length: Math.min(CONCURRENCY, videos.length) }, () => worker())
+  );
+
+  await checkpoint(true);
+
+  console.log(
+    `Done. Processed: ${processed}, skipped: ${skipped}, total unique hotels: ${Object.keys(allHotelsById).length}`
+  );
 }
 
 main().catch((err) => {

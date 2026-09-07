@@ -1,0 +1,14 @@
+{
+  "generatedAt": "2026-09-06T23:58:08.585Z",
+  "mode": "youtube-api",
+  "writeRequested": true,
+  "inputPath": "./video-candidates.json",
+  "videos": 152,
+  "sourceVerified": 152,
+  "unavailable": 0,
+  "descriptionsWithLineBreaks": 152,
+  "videosWithChapters": 148,
+  "totalChapters": 2156,
+  "videosWithRoutePoints": 147,
+  "totalRoutePoints": 1999
+}

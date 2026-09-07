@@ -1,0 +1,17 @@
+{
+  "generatedAt": "2026-09-07T08:35:25.858Z",
+  "writeRequested": false,
+  "currentVideos": 129,
+  "candidatesChecked": 152,
+  "accepted": 0,
+  "rejected": 152,
+  "finalVideos": 129,
+  "languagesChecked": 18,
+  "rejectionCounts": {
+    "verified-location-required": 98,
+    "verified-nearby-hotel-required": 93,
+    "duplicate-existing": 50,
+    "insufficient-unique-value": 2,
+    "insufficient-context": 2
+  }
+}
