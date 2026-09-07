@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+﻿import fs from 'node:fs';
 import { loadEnvFile } from 'node:process';
 import { pathToFileURL } from 'node:url';
 
@@ -44,7 +44,7 @@ const SEARCH_QUERIES = [
 
 const CATEGORY_PATTERNS = {
   'Walking Tours': /\b(?:walk|walking|stroll|promenade)\b/i,
-  'Airport Walks': /\b(?:airport|terminal|aeropuerto|aÃƒÆ’Ã‚Â©roport|flughafen|aeroporto)\b/i,
+  'Airport Walks': /\b(?:airport|terminal|aeropuerto|aÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©roport|flughafen|aeroporto)\b/i,
   'Beach Walking Tours': /\b(?:beach|seaside|seafront|coastal|coastline|oceanfront)\b/i,
   'Night & Rain': /\b(?:night|rain|rainy|evening|after dark|storm)\b/i,
   'Drone & Aerial': /\b(?:drone|aerial|fpv|from above|flying over|fly over)\b/i,
@@ -103,7 +103,7 @@ function parseTimestamp(value) {
 
 function normalizeEvidenceLabel(value) {
   return cleanTitle(value)
-    .replace(/^[\s\-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â|ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢:]+|[\s\-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â|ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢:]+$/g, '')
+    .replace(/^[\s\-ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â|ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢:]+|[\s\-ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â|ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢:]+$/g, '')
     .replace(/\s*\([^)]*\)\s*$/g, '')
     .trim();
 }
@@ -130,7 +130,7 @@ export function extractUniqueEvidence(description) {
     if (!line) continue;
 
     const leadingTimestamp = line.match(
-      /^[^\p{L}\p{N}:]*((?:\d{1,2}:)?\d{1,2}:\d{2})\s*(?:AM|PM)?\s*(?:[-ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â|ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¢:]\s*)?(.+)$/iu
+      /^[^\p{L}\p{N}:]*((?:\d{1,2}:)?\d{1,2}:\d{2})\s*(?:AM|PM)?\s*(?:[-ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â|ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â¢:]\s*)?(.+)$/iu
     );
     const trailingTimestamp = line.match(
       /^(.+?)\s*[\[(]((?:\d{1,2}:)?\d{1,2}:\d{2})[\])]\s*$/u
@@ -186,7 +186,7 @@ async function fetchJson(url) {
 async function searchYouTube(query) {
   const params = new URLSearchParams({
     part: 'snippet',
-    maxResults: '25',
+    maxResults: '50',
     q: query,
     type: 'video',
     videoDefinition: 'high',
@@ -331,3 +331,4 @@ if (isDirectRun) {
     process.exit(1);
   });
 }
+
