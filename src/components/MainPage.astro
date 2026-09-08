@@ -51,6 +51,87 @@ const categories = [
   { id: 'Documentaries', label: t['cat.documentaries'] || 'Documentaries' }
 ];
 
+const POPULAR_CITIES_INITIAL = [
+  'Tokyo', 'London', 'Paris', 'New York', 'Istanbul', 'Rome', 'Bangkok',
+  'Barcelona', 'Amsterdam', 'Berlin', 'Vienna', 'Prague', 'Madrid',
+  'Lisbon', 'Dubai', 'Singapore', 'Seoul', 'Kyoto', 'Osaka', 'Venice',
+  'Florence'
+];
+
+function shuffleInitialVideos(items: Array<any>) {
+  const result = [...items];
+
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
+function buildInitialMixedOrder(items: Array<any>) {
+  const popular: Array<any> = [];
+  const other: Array<any> = [];
+
+  for (const video of items) {
+    const city = String(video?.city || '').trim().toLowerCase();
+    const isPopular = POPULAR_CITIES_INITIAL.some(
+      (popularCity) => popularCity.toLowerCase() === city
+    );
+
+    (isPopular ? popular : other).push(video);
+  }
+
+  const popularPool = shuffleInitialVideos(popular);
+  const otherPool = shuffleInitialVideos(other);
+  const result: Array<any> = [];
+  const recentCities: string[] = [];
+
+  function takeBest(pool: Array<any>) {
+    if (!pool.length) return null;
+
+    let index = pool.findIndex((video) => {
+      const city = String(video?.city || '').trim().toLowerCase();
+      return !city || !recentCities.includes(city);
+    });
+
+    if (index < 0) index = 0;
+    return pool.splice(index, 1)[0];
+  }
+
+  while (popularPool.length || otherPool.length) {
+    const preferPopular =
+      popularPool.length > 0 &&
+      (otherPool.length === 0 || Math.random() < 0.6);
+
+    let video = preferPopular
+      ? takeBest(popularPool)
+      : takeBest(otherPool);
+
+    if (!video) {
+      video = takeBest(popularPool) || takeBest(otherPool);
+    }
+
+    if (!video) break;
+
+    result.push(video);
+
+    const city = String(video?.city || '').trim().toLowerCase();
+
+    if (city) {
+      recentCities.push(city);
+
+      if (recentCities.length > 3) {
+        recentCities.shift();
+      }
+    }
+  }
+
+  return result;
+}
+
+const initialVideos = buildInitialMixedOrder(videos);
+
 const videoSchema = {
   "@context": "https://schema.org",
   "@graph": videos.map((video) => getVideoSchema(video, lang))
@@ -449,11 +530,6 @@ const videoSchema = {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 24px 20px;
-        visibility: hidden;
-      }
-
-      .video-grid.is-ready {
-        visibility: visible;
       }
 
       /* Fragment yerine kullanÃƒâ€žÃ‚Â±lan wrapper */
@@ -1264,7 +1340,7 @@ const videoSchema = {
 
           <div class="video-grid">
 
-            {videos.map((video) => (
+            {initialVideos.map((video) => (
 
               <div class="video-card-wrapper">
 
@@ -1596,10 +1672,6 @@ const videoSchema = {
 
         // Ãƒâ€žÃ‚Â°lk aÃƒÆ’Ã‚Â§Ãƒâ€žÃ‚Â±lÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸ta da 5 video + 1 reklam dÃƒÆ’Ã‚Â¼zenini kur.
         filterVideos();
-
-        if (videoGrid) {
-          videoGrid.classList.add('is-ready');
-        }
 
 
         // Hover Video Preview
