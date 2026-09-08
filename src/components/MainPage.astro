@@ -1471,83 +1471,8 @@ const videoSchema = {
 
         let currentCategory = 'All';
 
-        const POPULAR_CITIES = [
-          'Tokyo', 'London', 'Paris', 'New York', 'Istanbul', 'Rome', 'Bangkok',
-          'Barcelona', 'Amsterdam', 'Berlin', 'Vienna', 'Prague', 'Madrid',
-          'Lisbon', 'Dubai', 'Singapore', 'Seoul', 'Kyoto', 'Osaka', 'Venice',
-          'Florence'
-        ];
-
-        function shuffleArray(items) {
-          const result = [...items];
-          for (let i = result.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [result[i], result[j]] = [result[j], result[i]];
-          }
-          return result;
-        }
-
-        function getCardCity(card) {
-          return (card.getAttribute('data-city') || '').trim();
-        }
-
-        function buildMixedOrder(cards) {
-          const popular = [];
-          const other = [];
-
-          cards.forEach(card => {
-            const city = getCardCity(card).toLowerCase();
-            const isPopular = POPULAR_CITIES.some(
-              popularCity => popularCity.toLowerCase() === city
-            );
-            (isPopular ? popular : other).push(card);
-          });
-
-          const popularPool = shuffleArray(popular);
-          const otherPool = shuffleArray(other);
-          const result = [];
-          const recentCities = [];
-
-          function takeBest(pool) {
-            if (!pool.length) return null;
-            let index = pool.findIndex(card => {
-              const city = getCardCity(card).toLowerCase();
-              return !city || !recentCities.includes(city);
-            });
-            if (index < 0) index = 0;
-            return pool.splice(index, 1)[0];
-          }
-
-          while (popularPool.length || otherPool.length) {
-            const preferPopular =
-              popularPool.length > 0 &&
-              (otherPool.length === 0 || Math.random() < 0.6);
-
-            let card = preferPopular ? takeBest(popularPool) : takeBest(otherPool);
-            if (!card) card = takeBest(popularPool) || takeBest(otherPool);
-            if (!card) break;
-
-            result.push(card);
-            const city = getCardCity(card).toLowerCase();
-            if (city) {
-              recentCities.push(city);
-              if (recentCities.length > 3) recentCities.shift();
-            }
-          }
-
-          return result;
-        }
-
-        function reorderVisibleVideos() {
-          if (!videoGrid) return;
-          const visibleCards = Array.from(videoCards).filter(
-            card => card.style.display !== 'none'
-          );
-          buildMixedOrder(visibleCards).forEach(card => {
-            const wrapper = card.closest('.video-card-wrapper');
-            if (wrapper) videoGrid.appendChild(wrapper);
-          });
-        }
+        // The initial mixed order is rendered by Astro before the page reaches the browser.
+        // Client-side filtering preserves that order to prevent a second visible reshuffle.
 
 
         function filterVideos() {
@@ -1607,7 +1532,6 @@ const videoSchema = {
               .querySelectorAll('.ad-card-slot')
               .forEach(ad => ad.remove());
 
-            reorderVisibleVideos();
 
             const visibleCards = Array.from(videoGrid.querySelectorAll('.video-card')).filter(card =>
               card.style.display !== 'none'
