@@ -449,6 +449,11 @@ const videoSchema = {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 24px 20px;
+        visibility: hidden;
+      }
+
+      .video-grid.is-ready {
+        visibility: visible;
       }
 
       /* Fragment yerine kullanÃƒâ€žÃ‚Â±lan wrapper */
@@ -1591,6 +1596,10 @@ const videoSchema = {
 
         // Ãƒâ€žÃ‚Â°lk aÃƒÆ’Ã‚Â§Ãƒâ€žÃ‚Â±lÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸ta da 5 video + 1 reklam dÃƒÆ’Ã‚Â¼zenini kur.
         filterVideos();
+
+        if (videoGrid) {
+          videoGrid.classList.add('is-ready');
+        }
 
 
         // Hover Video Preview
