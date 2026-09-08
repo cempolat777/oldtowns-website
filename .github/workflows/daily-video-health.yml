@@ -31,7 +31,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add src/data/videos.json video-health-report.json src/data/health-backups/
+          git add src/data/videos.json video-health-report.json
+
+          if [ -d "src/data/health-backups" ]; then
+            git add src/data/health-backups
+          fi
 
           if git diff --cached --quiet; then
             echo "No video changes detected."
