@@ -8,6 +8,7 @@ try {
 const API_KEY = process.env.YOUTUBE_API_KEY;
 const VIDEOS_PATH = './src/data/videos.json';
 const OUTPUT_PATH = './channel-video-candidates.json';
+const BLACKLIST_PATH = './src/data/video-blacklist.json';
 const MIN_DURATION_SECONDS = 30 * 60;
 
 const CATEGORY_PATTERNS = [
@@ -50,6 +51,80 @@ function loadVideos() {
   }
 }
 
+function ensureBlacklistFile() {
+  if (!fs.existsSync(BLACKLIST_PATH)) {
+    fs.writeFileSync(
+      BLACKLIST_PATH,
+      '[]\n',
+      'utf8'
+    );
+  }
+}
+
+function loadBlacklist() {
+  ensureBlacklistFile();
+
+  try {
+    const data = JSON.parse(
+      fs.readFileSync(BLACKLIST_PATH, 'utf8')
+    );
+
+    const entries =
+      Array.isArray(data) ? data : [];
+
+    const videoIds = new Set();
+    const channelIds = new Set();
+
+    for (const entry of entries) {
+      if (typeof entry === 'string') {
+        const id = entry.trim();
+
+        if (id) {
+          videoIds.add(id);
+        }
+
+        continue;
+      }
+
+      if (
+        !entry ||
+        typeof entry !== 'object'
+      ) {
+        continue;
+      }
+
+      const type =
+        String(
+          entry.type || 'video'
+        ).toLowerCase();
+
+      const id =
+        String(
+          entry.id || ''
+        ).trim();
+
+      if (!id) {
+        continue;
+      }
+
+      if (type === 'channel') {
+        channelIds.add(id);
+      } else {
+        videoIds.add(id);
+      }
+    }
+
+    return {
+      videoIds,
+      channelIds
+    };
+  } catch {
+    throw new Error(
+      'Could not read video-blacklist.json.'
+    );
+  }
+}
+
 async function fetchJson(url) {
   const response = await fetch(url);
   const data = await response.json();
@@ -80,7 +155,9 @@ async function resolveChannel(handle) {
   const channel = data.items?.[0];
 
   if (!channel) {
-    throw new Error(`Channel not found: ${handle}`);
+    throw new Error(
+      `Channel not found: ${handle}`
+    );
   }
 
   const uploadsPlaylistId =
@@ -182,7 +259,10 @@ function durationSeconds(isoDuration = '') {
 }
 
 function categoryFor(title) {
-  for (const [category, pattern] of CATEGORY_PATTERNS) {
+  for (
+    const [category, pattern]
+    of CATEGORY_PATTERNS
+  ) {
     if (pattern.test(title)) {
       return category;
     }
@@ -191,7 +271,11 @@ function categoryFor(title) {
   return null;
 }
 
-function cityRelevant(title, description, city) {
+function cityRelevant(
+  title,
+  description,
+  city
+) {
   const text =
     `${title} ${description}`
       .toLocaleLowerCase('en-US');
@@ -205,7 +289,9 @@ function badgeFor(title, category) {
   const normalized =
     title.toLowerCase();
 
-  if (category === 'Drone & Aerial') {
+  if (
+    category === 'Drone & Aerial'
+  ) {
     return 'DRONE 4K';
   }
 
@@ -220,14 +306,18 @@ function badgeFor(title, category) {
 }
 
 function parseArguments() {
-  const args = process.argv.slice(2);
+  const args =
+    process.argv.slice(2);
 
   if (
     args[0]?.toUpperCase() === 'ALL'
   ) {
-    const handles = args.slice(1);
+    const handles =
+      args.slice(1);
 
-    if (handles.length === 0) {
+    if (
+      handles.length === 0
+    ) {
       throw new Error(
         'Usage: node .\\fetch-channel-videos.mjs ALL "@Channel1" "@Channel2"'
       );
@@ -249,7 +339,8 @@ function parseArguments() {
     ...handles
   ] = args;
 
-  const limit = Number(limitRaw);
+  const limit =
+    Number(limitRaw);
 
   if (
     !city ||
@@ -285,6 +376,9 @@ async function main() {
   const existing =
     loadVideos();
 
+  const blacklist =
+    loadBlacklist();
+
   const existingIds =
     new Set(
       existing
@@ -295,7 +389,12 @@ async function main() {
   const archiveIds =
     new Set();
 
-  if (config.mode === 'ALL') {
+  let blacklistedArchiveVideos = 0;
+  let blacklistedChannels = 0;
+
+  if (
+    config.mode === 'ALL'
+  ) {
     console.log(
       'Mode: ALL eligible videos'
     );
@@ -303,6 +402,7 @@ async function main() {
     console.log(
       `Target: ${config.city}, ${config.country}`
     );
+
     console.log(
       `Maximum selected: ${config.limit}`
     );
@@ -312,9 +412,34 @@ async function main() {
     `Existing videos: ${existing.length}`
   );
 
-  for (const handle of config.handles) {
+  console.log(
+    `Blacklisted videos: ${blacklist.videoIds.size}`
+  );
+
+  console.log(
+    `Blacklisted channels: ${blacklist.channelIds.size}`
+  );
+
+  for (
+    const handle
+    of config.handles
+  ) {
     const channel =
       await resolveChannel(handle);
+
+    if (
+      blacklist.channelIds.has(
+        channel.id
+      )
+    ) {
+      blacklistedChannels++;
+
+      console.log(
+        `Skipped blacklisted channel: ${channel.title} (${handle})`
+      );
+
+      continue;
+    }
 
     console.log(
       `Scanning channel: ${channel.title} (${handle})`
@@ -330,6 +455,13 @@ async function main() {
     );
 
     for (const id of ids) {
+      if (
+        blacklist.videoIds.has(id)
+      ) {
+        blacklistedArchiveVideos++;
+        continue;
+      }
+
       archiveIds.add(id);
     }
   }
@@ -352,13 +484,20 @@ async function main() {
 
   const missingFromApi =
     [...archiveIds]
-      .filter(id => !returnedIds.has(id))
+      .filter(
+        id =>
+          !returnedIds.has(id)
+      )
       .length;
 
   const candidates = [];
 
   const rejection = {
     duplicate: 0,
+    blacklisted:
+      blacklistedArchiveVideos,
+    blacklistedChannel:
+      blacklistedChannels,
     unavailable: 0,
     missingFromApi,
     wrongCity: 0,
@@ -366,13 +505,32 @@ async function main() {
     uncategorized: 0
   };
 
-  for (const video of details) {
+  for (
+    const video
+    of details
+  ) {
     const videoId =
       video.id;
 
+    const channelId =
+      video.snippet?.channelId || '';
+
+    if (
+      blacklist.videoIds.has(
+        videoId
+      ) ||
+      blacklist.channelIds.has(
+        channelId
+      )
+    ) {
+      rejection.blacklisted++;
+      continue;
+    }
+
     if (
       !videoId ||
-      video.status?.privacyStatus !== 'public' ||
+      video.status?.privacyStatus !==
+        'public' ||
       video.status?.embeddable !== true
     ) {
       rejection.unavailable++;
@@ -387,10 +545,14 @@ async function main() {
     }
 
     const title =
-      clean(video.snippet?.title);
+      clean(
+        video.snippet?.title
+      );
 
     const description =
-      clean(video.snippet?.description);
+      clean(
+        video.snippet?.description
+      );
 
     if (
       config.mode === 'CITY' &&
@@ -410,7 +572,8 @@ async function main() {
       );
 
     if (
-      seconds < MIN_DURATION_SECONDS
+      seconds <
+      MIN_DURATION_SECONDS
     ) {
       rejection.tooShort++;
       continue;
@@ -447,23 +610,31 @@ async function main() {
           : '',
 
       channel:
-        clean(video.snippet?.channelTitle),
+        clean(
+          video.snippet?.channelTitle
+        ),
 
       channelTitle:
-        clean(video.snippet?.channelTitle),
+        clean(
+          video.snippet?.channelTitle
+        ),
 
       channelId:
-        video.snippet?.channelId || '',
+        channelId,
 
       badge:
-        badgeFor(title, category),
+        badgeFor(
+          title,
+          category
+        ),
 
       publishedAt:
         video.snippet?.publishedAt || '',
 
       viewCount:
         Number(
-          video.statistics?.viewCount || 0
+          video.statistics?.viewCount ||
+          0
         ),
 
       durationSeconds:
@@ -471,16 +642,20 @@ async function main() {
 
       admission: {
         version: 3,
-        status: 'channel-candidate',
-        source: 'channel-archive',
-        mode: config.mode
+        status:
+          'channel-candidate',
+        source:
+          'channel-archive',
+        mode:
+          config.mode
       }
     });
   }
 
   candidates.sort(
     (a, b) =>
-      b.viewCount - a.viewCount
+      b.viewCount -
+      a.viewCount
   );
 
   const selected =
@@ -503,8 +678,13 @@ async function main() {
 
   const categoryCounts = {};
 
-  for (const video of selected) {
-    categoryCounts[video.category] =
+  for (
+    const video
+    of selected
+  ) {
+    categoryCounts[
+      video.category
+    ] =
       (
         categoryCounts[
           video.category
@@ -513,6 +693,7 @@ async function main() {
   }
 
   console.log('');
+
   console.log(
     `Eligible candidates: ${candidates.length}`
   );

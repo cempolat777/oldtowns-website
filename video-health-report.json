@@ -1,0 +1,23 @@
+{
+  "checkedAt": "2026-09-08T15:50:51.528Z",
+  "archiveVideos": 1504,
+  "uniqueVideoIds": 1504,
+  "duplicateIds": 0,
+  "healthy": 1504,
+  "unhealthy": 0,
+  "removed": 0,
+  "remaining": 1504,
+  "backupPath": null,
+  "blacklist": {
+    "videos": 0,
+    "channels": 0
+  },
+  "reasons": {
+    "blacklistedVideo": 0,
+    "blacklistedChannel": 0,
+    "missingFromApi": 0,
+    "notPublic": 0,
+    "embeddingDisabled": 0
+  },
+  "unhealthyVideos": []
+}
