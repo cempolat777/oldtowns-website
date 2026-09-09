@@ -3,7 +3,7 @@ import LanguagePicker from './LanguagePicker.astro';
 import { ui } from '../i18n/ui';
 import { getPageSeo, getVideoCardTitle, getVideoSchema } from '../lib/videoSeo';
 
-// DÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸arÃƒâ€žÃ‚Â±dan gelecek verileri (props) tanÃƒâ€žÃ‚Â±mlÃƒâ€žÃ‚Â±yoruz
+// Dışarıdan gelecek verileri (props) tanımlıyoruz
 interface Props {
   videos: Array<any>;
   lang?: string;
@@ -11,7 +11,7 @@ interface Props {
 
 const { videos = [], lang = 'en' } = Astro.props;
 
-// Dil ÃƒÆ’Ã‚Â§evirisi iÃƒÆ’Ã‚Â§in ui.ts dosyasÃƒâ€žÃ‚Â±ndan ilgili dili ÃƒÆ’Ã‚Â§ekiyoruz
+// Dil çevirisi için ui.ts dosyasından ilgili dili çekiyoruz
 const translations = ui as Record<string, Record<string, string>>;
 const t = translations[lang] || translations.en || translations.tr;
 const pageSeo = getPageSeo(lang);
@@ -19,15 +19,15 @@ const pageSeo = getPageSeo(lang);
 const emptyStateText = t['state.videosComingSoon'] || 'Videos coming soon';
 const shareLabels: Record<string, string> = {
   en: 'Share', tr: 'Paylaş', de: 'Teilen', es: 'Compartir', it: 'Condividi',
-  fr: 'Partager', ja: 'ÃƒÂ¥Ã¢â‚¬Â¦Ã‚Â±ÃƒÂ¦Ã…â€œÃ¢â‚¬Â°', pt: 'Compartilhar', ru: 'ÃƒÂÃ…Â¸ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â´ÃƒÂÃ‚ÂµÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã…â€™Ãƒâ€˜Ã‚ÂÃƒâ€˜Ã‚Â', zh: 'ÃƒÂ¥Ã‹â€ Ã¢â‚¬Â ÃƒÂ¤Ã‚ÂºÃ‚Â«',
-  ko: 'ÃƒÂªÃ‚Â³Ã‚ÂµÃƒÂ¬Ã…â€œÃ‚Â ', ar: 'Ãƒâ„¢Ã¢â‚¬Â¦ÃƒËœÃ‚Â´ÃƒËœÃ‚Â§ÃƒËœÃ‚Â±Ãƒâ„¢Ã†â€™ÃƒËœÃ‚Â©', hi: 'ÃƒÂ Ã‚Â¤Ã‚Â¸ÃƒÂ Ã‚Â¤Ã‚Â¾ÃƒÂ Ã‚Â¤Ã‚ÂÃƒÂ Ã‚Â¤Ã‚Â¾ ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¤Ã‚Â°ÃƒÂ Ã‚Â¥Ã¢â‚¬Â¡ÃƒÂ Ã‚Â¤Ã¢â‚¬Å¡', nl: 'Delen', pl: 'UdostÃƒâ€žÃ¢â€žÂ¢pnij',
-  sv: 'Dela', id: 'Bagikan', vi: 'Chia sÃƒÂ¡Ã‚ÂºÃ‚Â»'
+  fr: 'Partager', ja: '共有', pt: 'Compartilhar', ru: 'Поделиться', zh: '分享',
+  ko: '공유', ar: 'مشاركة', hi: 'साझा करें', nl: 'Delen', pl: 'Udostępnij',
+  sv: 'Dela', id: 'Bagikan', vi: 'Chia sẻ'
 };
 const copiedLabels: Record<string, string> = {
   en: 'Copied', tr: 'Kopyalandı', de: 'Kopiert', es: 'Copiado', it: 'Copiato',
-  fr: 'CopiÃƒÆ’Ã‚Â©', ja: 'ÃƒÂ£Ã¢â‚¬Å¡Ã‚Â³ÃƒÂ£Ã†â€™Ã¢â‚¬ÂÃƒÂ£Ã†â€™Ã‚Â¼ÃƒÂ¦Ã‚Â¸Ã‹â€ ÃƒÂ£Ã‚ÂÃ‚Â¿', pt: 'Copiado', ru: 'ÃƒÂÃ‚Â¡ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â¿ÃƒÂÃ‚Â¸Ãƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â¾', zh: 'ÃƒÂ¥Ã‚Â·Ã‚Â²ÃƒÂ¥Ã‚Â¤Ã‚ÂÃƒÂ¥Ã‹â€ Ã‚Â¶',
-  ko: 'ÃƒÂ«Ã‚Â³Ã‚ÂµÃƒÂ¬Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ«Ã‚ÂÃ‚Â¨', ar: 'ÃƒËœÃ‚ÂªÃƒâ„¢Ã¢â‚¬Â¦ ÃƒËœÃ‚Â§Ãƒâ„¢Ã¢â‚¬Å¾Ãƒâ„¢Ã¢â‚¬Â ÃƒËœÃ‚Â³ÃƒËœÃ‚Â®', hi: 'ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¥Ã¢â‚¬Â°ÃƒÂ Ã‚Â¤Ã‚ÂªÃƒÂ Ã‚Â¥Ã¢â€šÂ¬ ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¤Ã‚Â¿ÃƒÂ Ã‚Â¤Ã‚Â¯ÃƒÂ Ã‚Â¤Ã‚Â¾ ÃƒÂ Ã‚Â¤Ã¢â‚¬â€ÃƒÂ Ã‚Â¤Ã‚Â¯ÃƒÂ Ã‚Â¤Ã‚Â¾', nl: 'Gekopieerd', pl: 'Skopiowano',
-  sv: 'Kopierad', id: 'Disalin', vi: 'Ãƒâ€žÃ‚ÂÃƒÆ’Ã‚Â£ sao chÃƒÆ’Ã‚Â©p'
+  fr: 'Copié', ja: 'コピーしました', pt: 'Copiado', ru: 'Скопировано', zh: '已复制',
+  ko: '복사됨', ar: 'تم النسخ', hi: 'कॉपी की गई', nl: 'Gekopieerd', pl: 'Skopiowano',
+  sv: 'Kopierad', id: 'Disalin', vi: 'Đã sao chép'
 };
 const shareLabel = shareLabels[lang] || shareLabels.en;
 const copiedLabel = copiedLabels[lang] || copiedLabels.en;
@@ -51,9 +51,117 @@ const categories = [
   { id: 'Documentaries', label: t['cat.documentaries'] || 'Documentaries' }
 ];
 
+const POPULAR_CITIES_INITIAL = [
+  'Tokyo', 'London', 'Paris', 'New York', 'Istanbul', 'Rome', 'Bangkok',
+  'Barcelona', 'Amsterdam', 'Berlin', 'Vienna', 'Prague', 'Madrid',
+  'Lisbon', 'Dubai', 'Singapore', 'Seoul', 'Kyoto', 'Osaka', 'Venice',
+  'Florence'
+];
+
+// Deterministic (seeded) PRNG: aynı seed her zaman aynı sayı dizisini üretir.
+// Böylece sıralama rastgele GÖRÜNÜR ama tekrar üretilebilir/stabildir.
+function createSeededRandom(seed: number) {
+  let s = seed >>> 0;
+  return function () {
+    s |= 0;
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function hashStringToSeed(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+
+// Seed günün tarihine (UTC, YYYY-MM-DD) bağlı: aynı gün içindeki HER istek
+// aynı sırayı üretir (flicker yok), ertesi gün sıra otomatik olarak değişir.
+const dailySeed = hashStringToSeed(new Date().toISOString().slice(0, 10));
+const seededRandom = createSeededRandom(dailySeed);
+
+function shuffleInitialVideos(items: Array<any>) {
+  const result = [...items];
+
+  for (let i = result.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(seededRandom() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
+function buildInitialMixedOrder(items: Array<any>) {
+  const popular: Array<any> = [];
+  const other: Array<any> = [];
+
+  for (const video of items) {
+    const city = String(video?.city || '').trim().toLowerCase();
+    const isPopular = POPULAR_CITIES_INITIAL.some(
+      (popularCity) => popularCity.toLowerCase() === city
+    );
+
+    (isPopular ? popular : other).push(video);
+  }
+
+  const popularPool = shuffleInitialVideos(popular);
+  const otherPool = shuffleInitialVideos(other);
+  const result: Array<any> = [];
+  const recentCities: string[] = [];
+
+  function takeBest(pool: Array<any>) {
+    if (!pool.length) return null;
+
+    let index = pool.findIndex((video) => {
+      const city = String(video?.city || '').trim().toLowerCase();
+      return !city || !recentCities.includes(city);
+    });
+
+    if (index < 0) index = 0;
+    return pool.splice(index, 1)[0];
+  }
+
+  while (popularPool.length || otherPool.length) {
+    const preferPopular =
+      popularPool.length > 0 &&
+      (otherPool.length === 0 || seededRandom() < 0.6);
+
+    let video = preferPopular
+      ? takeBest(popularPool)
+      : takeBest(otherPool);
+
+    if (!video) {
+      video = takeBest(popularPool) || takeBest(otherPool);
+    }
+
+    if (!video) break;
+
+    result.push(video);
+
+    const city = String(video?.city || '').trim().toLowerCase();
+
+    if (city) {
+      recentCities.push(city);
+
+      if (recentCities.length > 3) {
+        recentCities.shift();
+      }
+    }
+  }
+
+  return result;
+}
+
+const initialVideos = buildInitialMixedOrder(videos);
+
 const videoSchema = {
   "@context": "https://schema.org",
-  "@graph": videos.map((video) => getVideoSchema(video, lang))
+  "@graph": initialVideos.map((video) => getVideoSchema(video, lang))
 };
 ---
 
@@ -70,7 +178,7 @@ const videoSchema = {
       content={pageSeo.description}
     />
 
-    <!-- Video preview baÃƒâ€žÃ…Â¸lantÃƒâ€žÃ‚Â±sÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± ÃƒÆ’Ã‚Â¶nceden hazÃƒâ€žÃ‚Â±rla -->
+    <!-- Video preview bağlantısını önceden hazırla -->
     <link rel="preconnect" href="https://www.youtube-nocookie.com" />
     <link rel="preconnect" href="https://www.youtube.com" />
     <link rel="preconnect" href="https://i.ytimg.com" />
@@ -361,7 +469,7 @@ const videoSchema = {
         width: 100%;
       }
 
-      /* AdSense henÃƒÆ’Ã‚Â¼z iÃƒÆ’Ã‚Â§erik yerleÃƒâ€¦Ã…Â¸tirmediyse sol reklam alanÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± tamamen gizle. */
+      /* AdSense henüz içerik yerleştirmediyse sol reklam alanını tamamen gizle. */
       .sidebar-ad-container:empty {
         display: none;
       }
@@ -374,7 +482,7 @@ const videoSchema = {
         margin-bottom: 24px;
       }
 
-      /* AdSense henÃƒÆ’Ã‚Â¼z iÃƒÆ’Ã‚Â§erik yerleÃƒâ€¦Ã…Â¸tirmediyse ÃƒÆ’Ã‚Â¼st reklam alanÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± tamamen gizle. */
+      /* AdSense henüz içerik yerleştirmediyse üst reklam alanını tamamen gizle. */
       .ad-banner-top:empty {
         display: none;
       }
@@ -451,7 +559,7 @@ const videoSchema = {
         gap: 24px 20px;
       }
 
-      /* Fragment yerine kullanÃƒâ€žÃ‚Â±lan wrapper */
+      /* Fragment yerine kullanılan wrapper */
       .video-card-wrapper {
         display: contents;
       }
@@ -1259,7 +1367,7 @@ const videoSchema = {
 
           <div class="video-grid">
 
-            {videos.map((video, index) => (
+            {initialVideos.map((video, index) => (
 
               <>
 
@@ -1448,9 +1556,9 @@ const videoSchema = {
           });
 
 
-          // Her 5 gÃƒÆ’Ã‚Â¶rÃƒÆ’Ã‚Â¼nÃƒÆ’Ã‚Â¼r videodan sonra 1 reklam alanÃƒâ€žÃ‚Â± oluÃƒâ€¦Ã…Â¸tur.
-          // BÃƒÆ’Ã‚Â¶ylece TÃƒÆ’Ã‚Â¼mÃƒÆ’Ã‚Â¼ veya herhangi bir kategori seÃƒÆ’Ã‚Â§ildiÃƒâ€žÃ…Â¸inde
-          // reklamlar sadece o anda gÃƒÆ’Ã‚Â¶rÃƒÆ’Ã‚Â¼nen videolara gÃƒÆ’Ã‚Â¶re yeniden dizilir.
+          // Her 5 görünür videodan sonra 1 reklam alanı oluştur.
+          // Böylece Tümü veya herhangi bir kategori seçildiğinde
+          // reklamlar sadece o anda görünen videolara göre yeniden dizilir.
           if (videoGrid) {
 
             videoGrid
@@ -1584,7 +1692,7 @@ const videoSchema = {
           wrapper.addEventListener('mouseenter', startPreview);
           wrapper.addEventListener('mouseleave', stopPreview);
 
-          // Smart TV / klavye: kumanda odaÃƒâ€žÃ…Â¸Ãƒâ€žÃ‚Â± karta geldiÃƒâ€žÃ…Â¸inde aynÃƒâ€žÃ‚Â± ÃƒÆ’Ã‚Â¶nizleme davranÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸Ãƒâ€žÃ‚Â±
+          // Smart TV / klavye: kumanda odağı karta geldiğinde aynı önizleme davranışı
           wrapper.addEventListener('focus', startPreview);
           wrapper.addEventListener('blur', stopPreview);
 
@@ -1813,11 +1921,6 @@ const videoSchema = {
 
   </body>
 </html>
-
-
-
-
-
 
 
 
