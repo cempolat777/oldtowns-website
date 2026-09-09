@@ -58,38 +58,11 @@ const POPULAR_CITIES_INITIAL = [
   'Florence'
 ];
 
-// Deterministic (seeded) PRNG: aynı seed her zaman aynı sayı dizisini üretir.
-// Böylece sıralama rastgele GÖRÜNÜR ama tekrar üretilebilir/stabildir.
-function createSeededRandom(seed: number) {
-  let s = seed >>> 0;
-  return function () {
-    s |= 0;
-    s = (s + 0x6d2b79f5) | 0;
-    let t = Math.imul(s ^ (s >>> 15), 1 | s);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-function hashStringToSeed(str: string) {
-  let hash = 0;
-  for (let i = 0; i < str.length; i += 1) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  return hash;
-}
-
-// Seed günün tarihine (UTC, YYYY-MM-DD) bağlı: aynı gün içindeki HER istek
-// aynı sırayı üretir (flicker yok), ertesi gün sıra otomatik olarak değişir.
-const dailySeed = hashStringToSeed(new Date().toISOString().slice(0, 10));
-const seededRandom = createSeededRandom(dailySeed);
-
-function shuffleInitialVideos(items: Array<any>) {
+function shuffleVideos(items: Array<any>) {
   const result = [...items];
 
   for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(seededRandom() * (i + 1));
+    const j = Math.floor(Math.random() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
 
@@ -109,8 +82,8 @@ function buildInitialMixedOrder(items: Array<any>) {
     (isPopular ? popular : other).push(video);
   }
 
-  const popularPool = shuffleInitialVideos(popular);
-  const otherPool = shuffleInitialVideos(other);
+  const popularPool = shuffleVideos(popular);
+  const otherPool = shuffleVideos(other);
   const result: Array<any> = [];
   const recentCities: string[] = [];
 
@@ -129,7 +102,7 @@ function buildInitialMixedOrder(items: Array<any>) {
   while (popularPool.length || otherPool.length) {
     const preferPopular =
       popularPool.length > 0 &&
-      (otherPool.length === 0 || seededRandom() < 0.6);
+      (otherPool.length === 0 || Math.random() < 0.6);
 
     let video = preferPopular
       ? takeBest(popularPool)
@@ -1508,7 +1481,25 @@ const videoSchema = {
         let currentCategory = 'All';
 
 
-        function filterVideos() {
+        function shuffleVisibleCards(cards) {
+          if (!videoGrid || cards.length < 2) return;
+
+          const wrappers = cards
+            .map(card => card.closest('.video-card-wrapper'))
+            .filter(Boolean);
+
+          for (let i = wrappers.length - 1; i > 0; i -= 1) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [wrappers[i], wrappers[j]] = [wrappers[j], wrappers[i]];
+          }
+
+          wrappers.forEach(wrapper => {
+            videoGrid.appendChild(wrapper);
+          });
+        }
+
+
+        function filterVideos({ reshuffle = false } = {}) {
 
           const searchTerm = searchInput
             ? searchInput.value.toLowerCase().trim()
@@ -1556,19 +1547,23 @@ const videoSchema = {
           });
 
 
-          // Her 5 görünür videodan sonra 1 reklam alanı oluştur.
-          // Böylece Tümü veya herhangi bir kategori seçildiğinde
-          // reklamlar sadece o anda görünen videolara göre yeniden dizilir.
           if (videoGrid) {
 
             videoGrid
               .querySelectorAll('.ad-card-slot')
               .forEach(ad => ad.remove());
 
+            let visibleCards = Array.from(
+              videoGrid.querySelectorAll('.video-card')
+            ).filter(card => card.style.display !== 'none');
 
-            const visibleCards = Array.from(videoGrid.querySelectorAll('.video-card')).filter(card =>
-              card.style.display !== 'none'
-            );
+            if (reshuffle) {
+              shuffleVisibleCards(visibleCards);
+
+              visibleCards = Array.from(
+                videoGrid.querySelectorAll('.video-card')
+              ).filter(card => card.style.display !== 'none');
+            }
 
             if (emptyState) {
               emptyState.hidden = visibleCards.length !== 0;
@@ -1610,7 +1605,7 @@ const videoSchema = {
             currentCategory =
               chip.getAttribute('data-category-target') || 'All';
 
-            filterVideos();
+            filterVideos({ reshuffle: true });
 
           });
 
@@ -1627,7 +1622,7 @@ const videoSchema = {
         }
 
 
-        // The initial grid and ad slots are already rendered by Astro.
+        // The initial randomized grid and ad slots are already rendered by Astro.
         // Only apply client-side filtering on load when a URL search query exists.
         if (initialSearch) {
           filterVideos();
