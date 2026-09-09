@@ -87,9 +87,8 @@ interface Video {
 export const prerender = false;
 
 interface VideoRow {
-
   raw_json: string | null;
-
+  active: number | null;
 }
 
 const { lang, id } = Astro.params;
@@ -125,10 +124,9 @@ if (!db) {
 const videoRow = await db
 
   .prepare(`
-    SELECT raw_json
+    SELECT raw_json, active
     FROM videos
     WHERE id = ?1
-      AND active = 1
     LIMIT 1
   `)
 
@@ -147,6 +145,8 @@ if (!videoRow?.raw_json) {
   });
 
 }
+
+const isVideoAvailable = Number(videoRow.active) === 1;
 
 let video: Video;
 
@@ -253,7 +253,7 @@ Astro.response.headers.set(
 
   'X-Robots-Tag',
 
-  seoContent.robots
+  isVideoAvailable ? seoContent.robots : 'noindex, follow'
 
 );
 
@@ -3313,7 +3313,8 @@ const breadcrumbSchema = {
 
         <div class="video-frame">
 
-          <iframe
+          {isVideoAvailable ? (
+<iframe
 
             src={`https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&playsinline=1&rel=0`}
 
@@ -3326,6 +3327,13 @@ const breadcrumbSchema = {
             allowfullscreen
 
           ></iframe>
+) : (
+  <div class="video-unavailable-panel" role="status">
+    <div class="video-unavailable-icon material-symbols-outlined" aria-hidden="true">video_off</div>
+    <h2>Video unavailable</h2>
+    <p>This video is no longer available on YouTube, but this archived walk page remains available.</p>
+  </div>
+)}
 
         </div>
 
@@ -4744,5 +4752,37 @@ const breadcrumbSchema = {
     }
 
   }
+
+
+      .video-unavailable-panel {
+        min-height: 360px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 32px;
+        text-align: center;
+        background: #181818;
+        border: 1px solid #2a2a2a;
+        border-radius: 14px;
+        color: #f1f1f1;
+      }
+
+      .video-unavailable-panel .video-unavailable-icon {
+        font-size: 52px;
+        color: #aaaaaa;
+      }
+
+      .video-unavailable-panel h2 {
+        font-size: 22px;
+        font-weight: 700;
+      }
+
+      .video-unavailable-panel p {
+        max-width: 620px;
+        color: #aaaaaa;
+        line-height: 1.6;
+      }
 
 </style>
