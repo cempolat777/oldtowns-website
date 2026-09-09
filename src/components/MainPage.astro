@@ -51,87 +51,6 @@ const categories = [
   { id: 'Documentaries', label: t['cat.documentaries'] || 'Documentaries' }
 ];
 
-const POPULAR_CITIES_INITIAL = [
-  'Tokyo', 'London', 'Paris', 'New York', 'Istanbul', 'Rome', 'Bangkok',
-  'Barcelona', 'Amsterdam', 'Berlin', 'Vienna', 'Prague', 'Madrid',
-  'Lisbon', 'Dubai', 'Singapore', 'Seoul', 'Kyoto', 'Osaka', 'Venice',
-  'Florence'
-];
-
-function shuffleInitialVideos(items: Array<any>) {
-  const result = [...items];
-
-  for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [result[i], result[j]] = [result[j], result[i]];
-  }
-
-  return result;
-}
-
-function buildInitialMixedOrder(items: Array<any>) {
-  const popular: Array<any> = [];
-  const other: Array<any> = [];
-
-  for (const video of items) {
-    const city = String(video?.city || '').trim().toLowerCase();
-    const isPopular = POPULAR_CITIES_INITIAL.some(
-      (popularCity) => popularCity.toLowerCase() === city
-    );
-
-    (isPopular ? popular : other).push(video);
-  }
-
-  const popularPool = shuffleInitialVideos(popular);
-  const otherPool = shuffleInitialVideos(other);
-  const result: Array<any> = [];
-  const recentCities: string[] = [];
-
-  function takeBest(pool: Array<any>) {
-    if (!pool.length) return null;
-
-    let index = pool.findIndex((video) => {
-      const city = String(video?.city || '').trim().toLowerCase();
-      return !city || !recentCities.includes(city);
-    });
-
-    if (index < 0) index = 0;
-    return pool.splice(index, 1)[0];
-  }
-
-  while (popularPool.length || otherPool.length) {
-    const preferPopular =
-      popularPool.length > 0 &&
-      (otherPool.length === 0 || Math.random() < 0.6);
-
-    let video = preferPopular
-      ? takeBest(popularPool)
-      : takeBest(otherPool);
-
-    if (!video) {
-      video = takeBest(popularPool) || takeBest(otherPool);
-    }
-
-    if (!video) break;
-
-    result.push(video);
-
-    const city = String(video?.city || '').trim().toLowerCase();
-
-    if (city) {
-      recentCities.push(city);
-
-      if (recentCities.length > 3) {
-        recentCities.shift();
-      }
-    }
-  }
-
-  return result;
-}
-
-const initialVideos = buildInitialMixedOrder(videos);
-
 const videoSchema = {
   "@context": "https://schema.org",
   "@graph": videos.map((video) => getVideoSchema(video, lang))
@@ -1340,15 +1259,17 @@ const videoSchema = {
 
           <div class="video-grid">
 
-            {initialVideos.map((video) => (
+            {videos.map((video, index) => (
 
-              <div class="video-card-wrapper">
+              <>
 
-                <div
-                  class="video-card"
-                  data-category={video.category || 'Walking Tours'}
-                  data-city={video.city || ''}
-                >
+                <div class="video-card-wrapper">
+
+                  <div
+                    class="video-card"
+                    data-category={video.category || 'Walking Tours'}
+                    data-city={video.city || ''}
+                  >
 
                   <a
                     href={`/${lang}/walks/${video.id}`}
@@ -1361,7 +1282,8 @@ const videoSchema = {
                       src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
                       alt={getVideoCardTitle(video, lang)}
                       class="video-poster"
-                      loading="lazy"
+                      loading={index < 6 ? 'eager' : 'lazy'}
+                      fetchpriority={index < 6 ? 'high' : 'auto'}
                     />
 
                   </a>
@@ -1395,9 +1317,15 @@ const videoSchema = {
 
                   </div>
 
+                  </div>
+
                 </div>
 
-              </div>
+                {(index + 1) % 5 === 0 && (
+                  <div class="ad-card-slot" aria-hidden="true"></div>
+                )}
+
+              </>
 
             ))}
 
@@ -1470,9 +1398,6 @@ const videoSchema = {
         if (!chips.length && !videoCards.length) return;
 
         let currentCategory = 'All';
-
-        // The initial mixed order is rendered by Astro before the page reaches the browser.
-        // Client-side filtering preserves that order to prevent a second visible reshuffle.
 
 
         function filterVideos() {
@@ -1594,8 +1519,11 @@ const videoSchema = {
         }
 
 
-        // Ãƒâ€žÃ‚Â°lk aÃƒÆ’Ã‚Â§Ãƒâ€žÃ‚Â±lÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸ta da 5 video + 1 reklam dÃƒÆ’Ã‚Â¼zenini kur.
-        filterVideos();
+        // The initial grid and ad slots are already rendered by Astro.
+        // Only apply client-side filtering on load when a URL search query exists.
+        if (initialSearch) {
+          filterVideos();
+        }
 
 
         // Hover Video Preview
@@ -1603,47 +1531,6 @@ const videoSchema = {
         const previewWrappers = Array.from(
           document.querySelectorAll('.thumbnail-wrapper')
         );
-
-        // Ãƒâ€žÃ‚Â°lk ekrandaki videolarÃƒâ€žÃ‚Â±n YouTube baÃƒâ€žÃ…Â¸lantÃƒâ€žÃ‚Â±sÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± tarayÃƒâ€žÃ‚Â±cÃƒâ€žÃ‚Â± boÃƒâ€¦Ã…Â¸ta iken
-        // ÃƒÆ’Ã‚Â¶nceden Ãƒâ€žÃ‚Â±sÃƒâ€žÃ‚Â±tÃƒâ€žÃ‚Â±r. BÃƒÆ’Ã‚Â¶ylece ilk hover daha hÃƒâ€žÃ‚Â±zlÃƒâ€žÃ‚Â± baÃƒâ€¦Ã…Â¸layabilir.
-        const prewarmPreviewConnections = () => {
-
-          previewWrappers
-            .slice(0, 6)
-            .forEach(wrapper => {
-
-              const videoId =
-                wrapper.getAttribute('data-video-id');
-
-              if (!videoId) return;
-
-              const prefetch = document.createElement('link');
-              prefetch.rel = 'prefetch';
-              prefetch.href =
-                `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&rel=0`;
-
-              document.head.appendChild(prefetch);
-
-            });
-
-        };
-
-        if ('requestIdleCallback' in window) {
-
-          window.requestIdleCallback(
-            prewarmPreviewConnections,
-            { timeout: 1200 }
-          );
-
-        } else {
-
-          setTimeout(
-            prewarmPreviewConnections,
-            500
-          );
-
-        }
-
 
         previewWrappers.forEach(wrapper => {
 
@@ -1926,6 +1813,11 @@ const videoSchema = {
 
   </body>
 </html>
+
+
+
+
+
 
 
 

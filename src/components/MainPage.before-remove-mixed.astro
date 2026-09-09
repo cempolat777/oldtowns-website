@@ -1,0 +1,1824 @@
+﻿---
+import LanguagePicker from './LanguagePicker.astro';
+import { ui } from '../i18n/ui';
+import { getPageSeo, getVideoCardTitle, getVideoSchema } from '../lib/videoSeo';
+
+// DÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸arÃƒâ€žÃ‚Â±dan gelecek verileri (props) tanÃƒâ€žÃ‚Â±mlÃƒâ€žÃ‚Â±yoruz
+interface Props {
+  videos: Array<any>;
+  lang?: string;
+}
+
+const { videos = [], lang = 'en' } = Astro.props;
+
+// Dil ÃƒÆ’Ã‚Â§evirisi iÃƒÆ’Ã‚Â§in ui.ts dosyasÃƒâ€žÃ‚Â±ndan ilgili dili ÃƒÆ’Ã‚Â§ekiyoruz
+const translations = ui as Record<string, Record<string, string>>;
+const t = translations[lang] || translations.en || translations.tr;
+const pageSeo = getPageSeo(lang);
+
+const emptyStateText = t['state.videosComingSoon'] || 'Videos coming soon';
+const shareLabels: Record<string, string> = {
+  en: 'Share', tr: 'Paylaş', de: 'Teilen', es: 'Compartir', it: 'Condividi',
+  fr: 'Partager', ja: 'ÃƒÂ¥Ã¢â‚¬Â¦Ã‚Â±ÃƒÂ¦Ã…â€œÃ¢â‚¬Â°', pt: 'Compartilhar', ru: 'ÃƒÂÃ…Â¸ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â´ÃƒÂÃ‚ÂµÃƒÂÃ‚Â»ÃƒÂÃ‚Â¸Ãƒâ€˜Ã¢â‚¬Å¡Ãƒâ€˜Ã…â€™Ãƒâ€˜Ã‚ÂÃƒâ€˜Ã‚Â', zh: 'ÃƒÂ¥Ã‹â€ Ã¢â‚¬Â ÃƒÂ¤Ã‚ÂºÃ‚Â«',
+  ko: 'ÃƒÂªÃ‚Â³Ã‚ÂµÃƒÂ¬Ã…â€œÃ‚Â ', ar: 'Ãƒâ„¢Ã¢â‚¬Â¦ÃƒËœÃ‚Â´ÃƒËœÃ‚Â§ÃƒËœÃ‚Â±Ãƒâ„¢Ã†â€™ÃƒËœÃ‚Â©', hi: 'ÃƒÂ Ã‚Â¤Ã‚Â¸ÃƒÂ Ã‚Â¤Ã‚Â¾ÃƒÂ Ã‚Â¤Ã‚ÂÃƒÂ Ã‚Â¤Ã‚Â¾ ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¤Ã‚Â°ÃƒÂ Ã‚Â¥Ã¢â‚¬Â¡ÃƒÂ Ã‚Â¤Ã¢â‚¬Å¡', nl: 'Delen', pl: 'UdostÃƒâ€žÃ¢â€žÂ¢pnij',
+  sv: 'Dela', id: 'Bagikan', vi: 'Chia sÃƒÂ¡Ã‚ÂºÃ‚Â»'
+};
+const copiedLabels: Record<string, string> = {
+  en: 'Copied', tr: 'Kopyalandı', de: 'Kopiert', es: 'Copiado', it: 'Copiato',
+  fr: 'CopiÃƒÆ’Ã‚Â©', ja: 'ÃƒÂ£Ã¢â‚¬Å¡Ã‚Â³ÃƒÂ£Ã†â€™Ã¢â‚¬ÂÃƒÂ£Ã†â€™Ã‚Â¼ÃƒÂ¦Ã‚Â¸Ã‹â€ ÃƒÂ£Ã‚ÂÃ‚Â¿', pt: 'Copiado', ru: 'ÃƒÂÃ‚Â¡ÃƒÂÃ‚ÂºÃƒÂÃ‚Â¾ÃƒÂÃ‚Â¿ÃƒÂÃ‚Â¸Ãƒâ€˜Ã¢â€šÂ¬ÃƒÂÃ‚Â¾ÃƒÂÃ‚Â²ÃƒÂÃ‚Â°ÃƒÂÃ‚Â½ÃƒÂÃ‚Â¾', zh: 'ÃƒÂ¥Ã‚Â·Ã‚Â²ÃƒÂ¥Ã‚Â¤Ã‚ÂÃƒÂ¥Ã‹â€ Ã‚Â¶',
+  ko: 'ÃƒÂ«Ã‚Â³Ã‚ÂµÃƒÂ¬Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ«Ã‚ÂÃ‚Â¨', ar: 'ÃƒËœÃ‚ÂªÃƒâ„¢Ã¢â‚¬Â¦ ÃƒËœÃ‚Â§Ãƒâ„¢Ã¢â‚¬Å¾Ãƒâ„¢Ã¢â‚¬Â ÃƒËœÃ‚Â³ÃƒËœÃ‚Â®', hi: 'ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¥Ã¢â‚¬Â°ÃƒÂ Ã‚Â¤Ã‚ÂªÃƒÂ Ã‚Â¥Ã¢â€šÂ¬ ÃƒÂ Ã‚Â¤Ã¢â‚¬Â¢ÃƒÂ Ã‚Â¤Ã‚Â¿ÃƒÂ Ã‚Â¤Ã‚Â¯ÃƒÂ Ã‚Â¤Ã‚Â¾ ÃƒÂ Ã‚Â¤Ã¢â‚¬â€ÃƒÂ Ã‚Â¤Ã‚Â¯ÃƒÂ Ã‚Â¤Ã‚Â¾', nl: 'Gekopieerd', pl: 'Skopiowano',
+  sv: 'Kopierad', id: 'Disalin', vi: 'Ãƒâ€žÃ‚ÂÃƒÆ’Ã‚Â£ sao chÃƒÆ’Ã‚Â©p'
+};
+const shareLabel = shareLabels[lang] || shareLabels.en;
+const copiedLabel = copiedLabels[lang] || copiedLabels.en;
+const languageFlags: Record<string, string> = {
+  en: '🇬🇧', tr: '🇹🇷', de: '🇩🇪', es: '🇪🇸', it: '🇮🇹', fr: '🇫🇷',
+  ja: '🇯🇵', pt: '🇵🇹', ru: '🇷🇺', zh: '🇨🇳', ko: '🇰🇷', ar: '🇸🇦',
+  hi: '🇮🇳', nl: '🇳🇱', pl: '🇵🇱', sv: '🇸🇪', id: '🇮🇩', vi: '🇻🇳'
+};
+const currentLanguageFlag = languageFlags[lang] || languageFlags.en;
+const categories = [
+  { id: 'All', label: t['cat.all'] || 'All' },
+  { id: 'Walking Tours', label: t['cat.walkingTours'] || 'Walking Tours' },
+  { id: 'Airport Walks', label: t['cat.airportWalks'] || 'Airport Walks' },
+  { id: 'Beach Walking Tours', label: t['cat.beachWalkingTours'] || 'Beach Walks' },
+  { id: 'Drone & Aerial', label: t['cat.droneAerial'] || 'Drone & Aerial' },
+  { id: 'POV Rides', label: t['cat.povRides'] || 'POV Rides' },
+  { id: 'Night & Rain', label: t['cat.nightRain'] || 'Night & Rain' },
+  { id: 'Museums & Culture', label: t['cat.museumsCulture'] || 'Museums & Culture' },
+  { id: 'Street Food', label: t['cat.streetFood'] || 'Street Food' },
+  { id: 'Nature Trails', label: t['cat.natureTrails'] || 'Nature Trails' },
+  { id: 'Documentaries', label: t['cat.documentaries'] || 'Documentaries' }
+];
+
+const videoSchema = {
+  "@context": "https://schema.org",
+  "@graph": videos.map((video) => getVideoSchema(video, lang))
+};
+---
+
+<!DOCTYPE html>
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>{pageSeo.title}</title>
+
+    <meta
+      name="description"
+      content={pageSeo.description}
+    />
+
+    <!-- Video preview baÃƒâ€žÃ…Â¸lantÃƒâ€žÃ‚Â±sÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± ÃƒÆ’Ã‚Â¶nceden hazÃƒâ€žÃ‚Â±rla -->
+    <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+    <link rel="preconnect" href="https://www.youtube.com" />
+    <link rel="preconnect" href="https://i.ytimg.com" />
+    <link rel="dns-prefetch" href="//www.youtube-nocookie.com" />
+    <link rel="dns-prefetch" href="//googlevideo.com" />
+
+    <!-- Google Fonts & Material Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+      rel="stylesheet"
+    />
+
+    <style is:inline>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        background-color: #0f0f0f;
+        color: #f1f1f1;
+        font-family: 'Roboto', sans-serif;
+        overflow: hidden;
+      }
+
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #0f0f0f;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #373737;
+        border-radius: 4px;
+      }
+
+      /* Navbar Layout */
+
+      .navbar {
+        height: 56px;
+        background-color: #0f0f0f;
+        border-bottom: 1px solid #222222;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 24px;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 100;
+      }
+
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .nav-right {
+        display: flex;
+        align-items: center;
+        margin-left: auto;
+      }
+
+      .site-share-button {
+        min-height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        padding: 7px 12px;
+        background: #222222;
+        border: 1px solid #353535;
+        border-radius: 8px;
+        color: #f1f1f1;
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .site-share-button:hover {
+        background: #303030;
+        border-color: #f5b400;
+      }
+
+      .site-share-button .material-symbols-outlined {
+        font-size: 19px;
+      }
+
+      .icon-btn {
+        background: transparent;
+        border: none;
+        color: #f1f1f1;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .icon-btn:hover {
+        background-color: #272727;
+      }
+
+      /* Brand Logo */
+
+      .brand-logo {
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        font-weight: 800;
+        font-size: 15px;
+        letter-spacing: 0.5px;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .logo-box-1 {
+        background-color: #0f0f0f;
+        color: #f5b400;
+        padding: 4px 8px;
+        border: 1px solid rgba(245, 180, 0, 0.35);
+        border-right: none;
+      }
+
+      .logo-box-2 {
+        background-color: #f5b400;
+        color: #0f0f0f;
+        padding: 4px 8px;
+        border: 1px solid #f5b400;
+      }
+
+      /* Search Bar */
+
+      .nav-center {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        width: 45%;
+        max-width: 650px;
+      }
+
+      .search-box {
+        display: flex;
+        width: 100%;
+      }
+
+      .search-input {
+        width: 100%;
+        background-color: #121212;
+        border: 1px solid #303030;
+        border-radius: 40px 0 0 40px;
+        padding: 8px 16px;
+        color: #f1f1f1;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .search-input:focus {
+        border-color: #aaaaaa;
+      }
+
+      .search-btn {
+        background-color: #222222;
+        border: 1px solid #303030;
+        border-left: none;
+        border-radius: 0 40px 40px 0;
+        padding: 0 20px;
+        color: #f1f1f1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+      }
+
+      .search-btn:hover {
+        background-color: #272727;
+      }
+
+      /* App Body Structure */
+
+      .app-body {
+        display: flex;
+        margin-top: 56px;
+        height: calc(100vh - 56px);
+      }
+
+      /* FIXED SIDEBAR */
+
+      .sidebar {
+        width: 240px;
+        background-color: #0f0f0f;
+        border-right: 1px solid #222222;
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex-shrink: 0;
+        height: 100%;
+        overflow-y: auto;
+      }
+
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        color: #aaaaaa;
+        text-decoration: none;
+        font-size: 14px;
+      }
+
+      .nav-link:hover {
+        background-color: #272727;
+        color: #ffffff;
+      }
+
+      .nav-link.active {
+        background-color: #272727;
+        color: #ffffff;
+        font-weight: 500;
+      }
+
+      .nav-link.active .material-symbols-outlined {
+        color: #ffffff;
+      }
+
+      .sidebar-divider {
+        border: none;
+        border-top: 1px solid #222222;
+        margin: 8px 0;
+      }
+
+      .sidebar-lang {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        color: #aaaaaa;
+        font-size: 14px;
+      }
+
+      .sidebar-lang :global(.lang-picker-container) {
+        display: inline-block;
+      }
+
+      .sidebar-lang :global(.lang-select) {
+        background-color: transparent !important;
+        color: #aaaaaa !important;
+        border: none !important;
+        padding: 0 !important;
+        font-size: 14px !important;
+        font-weight: 400 !important;
+      }
+
+      .sidebar-lang :global(.lang-select:hover) {
+        color: #ffffff !important;
+      }
+
+      .sidebar-ad-container {
+        position: sticky;
+        top: 10px;
+        margin-top: auto;
+        padding: 12px;
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        min-height: 250px;
+        width: 100%;
+      }
+
+      /* AdSense henÃƒÆ’Ã‚Â¼z iÃƒÆ’Ã‚Â§erik yerleÃƒâ€¦Ã…Â¸tirmediyse sol reklam alanÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± tamamen gizle. */
+      .sidebar-ad-container:empty {
+        display: none;
+      }
+
+      .ad-banner-top {
+        width: 100%;
+        min-height: 90px;
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 8px;
+        margin-bottom: 24px;
+      }
+
+      /* AdSense henÃƒÆ’Ã‚Â¼z iÃƒÆ’Ã‚Â§erik yerleÃƒâ€¦Ã…Â¸tirmediyse ÃƒÆ’Ã‚Â¼st reklam alanÃƒâ€žÃ‚Â±nÃƒâ€žÃ‚Â± tamamen gizle. */
+      .ad-banner-top:empty {
+        display: none;
+      }
+
+      .ad-card-slot {
+        border: 1px dashed rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        min-height: 220px;
+        width: 100%;
+      }
+
+      /* MAIN CONTENT CONTAINER */
+
+      .content-area {
+        flex: 1;
+        overflow-y: auto;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .sticky-header-wrapper {
+        position: sticky;
+        top: 0;
+        background-color: #0f0f0f;
+        z-index: 10;
+        padding: 24px 24px 0 24px;
+      }
+
+      .chips-bar {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 12px;
+        overflow-x: auto;
+        padding-bottom: 16px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+      }
+
+      .chips-bar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .chip {
+        background-color: #272727;
+        color: #ffffff;
+        border: none;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+        flex: 0 0 auto;
+      }
+
+      .chip:hover {
+        background-color: #3f3f3f;
+      }
+
+      .chip.active {
+        background-color: #ffffff;
+        color: #000000;
+      }
+
+      .scrollable-grid-container {
+        padding: 0 24px 24px 24px;
+      }
+
+      .video-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px 20px;
+      }
+
+      /* Fragment yerine kullanÃƒâ€žÃ‚Â±lan wrapper */
+      .video-card-wrapper {
+        display: contents;
+      }
+
+      .video-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .thumbnail-wrapper {
+        display: block;
+        position: relative;
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        border-radius: 12px;
+        overflow: hidden;
+        background-color: #1f1f1f;
+        border: 1px solid #222222;
+        cursor: pointer;
+      }
+
+      .video-poster {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+      }
+
+      .thumbnail-wrapper:hover .video-poster {
+        transform: scale(1.03);
+      }
+
+      .thumbnail-wrapper:focus-visible {
+        outline: 3px solid #f5b400;
+        outline-offset: 3px;
+      }
+
+      .thumbnail-wrapper iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        pointer-events: none;
+      }
+
+      .thumbnail-wrapper .preview-frame {
+        opacity: 0;
+        transition: opacity 0.12s ease;
+      }
+
+      .thumbnail-wrapper .preview-frame.is-ready {
+        opacity: 1;
+      }
+
+      .video-details {
+        display: flex;
+        gap: 12px;
+      }
+
+      .video-info {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+      }
+
+      .video-title {
+        font-size: 15px;
+        font-weight: 500;
+        color: #f1f1f1;
+        line-height: 1.4;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .video-title-link {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      .video-title-link:hover {
+        text-decoration: underline;
+      }
+
+      .channel-name {
+        font-size: 13px;
+        color: #aaaaaa;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .verified-icon {
+        font-size: 15px;
+        color: #aaaaaa;
+      }
+
+      .video-stats {
+        font-size: 13px;
+        color: #aaaaaa;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-top: 2px;
+      }
+
+      .badge-tag {
+        margin-left: auto;
+        background-color: #272727;
+        color: #aaaaaa;
+        font-size: 11px;
+        font-weight: bold;
+        padding: 1px 5px;
+        border-radius: 3px;
+        border: 1px solid #303030;
+      }
+
+      .empty-state {
+        width: 100%;
+        padding: 56px 20px;
+        text-align: center;
+        color: #aaaaaa;
+        font-size: 15px;
+        font-weight: 500;
+      }
+
+      .empty-state[hidden] {
+        display: none;
+      }
+
+      @media (max-width: 1100px) {
+        .video-grid {
+          grid-template-columns: repeat(2, 1fr);
+        }
+      }
+
+      /* Mobile and tablet header */
+      .mobile-menu-button,
+      .mobile-language-picker,
+      .mobile-menu-overlay,
+      .mobile-menu-panel,
+      .mobile-scroll-track,
+      .mobile-back-to-top {
+        display: none;
+      }
+
+      @media (max-width: 900px) {
+        .navbar {
+          height: 108px;
+          padding: 8px 12px 10px;
+          display: grid;
+          grid-template-columns: 40px 1fr auto;
+          grid-template-rows: 38px 44px;
+          column-gap: 8px;
+          row-gap: 8px;
+          align-items: center;
+        }
+
+        .nav-left {
+          grid-column: 1 / -1;
+          grid-row: 1;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          pointer-events: none;
+        }
+
+        .brand-logo {
+          pointer-events: auto;
+          font-size: 15px;
+          letter-spacing: 0.4px;
+        }
+
+        .logo-box-1,
+        .logo-box-2 {
+          padding: 4px 7px;
+        }
+
+        .mobile-menu-button {
+          display: inline-flex;
+          grid-column: 1;
+          grid-row: 1;
+          width: 36px;
+          height: 36px;
+          align-items: center;
+          justify-content: center;
+          background: transparent;
+          border: 1px solid #2d2d2d;
+          border-radius: 9px;
+          color: #f1f1f1;
+          cursor: pointer;
+          z-index: 2;
+        }
+
+        .mobile-menu-button .material-symbols-outlined {
+          font-size: 22px;
+        }
+
+        .nav-center {
+          position: static;
+          transform: none;
+          grid-column: 1 / -1;
+          grid-row: 2;
+          width: 100%;
+          max-width: none;
+          min-width: 0;
+          margin: 0;
+        }
+
+        .search-box {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .search-input {
+          min-width: 0;
+          padding: 10px 14px;
+          font-size: 14px;
+        }
+
+        .search-btn {
+          flex: 0 0 46px;
+          padding: 0;
+          justify-content: center;
+        }
+
+        .nav-right {
+          grid-column: 3;
+          grid-row: 1;
+          margin: 0;
+          justify-self: end;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          z-index: 2;
+        }
+
+        .mobile-language-picker {
+          display: block;
+          position: relative;
+        }
+
+        .mobile-language-button {
+          width: 36px;
+          height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #2d2d2d;
+          border-radius: 9px;
+          background: #222222;
+          color: #ffffff;
+          font-size: 20px;
+          line-height: 1;
+          cursor: pointer;
+        }
+
+        .mobile-language-menu {
+          display: none;
+          position: absolute;
+          top: 42px;
+          right: 0;
+          width: 210px;
+          max-height: min(62vh, 430px);
+          overflow-y: auto;
+          padding: 8px;
+          background: #151515;
+          border: 1px solid #333333;
+          border-radius: 12px;
+          box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+          z-index: 1700;
+        }
+
+        .mobile-language-menu.is-open {
+          display: block;
+        }
+
+        .mobile-language-option {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          padding: 10px 11px;
+          border-radius: 8px;
+          color: #f1f1f1;
+          text-decoration: none;
+          font-size: 14px;
+          font-weight: 500;
+        }
+
+        .mobile-language-option:hover,
+        .mobile-language-option.is-active {
+          background: #272727;
+        }
+
+        .mobile-language-flag {
+          width: 24px;
+          text-align: center;
+          font-size: 19px;
+          line-height: 1;
+        }
+
+        .site-share-button {
+          width: 36px;
+          min-width: 36px;
+          height: 36px;
+          min-height: 36px;
+          padding: 0;
+          border-radius: 9px;
+        }
+
+        .site-share-text {
+          display: none;
+        }
+
+        .app-body {
+          margin-top: 108px;
+          height: calc(100vh - 108px);
+        }
+
+        .sidebar {
+          display: none;
+        }
+
+        .mobile-menu-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.58);
+          z-index: 1400;
+        }
+
+        .mobile-menu-overlay.is-open {
+          display: block;
+        }
+
+        .mobile-menu-panel {
+          position: fixed;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: min(82vw, 320px);
+          padding: 18px 14px 24px;
+          background: #111111;
+          border-right: 1px solid #2a2a2a;
+          z-index: 1500;
+          overflow-y: auto;
+          transform: translateX(-102%);
+          transition: transform 160ms ease-out;
+        }
+
+        .mobile-menu-panel.is-open {
+          display: block;
+          transform: translateX(0);
+        }
+
+        .mobile-menu-head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 18px;
+          padding: 0 4px 12px;
+          border-bottom: 1px solid #252525;
+        }
+
+        .mobile-menu-close {
+          width: 36px;
+          height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          border: 0;
+          border-radius: 50%;
+          background: #222222;
+          color: #ffffff;
+          cursor: pointer;
+        }
+
+        .mobile-menu-panel .nav-link {
+          padding: 12px;
+        }
+
+        .mobile-menu-panel .sidebar-lang {
+          margin: 6px 0;
+        }
+
+        .content-area {
+          padding-bottom: 80px;
+          scrollbar-width: none;
+        }
+
+        .content-area::-webkit-scrollbar {
+          width: 0;
+          height: 0;
+        }
+
+        .mobile-scroll-track {
+          display: block;
+          position: fixed;
+          top: 124px;
+          right: 3px;
+          bottom: 72px;
+          width: 12px;
+          border-radius: 999px;
+          background: #1d1d1d;
+          border: 1px solid #343434;
+          z-index: 1150;
+          touch-action: pan-y;
+          pointer-events: none;
+        }
+
+        .mobile-scroll-thumb {
+          position: absolute;
+          top: 0;
+          left: 2px;
+          width: 6px;
+          min-height: 76px;
+          border-radius: 999px;
+          background: linear-gradient(
+            to right,
+            #f5b400 0%,
+            #f5b400 38%,
+            #111111 38%,
+            #111111 62%,
+            #f5b400 62%,
+            #f5b400 100%
+          );
+          box-shadow: 0 0 0 1px rgba(245, 180, 0, 0.32);
+          pointer-events: none;
+        }
+
+        .mobile-back-to-top {
+          position: fixed;
+          left: 50%;
+          bottom: 76px;
+          transform: translateX(-50%);
+          width: 38px;
+          height: 38px;
+          align-items: center;
+          justify-content: center;
+          border: 1px solid #111111;
+          border-radius: 50%;
+          background: #f5b400;
+          color: #111111;
+          box-shadow: 0 3px 12px rgba(0, 0, 0, 0.45);
+          cursor: pointer;
+          z-index: 1200;
+        }
+
+        .mobile-back-to-top.is-visible {
+          display: inline-flex;
+        }
+
+        .mobile-back-to-top .material-symbols-outlined {
+          font-size: 22px;
+          font-weight: 500;
+        }
+      }
+
+      @media (max-width: 700px) {
+        .video-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+
+        .sticky-header-wrapper {
+          padding: 12px 12px 0 12px;
+        }
+
+        .chips-bar {
+          gap: 8px;
+          padding-bottom: 12px;
+          scroll-snap-type: x proximity;
+        }
+
+        .chip {
+          scroll-snap-align: start;
+        }
+
+        .scrollable-grid-container {
+          padding: 0 12px 12px 12px;
+        }
+
+        .video-card {
+          width: 100%;
+          min-width: 0;
+        }
+
+        .thumbnail-wrapper {
+          width: 100%;
+          border-radius: 10px;
+        }
+
+        .ad-banner-top {
+          min-height: 50px;
+        }
+
+        .ad-card-slot {
+          min-height: 160px;
+          grid-column: 1 / -1;
+        }
+
+        .empty-state {
+          padding: 42px 16px;
+          font-size: 14px;
+        }
+      }
+
+      .mobile-bottom-nav {
+        display: none;
+      }
+
+      @media (max-width: 700px) {
+        .mobile-bottom-nav {
+          display: flex;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 60px;
+          background-color: #0f0f0f;
+          border-top: 1px solid #222222;
+          justify-content: space-around;
+          align-items: center;
+          z-index: 1000;
+        }
+
+        .mobile-nav-item {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          color: #aaaaaa;
+          text-decoration: none;
+          font-size: 10px;
+          gap: 2px;
+        }
+
+        .mobile-nav-item.active,
+        .mobile-nav-item:hover {
+          color: #ffffff;
+        }
+
+        .mobile-nav-item .material-symbols-outlined {
+          font-size: 22px;
+        }
+      }
+    </style>
+
+    <!-- Google Analytics (GA4) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z4B6GBNNE8"></script>
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-Z4B6GBNNE8');
+    </script>
+  </head>
+
+  <body>
+
+    <!-- FIXED TOP NAVBAR -->
+
+    <header class="navbar">
+      <button
+        type="button"
+        class="mobile-menu-button"
+        data-mobile-menu-open
+        aria-label="Open menu"
+        aria-expanded="false"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+      </button>
+
+      <div class="nav-left">
+
+        <a href="/" class="brand-logo">
+          <div class="logo-box-1">OLD</div>
+          <div class="logo-box-2">TOWNS</div>
+        </a>
+
+      </div>
+
+      <div class="nav-center">
+        <div class="search-box">
+
+          <input
+            type="text"
+            id="searchInput"
+            placeholder={t['search.placeholder']}
+            class="search-input"
+          />
+
+          <button class="search-btn" aria-label="Search">
+            <span class="material-symbols-outlined">search</span>
+          </button>
+
+        </div>
+      </div>
+
+      <div class="nav-right">
+        <div class="mobile-language-picker" data-mobile-language-picker>
+          <button
+            type="button"
+            class="mobile-language-button"
+            data-mobile-language-button
+            aria-label="Choose language"
+            aria-expanded="false"
+          >
+            <span data-current-language-flag>{currentLanguageFlag}</span>
+          </button>
+          <div class="mobile-language-menu" data-mobile-language-menu>
+            <a href="/en/" class="mobile-language-option" data-lang-code="en"><span class="mobile-language-flag">🇬🇧</span><span>English</span></a>
+            <a href="/tr/" class="mobile-language-option" data-lang-code="tr"><span class="mobile-language-flag">🇹🇷</span><span>Türkçe</span></a>
+            <a href="/de/" class="mobile-language-option" data-lang-code="de"><span class="mobile-language-flag">🇩🇪</span><span>Deutsch</span></a>
+            <a href="/es/" class="mobile-language-option" data-lang-code="es"><span class="mobile-language-flag">🇪🇸</span><span>Español</span></a>
+            <a href="/it/" class="mobile-language-option" data-lang-code="it"><span class="mobile-language-flag">🇮🇹</span><span>Italiano</span></a>
+            <a href="/fr/" class="mobile-language-option" data-lang-code="fr"><span class="mobile-language-flag">🇫🇷</span><span>Français</span></a>
+            <a href="/ja/" class="mobile-language-option" data-lang-code="ja"><span class="mobile-language-flag">🇯🇵</span><span>日本語</span></a>
+            <a href="/pt/" class="mobile-language-option" data-lang-code="pt"><span class="mobile-language-flag">🇵🇹</span><span>Português</span></a>
+            <a href="/ru/" class="mobile-language-option" data-lang-code="ru"><span class="mobile-language-flag">🇷🇺</span><span>Русский</span></a>
+            <a href="/zh/" class="mobile-language-option" data-lang-code="zh"><span class="mobile-language-flag">🇨🇳</span><span>中文</span></a>
+            <a href="/ko/" class="mobile-language-option" data-lang-code="ko"><span class="mobile-language-flag">🇰🇷</span><span>한국어</span></a>
+            <a href="/ar/" class="mobile-language-option" data-lang-code="ar"><span class="mobile-language-flag">🇸🇦</span><span>العربية</span></a>
+            <a href="/hi/" class="mobile-language-option" data-lang-code="hi"><span class="mobile-language-flag">🇮🇳</span><span>हिन्दी</span></a>
+            <a href="/nl/" class="mobile-language-option" data-lang-code="nl"><span class="mobile-language-flag">🇳🇱</span><span>Nederlands</span></a>
+            <a href="/pl/" class="mobile-language-option" data-lang-code="pl"><span class="mobile-language-flag">🇵🇱</span><span>Polski</span></a>
+            <a href="/sv/" class="mobile-language-option" data-lang-code="sv"><span class="mobile-language-flag">🇸🇪</span><span>Svenska</span></a>
+            <a href="/id/" class="mobile-language-option" data-lang-code="id"><span class="mobile-language-flag">🇮🇩</span><span>Bahasa Indonesia</span></a>
+            <a href="/vi/" class="mobile-language-option" data-lang-code="vi"><span class="mobile-language-flag">🇻🇳</span><span>Tiếng Việt</span></a>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="site-share-button"
+          data-site-share-button
+          aria-label={shareLabel}
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">share</span>
+          <span class="site-share-text" data-site-share-label>{shareLabel}</span>
+        </button>
+      </div>
+    </header>
+
+
+    <!-- MOBILE / TABLET MENU -->
+    <div class="mobile-menu-overlay" data-mobile-menu-overlay></div>
+
+    <aside class="mobile-menu-panel" data-mobile-menu-panel aria-hidden="true">
+      <div class="mobile-menu-head">
+        <a href={`/${lang}/`} class="brand-logo">
+          <div class="logo-box-1">OLD</div>
+          <div class="logo-box-2">TOWNS</div>
+        </a>
+        <button type="button" class="mobile-menu-close" data-mobile-menu-close aria-label="Close menu">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </div>
+
+      <a href={`/${lang}/`} class="nav-link active">
+        <span class="material-symbols-outlined">home</span>
+        <span>{t['nav.home'] || 'Home'}</span>
+      </a>
+      <a href={`/${lang}/map`} class="nav-link">
+        <span class="material-symbols-outlined">public</span>
+        <span>{t['nav.map'] || 'World Map'}</span>
+      </a>
+      <a href={`/${lang}/hotels`} class="nav-link">
+        <span class="material-symbols-outlined">hotel</span>
+        <span>{t['nav.hotels'] || 'Hotels'}</span>
+      </a>
+
+      <hr class="sidebar-divider" />
+
+      <div class="sidebar-lang">
+        <span class="material-symbols-outlined">language</span>
+        <LanguagePicker />
+      </div>
+
+      <a href="/about" class="nav-link">
+        <span class="material-symbols-outlined">info</span>
+        <span>{t['nav.about'] || 'About'}</span>
+      </a>
+      <a href="/privacy" class="nav-link">
+        <span class="material-symbols-outlined">policy</span>
+        <span>{t['nav.privacy'] || 'Privacy Policy'}</span>
+      </a>
+      <a href="/contact" class="nav-link">
+        <span class="material-symbols-outlined">mail</span>
+        <span>{t['nav.contact'] || 'Contact'}</span>
+      </a>
+    </aside>
+
+    <!-- MAIN APP STRUCTURE -->
+
+    <div class="app-body">
+
+      <!-- FIXED SIDEBAR -->
+
+      <aside class="sidebar">
+
+        <a href={`/${lang}/`} class="nav-link active">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <span>{t['nav.home'] || 'Home'}</span>
+        </a>
+
+        <a href={`/${lang}/map`} class="nav-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="2" y1="12" x2="22" y2="12"/>
+            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+          </svg>
+          <span>{t['nav.map'] || 'World Map'}</span>
+        </a>
+
+        <a href={`/${lang}/hotels`} class="nav-link">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
+            <path d="M9 6h6"/>
+            <path d="M9 10h6"/>
+            <path d="M9 14h6"/>
+            <path d="M9 18h6"/>
+          </svg>
+          <span>{t['nav.hotels'] || 'Hotels'}</span>
+        </a>
+
+        <hr class="sidebar-divider" />
+
+        <div class="sidebar-lang">
+
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12a9 9 0 0 1-9 9"/>
+            <path d="M21 12a9 9 0 0 0-9-9"/>
+            <path d="M21 12H3"/>
+            <path d="M12 21a9 9 0 0 1-9-9"/>
+            <path d="M12 21c1.657 0 3-4.03 3-9s-1.343-9-3-9"/>
+            <path d="M12 21c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
+            <path d="M12 3a9 9 0 0 1 9 9"/>
+          </svg>
+
+          <LanguagePicker />
+
+        </div>
+
+        <a href="/about" class="nav-link">
+          <span class="material-symbols-outlined">info</span>
+          <span>{t['nav.about'] || 'About'}</span>
+        </a>
+
+        <a href="/privacy" class="nav-link">
+          <span class="material-symbols-outlined">policy</span>
+          <span>{t['nav.privacy'] || 'Privacy Policy'}</span>
+        </a>
+
+        <a href="/contact" class="nav-link">
+          <span class="material-symbols-outlined">mail</span>
+          <span>{t['nav.contact'] || 'Contact'}</span>
+        </a>
+
+        <!-- REKLAM 1: SOL SIDEBAR STICKY AD SLOT -->
+
+        <div class="sidebar-ad-container"></div>
+
+      </aside>
+
+
+      <!-- MAIN SCROLLABLE CONTENT AREA -->
+
+      <main class="content-area">
+
+        <div class="sticky-header-wrapper">
+
+          <div class="chips-bar">
+
+            {categories.map((cat, index) => (
+              <button
+                class={`chip ${index === 0 ? 'active' : ''}`}
+                data-category-target={cat.id}
+              >
+                {cat.label}
+              </button>
+            ))}
+
+          </div>
+
+          <div class="ad-banner-top"></div>
+
+        </div>
+
+
+        <!-- VIDEO GRID CONTAINER -->
+
+        <div class="scrollable-grid-container">
+
+          <div class="video-grid">
+
+            {videos.map((video, index) => (
+
+              <>
+
+                <div class="video-card-wrapper">
+
+                  <div
+                    class="video-card"
+                    data-category={video.category || 'Walking Tours'}
+                    data-city={video.city || ''}
+                  >
+
+                  <a
+                    href={`/${lang}/walks/${video.id}`}
+                    class="thumbnail-wrapper"
+                    data-video-id={video.id}
+                    aria-label={getVideoCardTitle(video, lang)}
+                  >
+
+                    <img
+                      src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
+                      alt={getVideoCardTitle(video, lang)}
+                      class="video-poster"
+                      loading={index < 6 ? 'eager' : 'lazy'}
+                      fetchpriority={index < 6 ? 'high' : 'auto'}
+                    />
+
+                  </a>
+
+
+                  <div class="video-details">
+
+                    <div class="video-info">
+
+                      <h3 class="video-title">
+                        <a href={`/${lang}/walks/${video.id}`} class="video-title-link">
+                          {getVideoCardTitle(video, lang)}
+                        </a>
+                      </h3>
+
+                      <div class="channel-name">
+                        <span>{video.channel}</span>
+
+                        <span class="material-symbols-outlined verified-icon">
+                          check_circle
+                        </span>
+                      </div>
+
+                      <div class="video-stats">
+                        <span class="badge-tag">
+                          {video.badge}
+                        </span>
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                  </div>
+
+                </div>
+
+                {(index + 1) % 5 === 0 && (
+                  <div class="ad-card-slot" aria-hidden="true"></div>
+                )}
+
+              </>
+
+            ))}
+
+          </div>
+
+          <div class="empty-state" id="emptyState" hidden>
+            {emptyStateText}
+          </div>
+
+        </div>
+
+      </main>
+
+    </div>
+
+
+    <div class="mobile-scroll-track" data-mobile-scroll-track aria-hidden="true">
+      <div class="mobile-scroll-thumb" data-mobile-scroll-thumb></div>
+    </div>
+
+    <button type="button" class="mobile-back-to-top" data-mobile-back-to-top aria-label="Back to top">
+      <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+    </button>
+
+    <!-- MOBILE NAVIGATION BAR -->
+
+    <nav class="mobile-bottom-nav">
+
+      <a href={`/${lang}/`} class="mobile-nav-item active">
+        <span class="material-symbols-outlined">home</span>
+        <span>{t['nav.home'] || 'Home'}</span>
+      </a>
+
+      <a href="#" class="mobile-nav-item">
+        <span class="material-symbols-outlined">bolt</span>
+        <span>Shorts</span>
+      </a>
+
+      <a href="#" class="mobile-nav-item">
+        <span class="material-symbols-outlined">flight</span>
+        <span>Drone</span>
+      </a>
+
+      <a href="#" class="mobile-nav-item">
+        <span class="material-symbols-outlined">grid_view</span>
+        <span>Categories</span>
+      </a>
+
+    </nav>
+
+
+    <!-- Inline Script -->
+
+    <script is:inline>
+
+      function setupFilters() {
+
+        const chips = document.querySelectorAll('.chip');
+        const videoCards = document.querySelectorAll('.video-card');
+        const videoGrid = document.querySelector('.video-grid');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+
+        const initialSearch = new URLSearchParams(window.location.search).get('q');
+
+        if (searchInput instanceof HTMLInputElement && initialSearch) {
+          searchInput.value = initialSearch;
+        }
+
+        if (!chips.length && !videoCards.length) return;
+
+        let currentCategory = 'All';
+
+
+        function filterVideos() {
+
+          const searchTerm = searchInput
+            ? searchInput.value.toLowerCase().trim()
+            : '';
+
+          videoCards.forEach(card => {
+
+            const videoCategory =
+              card.getAttribute('data-category') || '';
+
+            const titleEl =
+              card.querySelector('.video-title');
+
+            const title =
+              titleEl
+                ? titleEl.textContent.toLowerCase()
+                : '';
+
+            const matchesCategory =
+              currentCategory === 'All' ||
+              videoCategory.toLowerCase().trim() ===
+              currentCategory.toLowerCase().trim();
+
+            const matchesSearch =
+              title.includes(searchTerm);
+
+            if (matchesCategory && matchesSearch) {
+
+              card.style.setProperty(
+                'display',
+                'flex',
+                'important'
+              );
+
+            } else {
+
+              card.style.setProperty(
+                'display',
+                'none',
+                'important'
+              );
+
+            }
+
+          });
+
+
+          // Her 5 gÃƒÆ’Ã‚Â¶rÃƒÆ’Ã‚Â¼nÃƒÆ’Ã‚Â¼r videodan sonra 1 reklam alanÃƒâ€žÃ‚Â± oluÃƒâ€¦Ã…Â¸tur.
+          // BÃƒÆ’Ã‚Â¶ylece TÃƒÆ’Ã‚Â¼mÃƒÆ’Ã‚Â¼ veya herhangi bir kategori seÃƒÆ’Ã‚Â§ildiÃƒâ€žÃ…Â¸inde
+          // reklamlar sadece o anda gÃƒÆ’Ã‚Â¶rÃƒÆ’Ã‚Â¼nen videolara gÃƒÆ’Ã‚Â¶re yeniden dizilir.
+          if (videoGrid) {
+
+            videoGrid
+              .querySelectorAll('.ad-card-slot')
+              .forEach(ad => ad.remove());
+
+
+            const visibleCards = Array.from(videoGrid.querySelectorAll('.video-card')).filter(card =>
+              card.style.display !== 'none'
+            );
+
+            if (emptyState) {
+              emptyState.hidden = visibleCards.length !== 0;
+            }
+
+            visibleCards.forEach((card, index) => {
+
+              if ((index + 1) % 5 !== 0) return;
+
+              const wrapper = card.closest('.video-card-wrapper');
+
+              if (!wrapper) return;
+
+              const adSlot = document.createElement('div');
+              adSlot.className = 'ad-card-slot';
+              adSlot.setAttribute('aria-hidden', 'true');
+
+              wrapper.insertAdjacentElement('afterend', adSlot);
+
+            });
+
+          }
+
+        }
+
+
+        chips.forEach(chip => {
+
+          chip.addEventListener('click', (e) => {
+
+            e.preventDefault();
+
+            chips.forEach(c =>
+              c.classList.remove('active')
+            );
+
+            chip.classList.add('active');
+
+            currentCategory =
+              chip.getAttribute('data-category-target') || 'All';
+
+            filterVideos();
+
+          });
+
+        });
+
+
+        if (searchInput) {
+
+          searchInput.addEventListener(
+            'input',
+            filterVideos
+          );
+
+        }
+
+
+        // The initial grid and ad slots are already rendered by Astro.
+        // Only apply client-side filtering on load when a URL search query exists.
+        if (initialSearch) {
+          filterVideos();
+        }
+
+
+        // Hover Video Preview
+
+        const previewWrappers = Array.from(
+          document.querySelectorAll('.thumbnail-wrapper')
+        );
+
+        previewWrappers.forEach(wrapper => {
+
+          let previewActive = false;
+          let previewFrame = null;
+
+          const startPreview = () => {
+
+            const videoId =
+              wrapper.getAttribute('data-video-id');
+
+            if (!videoId || previewActive) return;
+
+            previewActive = true;
+
+            const iframe = document.createElement('iframe');
+
+            iframe.className = 'preview-frame';
+            iframe.src =
+              `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&rel=0`;
+            iframe.title = 'Video preview';
+            iframe.tabIndex = -1;
+            iframe.allow =
+              'autoplay; encrypted-media; picture-in-picture';
+
+            iframe.addEventListener(
+              'load',
+              () => iframe.classList.add('is-ready'),
+              { once: true }
+            );
+
+            previewFrame = iframe;
+            wrapper.appendChild(iframe);
+
+          };
+
+          const stopPreview = () => {
+
+            if (!previewActive) return;
+
+            previewActive = false;
+
+            if (previewFrame) {
+              previewFrame.remove();
+              previewFrame = null;
+            }
+
+          };
+
+          // Bilgisayar: mouse hover
+          wrapper.addEventListener('mouseenter', startPreview);
+          wrapper.addEventListener('mouseleave', stopPreview);
+
+          // Smart TV / klavye: kumanda odaÃƒâ€žÃ…Â¸Ãƒâ€žÃ‚Â± karta geldiÃƒâ€žÃ…Â¸inde aynÃƒâ€žÃ‚Â± ÃƒÆ’Ã‚Â¶nizleme davranÃƒâ€žÃ‚Â±Ãƒâ€¦Ã…Â¸Ãƒâ€žÃ‚Â±
+          wrapper.addEventListener('focus', startPreview);
+          wrapper.addEventListener('blur', stopPreview);
+
+        });
+
+      }
+
+
+      if (document.readyState === 'loading') {
+
+        document.addEventListener(
+          'DOMContentLoaded',
+          setupFilters
+        );
+
+      } else {
+
+        setupFilters();
+
+      }
+
+    </script>
+
+    <script
+      is:inline
+      define:vars={{ shareLabel, copiedLabel }}
+    >
+      const siteShareButton = document.querySelector('[data-site-share-button]');
+
+      if (siteShareButton instanceof HTMLButtonElement) {
+        const siteShareLabel = siteShareButton.querySelector('[data-site-share-label]');
+
+        siteShareButton.addEventListener('click', async () => {
+          const shareUrl = `${window.location.origin}${window.location.pathname}`;
+          const useNativeShare =
+            navigator.maxTouchPoints > 0 &&
+            typeof navigator.share === 'function';
+
+          try {
+            if (useNativeShare) {
+              await navigator.share({ title: document.title, url: shareUrl });
+              return;
+            }
+
+            await navigator.clipboard.writeText(shareUrl);
+
+            if (siteShareLabel) {
+              siteShareLabel.textContent = copiedLabel;
+              window.setTimeout(() => {
+                siteShareLabel.textContent = shareLabel;
+              }, 1800);
+            }
+          } catch (error) {
+            if (error instanceof Error && error.name !== 'AbortError') {
+              console.error('Share failed.', error);
+            }
+          }
+        });
+      }
+    </script>
+
+
+    <script is:inline>
+      const mobileMenuOpen = document.querySelector('[data-mobile-menu-open]');
+      const mobileMenuClose = document.querySelector('[data-mobile-menu-close]');
+      const mobileMenuOverlay = document.querySelector('[data-mobile-menu-overlay]');
+      const mobileMenuPanel = document.querySelector('[data-mobile-menu-panel]');
+      const mobileLanguagePicker = document.querySelector('[data-mobile-language-picker]');
+      const mobileLanguageButton = document.querySelector('[data-mobile-language-button]');
+      const mobileLanguageMenu = document.querySelector('[data-mobile-language-menu]');
+      const currentLanguageFlag = document.querySelector('[data-current-language-flag]');
+      const mobileBackToTop = document.querySelector('[data-mobile-back-to-top]');
+      const mobileScrollTrack = document.querySelector('[data-mobile-scroll-track]');
+      const mobileScrollThumb = document.querySelector('[data-mobile-scroll-thumb]');
+      const contentArea = document.querySelector('.content-area');
+
+      function setMobileMenu(open) {
+        if (!mobileMenuPanel || !mobileMenuOverlay) return;
+        mobileMenuPanel.classList.toggle('is-open', open);
+        mobileMenuOverlay.classList.toggle('is-open', open);
+        mobileMenuPanel.setAttribute('aria-hidden', String(!open));
+        if (mobileMenuOpen instanceof HTMLButtonElement) {
+          mobileMenuOpen.setAttribute('aria-expanded', String(open));
+        }
+      }
+
+      function setLanguageMenu(open) {
+        if (!mobileLanguageMenu) return;
+        mobileLanguageMenu.classList.toggle('is-open', open);
+        if (mobileLanguageButton instanceof HTMLButtonElement) {
+          mobileLanguageButton.setAttribute('aria-expanded', String(open));
+        }
+      }
+
+      if (mobileMenuOpen) {
+        mobileMenuOpen.addEventListener('click', () => setMobileMenu(true));
+      }
+
+      if (mobileMenuClose) {
+        mobileMenuClose.addEventListener('click', () => setMobileMenu(false));
+      }
+
+      if (mobileMenuOverlay) {
+        mobileMenuOverlay.addEventListener('click', () => setMobileMenu(false));
+      }
+
+      if (mobileLanguageButton) {
+        mobileLanguageButton.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const open = mobileLanguageMenu?.classList.contains('is-open') ?? false;
+          setLanguageMenu(!open);
+        });
+      }
+
+      const languageFlags = {
+        en: '🇬🇧', tr: '🇹🇷', de: '🇩🇪', es: '🇪🇸', it: '🇮🇹', fr: '🇫🇷',
+        ja: '🇯🇵', pt: '🇵🇹', ru: '🇷🇺', zh: '🇨🇳', ko: '🇰🇷', ar: '🇸🇦',
+        hi: '🇮🇳', nl: '🇳🇱', pl: '🇵🇱', sv: '🇸🇪', id: '🇮🇩', vi: '🇻🇳'
+      };
+
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      const activeLanguage = pathParts[0] || 'en';
+
+      if (currentLanguageFlag) {
+        currentLanguageFlag.textContent = languageFlags[activeLanguage] || '🌐';
+      }
+
+      document.querySelectorAll('[data-lang-code]').forEach((link) => {
+        const code = link.getAttribute('data-lang-code');
+        link.classList.toggle('is-active', code === activeLanguage);
+        if (code) {
+          const nextParts = [...pathParts];
+          if (nextParts.length) nextParts[0] = code;
+          else nextParts.push(code);
+          link.setAttribute('href', '/' + nextParts.join('/') + window.location.search + window.location.hash);
+        }
+      });
+
+      document.addEventListener('click', (event) => {
+        if (mobileLanguagePicker && !mobileLanguagePicker.contains(event.target)) {
+          setLanguageMenu(false);
+        }
+      });
+
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+          setMobileMenu(false);
+          setLanguageMenu(false);
+        }
+      });
+
+      if (contentArea && mobileBackToTop instanceof HTMLButtonElement) {
+        let lastScrollTop = contentArea.scrollTop;
+
+        const updateBackToTop = () => {
+          const currentScrollTop = contentArea.scrollTop;
+          const scrollingUp = currentScrollTop < lastScrollTop;
+          const farEnoughDown = currentScrollTop > 500;
+          mobileBackToTop.classList.toggle('is-visible', scrollingUp && farEnoughDown);
+          lastScrollTop = currentScrollTop;
+        };
+
+        contentArea.addEventListener('scroll', updateBackToTop, { passive: true });
+
+        mobileBackToTop.addEventListener('click', () => {
+          contentArea.scrollTop = 0;
+          mobileBackToTop.classList.remove('is-visible');
+        });
+      }
+
+      if (contentArea && mobileScrollTrack instanceof HTMLElement && mobileScrollThumb instanceof HTMLElement) {
+        const updateScrollThumb = () => {
+          const maxScroll = Math.max(0, contentArea.scrollHeight - contentArea.clientHeight);
+          const maxThumbTravel = Math.max(0, mobileScrollTrack.clientHeight - mobileScrollThumb.clientHeight);
+          const ratio = maxScroll > 0 ? contentArea.scrollTop / maxScroll : 0;
+          mobileScrollThumb.style.transform = `translateY(${Math.round(ratio * maxThumbTravel)}px)`;
+        };
+
+        const scrollFromPointer = (clientY) => {
+          const rect = mobileScrollTrack.getBoundingClientRect();
+          const maxThumbTravel = Math.max(0, rect.height - mobileScrollThumb.offsetHeight);
+          const thumbTop = Math.min(maxThumbTravel, Math.max(0, clientY - rect.top - mobileScrollThumb.offsetHeight / 2));
+          const ratio = maxThumbTravel > 0 ? thumbTop / maxThumbTravel : 0;
+          const maxScroll = Math.max(0, contentArea.scrollHeight - contentArea.clientHeight);
+          contentArea.scrollTop = ratio * maxScroll;
+        };
+
+        let draggingThumb = false;
+
+        mobileScrollThumb.addEventListener('pointerdown', (event) => {
+          draggingThumb = true;
+          mobileScrollThumb.setPointerCapture(event.pointerId);
+          scrollFromPointer(event.clientY);
+          event.preventDefault();
+        });
+
+        mobileScrollThumb.addEventListener('pointermove', (event) => {
+          if (!draggingThumb) return;
+          scrollFromPointer(event.clientY);
+        });
+
+        mobileScrollThumb.addEventListener('pointerup', (event) => {
+          draggingThumb = false;
+          if (mobileScrollThumb.hasPointerCapture(event.pointerId)) {
+            mobileScrollThumb.releasePointerCapture(event.pointerId);
+          }
+        });
+
+        mobileScrollTrack.addEventListener('pointerdown', (event) => {
+          if (event.target === mobileScrollThumb) return;
+          scrollFromPointer(event.clientY);
+        });
+
+        contentArea.addEventListener('scroll', updateScrollThumb, { passive: true });
+        window.addEventListener('resize', updateScrollThumb);
+        updateScrollThumb();
+      }
+    </script>
+
+    <!-- Schema Structure -->
+
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(videoSchema)}
+    />
+
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
