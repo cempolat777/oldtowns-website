@@ -308,15 +308,15 @@ const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui]
     <footer>
       <div>
         <div>
-          <a href="/about">About Us</a>
+          <a href={`/${currentLang}/about`}>{t['nav.about']}</a>
           <span> · </span>
-          <a href="/privacy">Privacy Policy</a>
+          <a href={`/${currentLang}/privacy`}>{t['nav.privacy']}</a>
           <span> · </span>
-          <a href="/contact">Contact</a>
+          <a href={`/${currentLang}/contact`}>{t['nav.contact']}</a>
         </div>
 
         <p style="margin-top:12px;">
-          &copy; {new Date().getFullYear()} Old Towns Walks. All rights reserved.
+          &copy; {new Date().getFullYear()} Old Towns Walks
         </p>
       </div>
     </footer>
