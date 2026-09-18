@@ -6,6 +6,8 @@ import cloudflare from '@astrojs/cloudflare';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://oldtownswalks.com',
+  trailingSlash: 'never',
+
   integrations: [sitemap()],
 
   i18n: {

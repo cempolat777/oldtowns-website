@@ -1,0 +1,231 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, defaultLang, ui } from '../../i18n/ui';
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const requestedLang = Astro.params.lang || defaultLang;
+const currentLang = requestedLang in languages ? requestedLang : defaultLang;
+const t = ui[currentLang as keyof typeof ui];
+
+const metaTitle = t['about.metaTitle'];
+const metaDescription = t['about.metaDescription'];
+const canonicalUrl = new URL(`/${currentLang}/about`, Astro.url.origin).href;
+
+const alternateLinks = Object.keys(languages).map((lang) => ({
+  lang,
+  href: new URL(`/${lang}/about`, Astro.url.origin).href
+}));
+
+const aboutSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  url: canonicalUrl,
+  name: metaTitle,
+  description: metaDescription,
+  inLanguage: currentLang,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Old Towns Walks',
+    url: Astro.url.origin
+  }
+};
+---
+
+<BaseLayout title={metaTitle} description={metaDescription} canonical={canonicalUrl}>
+  <Fragment slot="head">
+    {alternateLinks.map(({ lang, href }) => (
+      <link rel="alternate" hreflang={lang} href={href} />
+    ))}
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL('/en/about', Astro.url.origin).href}
+    />
+  </Fragment>
+
+  <div class="about-container">
+    <a href={`/${currentLang}/`} class="back-link">← {t['about.backHome']}</a>
+
+    <div class="info-card header-card">
+      <h1>{t['about.heading']} <span class="highlight">Old Towns Walks</span></h1>
+      <p class="subtitle">{t['about.subtitle']}</p>
+    </div>
+
+    <div class="info-card">
+      <p>{t['about.intro1']}</p>
+      <p>{t['about.intro2']}</p>
+    </div>
+
+    <div class="info-card">
+      <h2 class="card-title">{t['about.howWorks']}</h2>
+      <div class="features-grid">
+        <div class="feature-box">
+          <h3>{t['about.originalTitle']}</h3>
+          <p>{t['about.originalText']}</p>
+        </div>
+        <div class="feature-box">
+          <h3>{t['about.curatedTitle']}</h3>
+          <p>{t['about.curatedText']}</p>
+        </div>
+        <div class="feature-box">
+          <h3>{t['about.contextTitle']}</h3>
+          <p>{t['about.contextText']}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-card contact-card">
+      <div>
+        <h2>{t['about.contactTitle']}</h2>
+        <p>{t['about.contactText']}</p>
+      </div>
+      <a href="/contact" class="btn-primary">{t['about.contactButton']}</a>
+    </div>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(aboutSchema)} />
+</BaseLayout>
+
+<style>
+  .about-container {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 20px;
+    box-sizing: border-box;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: #fbc02d;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .info-card {
+    background-color: #181818;
+    border: 1px solid #272727;
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .header-card h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+  }
+
+  .highlight {
+    color: #fbc02d;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .info-card p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #d1d5db;
+    margin: 0 0 16px 0;
+  }
+
+  .info-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  .card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 20px 0;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 16px;
+  }
+
+  .feature-box {
+    background-color: #0f0f0f;
+    border: 1px solid #222222;
+    border-radius: 8px;
+    padding: 20px;
+  }
+
+  .feature-box h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #fbc02d;
+    margin: 0 0 8px 0;
+  }
+
+  .feature-box p {
+    font-size: 0.9rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .contact-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .contact-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 4px 0;
+  }
+
+  .contact-card p {
+    font-size: 0.95rem;
+    color: #9ca3af;
+    margin: 0;
+  }
+
+  .btn-primary {
+    background-color: #fbc02d;
+    color: #0f0f0f;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    .about-container {
+      padding: 20px 16px;
+    }
+
+    .contact-card {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .btn-primary {
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+    }
+  }
+</style>

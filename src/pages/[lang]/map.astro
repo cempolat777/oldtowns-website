@@ -2,7 +2,6 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { languages, defaultLang } from '../../i18n/ui';
 import videos from '../../data/videos.json';
-
 interface Video {
   id: string;
   title: string;
@@ -16,7 +15,6 @@ interface Video {
   city?: string;
   country?: string;
 }
-
 interface MapPoint {
   city: string;
   country: string;
@@ -28,20 +26,16 @@ interface MapPoint {
   cityUrl: string;
   countryUrl: string;
 }
-
 export function getStaticPaths() {
   return Object.keys(languages).map((lang) => ({
     params: { lang }
   }));
 }
-
 const { lang } = Astro.params;
-
 const currentLang =
   lang && lang in languages
     ? lang
     : defaultLang;
-
 function createSlug(value: string) {
   return value
     .normalize('NFD')
@@ -50,7 +44,6 @@ function createSlug(value: string) {
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 }
-
 function normalizeKey(value: string) {
   return value
     .normalize('NFD')
@@ -59,7 +52,61 @@ function normalizeKey(value: string) {
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 }
-
+const countryCodeAliases: Record<string, string> = {
+  'turkiye': 'TR',
+  'turkey': 'TR',
+  'united states': 'US',
+  'united states of america': 'US',
+  'usa': 'US',
+  'u s a': 'US',
+  'united kingdom': 'GB',
+  'uk': 'GB',
+  'u k': 'GB',
+  'south korea': 'KR',
+  'republic of korea': 'KR',
+  'north korea': 'KP',
+  'russia': 'RU',
+  'vietnam': 'VN',
+  'viet nam': 'VN',
+  'czech republic': 'CZ',
+  'czechia': 'CZ',
+  'uae': 'AE',
+  'united arab emirates': 'AE'
+};
+const regionDisplayNames =
+  new Intl.DisplayNames(['en'], { type: 'region' });
+const regionCodeByName = new Map<string, string>();
+for (let first = 65; first <= 90; first += 1) {
+  for (let second = 65; second <= 90; second += 1) {
+    const code =
+      String.fromCharCode(first) +
+      String.fromCharCode(second);
+    const displayName = regionDisplayNames.of(code);
+    if (!displayName || displayName === code) continue;
+    regionCodeByName.set(
+      normalizeKey(displayName),
+      code
+    );
+  }
+}
+function getCountryFlag(countryName: string) {
+  const key = normalizeKey(countryName);
+  const code =
+    countryCodeAliases[key] ||
+    regionCodeByName.get(key);
+  if (!code || code.length !== 2) {
+    return '🌐';
+  }
+  return String.fromCodePoint(
+    ...code
+      .toUpperCase()
+      .split('')
+      .map(
+        (character) =>
+          127397 + character.charCodeAt(0)
+      )
+  );
+}
 const coordinateIndex: Record<string, [number, number]> = {
   'tokyo': [35.6762, 139.6503],
   'kyoto': [35.0116, 135.7681],
@@ -183,7 +230,6 @@ const coordinateIndex: Record<string, [number, number]> = {
   'perth': [-31.9523, 115.8613],
   'auckland': [-36.8509, 174.7645]
 };
-
 const labels: Record<string, Record<string, string>> = {
   title: {
     en: 'World Map',
@@ -426,13 +472,10 @@ const labels: Record<string, Record<string, string>> = {
     vi: 'Bản đồ hiển thị các điểm đến có tọa độ đã biết.'
   }
 };
-
 function label(key: string) {
   return labels[key]?.[currentLang] || labels[key]?.en || key;
 }
-
 const allVideos = videos as Video[];
-
 const cityGroups = new Map<
   string,
   {
@@ -441,12 +484,9 @@ const cityGroups = new Map<
     videos: Video[];
   }
 >();
-
 for (const video of allVideos) {
   if (!video.city) continue;
-
   const key = `${normalizeKey(video.city)}|${normalizeKey(video.country || '')}`;
-
   if (!cityGroups.has(key)) {
     cityGroups.set(key, {
       city: video.city,
@@ -454,10 +494,8 @@ for (const video of allVideos) {
       videos: []
     });
   }
-
   cityGroups.get(key)?.videos.push(video);
 }
-
 const mapPoints: MapPoint[] = [];
 const unmappedCities: Array<{
   city: string;
@@ -465,29 +503,23 @@ const unmappedCities: Array<{
   videoCount: number;
   cityUrl: string;
 }> = [];
-
 for (const group of cityGroups.values()) {
   const cityKey = normalizeKey(group.city);
   const coordinates = coordinateIndex[cityKey];
-
   const heroVideo =
     group.videos.find((video) => video.thumbnail) ||
     group.videos[0];
-
   const thumbnail =
     heroVideo?.thumbnail ||
     (heroVideo
       ? `https://i.ytimg.com/vi/${heroVideo.id}/hqdefault.jpg`
       : '');
-
   const cityUrl =
     `/${currentLang}/cities/${createSlug(group.city)}`;
-
   const countryUrl =
     group.country
       ? `/${currentLang}/countries/${createSlug(group.country)}`
       : '';
-
   const categories = Array.from(
     new Set(
       group.videos
@@ -495,7 +527,6 @@ for (const group of cityGroups.values()) {
         .filter((category): category is string => Boolean(category))
     )
   );
-
   if (coordinates) {
     mapPoints.push({
       city: group.city,
@@ -517,44 +548,180 @@ for (const group of cityGroups.values()) {
     });
   }
 }
-
 mapPoints.sort(
   (a, b) =>
     b.videoCount - a.videoCount ||
     a.city.localeCompare(b.city)
 );
-
 unmappedCities.sort(
   (a, b) =>
     b.videoCount - a.videoCount ||
     a.city.localeCompare(b.city)
 );
-
 const countries = Array.from(
   new Set(
-    mapPoints
-      .map((point) => point.country)
-      .filter(Boolean)
+    allVideos
+      .map((video) => video.country)
+      .filter((country): country is string => Boolean(country))
   )
 ).sort((a, b) => a.localeCompare(b));
+const countrySummaryMap = new Map<
+  string,
+  {
+    name: string;
+    videos: number;
+    cities: Set<string>;
+    thumbnail: string;
+  }
+>();
+for (const video of allVideos) {
+  if (!video.country) continue;
+  const key = normalizeKey(video.country);
+  if (!countrySummaryMap.has(key)) {
+    countrySummaryMap.set(key, {
+      name: video.country,
+      videos: 0,
+      cities: new Set<string>(),
+      thumbnail: ''
+    });
+  }
+  const summary = countrySummaryMap.get(key);
+  if (!summary) continue;
+  summary.videos += 1;
+  if (video.city) {
+    summary.cities.add(normalizeKey(video.city));
+  }
+  if (!summary.thumbnail) {
+    summary.thumbnail =
+      video.thumbnail ||
+      `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+  }
+}
+const countrySummaries = Array.from(
+  countrySummaryMap.values()
+)
+  .map((country) => ({
+    name: country.name,
+    flag: getCountryFlag(country.name),
+    videoCount: country.videos,
+    cityCount: country.cities.size,
+    thumbnail: country.thumbnail,
+    url:
+      `/${currentLang}/countries/${createSlug(country.name)}`
+  }))
+  .sort(
+    (a, b) =>
+      b.videoCount - a.videoCount ||
+      a.name.localeCompare(b.name)
+  );
+const citySummaries = Array.from(
+  cityGroups.values()
+)
+  .map((group) => {
+    const heroVideo =
+      group.videos.find((video) => video.thumbnail) ||
+      group.videos[0];
+    return {
+      name: group.city,
+      country: group.country,
+      videoCount: group.videos.length,
+      thumbnail:
+        heroVideo?.thumbnail ||
+        (heroVideo
+          ? `https://i.ytimg.com/vi/${heroVideo.id}/hqdefault.jpg`
+          : ''),
+      url:
+        `/${currentLang}/cities/${createSlug(group.city)}`
+    };
+  })
+  .sort(
+    (a, b) =>
+      b.videoCount - a.videoCount ||
+      a.name.localeCompare(b.name)
+  );
+const priorityCountryGroups = [
+  ['United States', 'United Kingdom'],
+  ['Türkiye', 'Turkey'],
+  ['Germany'],
+  ['Spain'],
+  ['Italy'],
+  ['France'],
+  ['Japan'],
+  ['Portugal'],
+  ['Russia'],
+  ['China'],
+  ['South Korea', 'Republic of Korea'],
+  ['United Arab Emirates', 'Saudi Arabia', 'Egypt'],
+  ['India'],
+  ['Netherlands'],
+  ['Poland'],
+  ['Sweden'],
+  ['Indonesia'],
+  ['Vietnam']
+];
+
+const existingCountryKeys = new Map(
+  countrySummaries.map((country) => [
+    normalizeKey(country.name),
+    country.name
+  ])
+);
+
+const priorityCountryNames = priorityCountryGroups
+  .map((group) =>
+    group.find((name) =>
+      existingCountryKeys.has(normalizeKey(name))
+    )
+  )
+  .filter((name): name is string => Boolean(name));
+
+const priorityCountryRank = new Map(
+  priorityCountryNames.map((name, index) => [
+    normalizeKey(name),
+    index
+  ])
+);
+
+const navigationCountries = countrySummaries
+  .map((country) => ({
+    ...country,
+    navKey: createSlug(country.name),
+    cities: citySummaries
+      .filter(
+        (city) =>
+          normalizeKey(city.country) ===
+          normalizeKey(country.name)
+      )
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }))
+  .sort((a, b) => {
+    const aRank =
+      priorityCountryRank.get(normalizeKey(a.name));
+    const bRank =
+      priorityCountryRank.get(normalizeKey(b.name));
+
+    if (aRank !== undefined && bRank !== undefined) {
+      return aRank - bRank;
+    }
+
+    if (aRank !== undefined) return -1;
+    if (bRank !== undefined) return 1;
+
+    return a.name.localeCompare(b.name);
+  });
 
 const countryCount = new Set(
   allVideos
     .map((video) => video.country)
     .filter(Boolean)
 ).size;
-
 const cityCount = cityGroups.size;
 const videoCount = allVideos.length;
-
 const pageTitle =
   `${label('title')} | Old Towns Walks`;
-
 const pageDescription =
   label('intro');
-
 const pageUrl = Astro.url.href;
-
 const mapSchema = {
   '@context': 'https://schema.org',
   '@graph': [
@@ -599,21 +766,18 @@ const mapSchema = {
     }
   ]
 };
-
 const clientLabels = {
   openCity: label('openCity'),
   videos: label('videos'),
   allCountries: label('allCountries')
 };
 ---
-
 <BaseLayout
   title={pageTitle}
   description={pageDescription}
 >
   <main class="map-page">
     <div class="map-shell">
-
       <nav
         class="breadcrumbs"
         aria-label="Breadcrumb"
@@ -621,55 +785,42 @@ const clientLabels = {
         <a href={`/${currentLang}/`}>
           {label('home')}
         </a>
-
         <span>/</span>
-
         <span aria-current="page">
           {label('title')}
         </span>
       </nav>
-
       <section class="map-hero">
         <div>
           <span class="eyebrow">
             Old Towns Walks
           </span>
-
           <h1>{label('title')}</h1>
-
           <p>{label('subtitle')}</p>
         </div>
-
         <div class="hero-stats">
           <div class="stat">
             <strong>{cityCount}</strong>
             <span>{label('cities')}</span>
           </div>
-
           <div class="stat">
             <strong>{countryCount}</strong>
             <span>{label('countries')}</span>
           </div>
-
           <div class="stat">
             <strong>{videoCount}</strong>
             <span>{label('videos')}</span>
           </div>
         </div>
       </section>
-
       <section class="intro-card">
         <p>{label('intro')}</p>
       </section>
-
       <section class="map-layout">
-
         <div class="map-panel">
           <div class="map-toolbar">
-
             <div class="search-box">
               <span aria-hidden="true">⌕</span>
-
               <input
                 id="mapSearch"
                 type="search"
@@ -677,7 +828,6 @@ const clientLabels = {
                 autocomplete="off"
               />
             </div>
-
             <select
               id="countryFilter"
               aria-label={label('countries')}
@@ -685,43 +835,35 @@ const clientLabels = {
               <option value="">
                 {label('allCountries')}
               </option>
-
               {countries.map((country) => (
                 <option value={country}>
                   {country}
                 </option>
               ))}
             </select>
-
           </div>
-
           <div
             id="worldMap"
             class="world-map"
             aria-label={label('title')}
           ></div>
-
           <div class="map-footer">
             <span>
               {mapPoints.length} {label('destinations')}
             </span>
-
             <span>
               {label('mapNote')}
             </span>
           </div>
         </div>
-
         <aside class="destination-panel">
           <div class="panel-heading">
             <div>
               <span class="section-kicker">
                 {label('explore')}
               </span>
-
               <h2>{label('destinations')}</h2>
             </div>
-
             <span
               id="visibleDestinationCount"
               class="destination-count"
@@ -729,7 +871,6 @@ const clientLabels = {
               {mapPoints.length}
             </span>
           </div>
-
           <div
             id="destinationList"
             class="destination-list"
@@ -755,14 +896,11 @@ const clientLabels = {
                     </div>
                   )}
                 </div>
-
                 <div class="destination-info">
                   <h3>{point.city}</h3>
-
                   {point.country && (
                     <p>{point.country}</p>
                   )}
-
                   <span>
                     {point.videoCount} {label('videos')}
                   </span>
@@ -771,55 +909,167 @@ const clientLabels = {
             ))}
           </div>
         </aside>
-
       </section>
+      <section class="country-browser-section">
+        <div class="section-heading">
+          <span class="section-kicker">
+            {label('explore')}
+          </span>
+          <h2>{label('countries')}</h2>
+        </div>
 
-      {unmappedCities.length > 0 && (
-        <section class="more-destinations">
-          <div class="section-heading">
-            <span class="section-kicker">
-              {label('destinations')}
-            </span>
-
-            <h2>{label('cities')}</h2>
-          </div>
-
-          <div class="more-grid">
-            {unmappedCities.map((item) => (
+        <div class="country-browser">
+          <div class="country-nav-list">
+            {navigationCountries.map((country, index) => (
               <a
-                href={item.cityUrl}
-                class="more-card"
+                href={country.url}
+                class:list={[
+                  'country-nav-trigger',
+                  index === 0 && 'is-active'
+                ]}
+                data-country-nav-trigger={country.navKey}
               >
-                <div>
-                  <strong>{item.city}</strong>
-
-                  {item.country && (
-                    <span>{item.country}</span>
-                  )}
-                </div>
-
-                <em>
-                  {item.videoCount} {label('videos')}
-                </em>
+                <span class="country-nav-flag" aria-hidden="true">
+                  {country.flag}
+                </span>
+                <span class="country-nav-name">
+                  {country.name}
+                </span>
+                <span class="country-nav-count">
+                  {country.videoCount}
+                </span>
+                <span class="country-nav-arrow" aria-hidden="true">
+                  ›
+                </span>
               </a>
             ))}
           </div>
-        </section>
-      )}
 
+          <div class="country-city-panels">
+            {navigationCountries.map((country, index) => (
+              <div
+                class:list={[
+                  'country-nav-panel',
+                  index === 0 && 'is-active'
+                ]}
+                data-country-nav-panel={country.navKey}
+              >
+                <div class="country-nav-panel-heading">
+                  <div>
+                    <span class="country-nav-panel-flag">
+                      {country.flag}
+                    </span>
+                    <h3>{country.name}</h3>
+                  </div>
+                  <a href={country.url}>
+                    {country.videoCount} {label('videos')}
+                  </a>
+                </div>
+
+                <div class="country-city-list">
+                  {country.cities.map((city) => (
+                    <a href={city.url} class="country-city-link">
+                      <span>{city.name}</span>
+                      <strong>
+                        {city.videoCount} {label('videos')}
+                      </strong>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section class="country-section">
+        <div class="section-heading">
+          <span class="section-kicker">
+            {label('explore')}
+          </span>
+          <h2>{label('countries')}</h2>
+        </div>
+        <div class="country-grid">
+          {countrySummaries.map((country) => (
+            <a href={country.url} class="country-card">
+              <div class="country-thumb">
+                {country.thumbnail && (
+                  <img
+                    src={country.thumbnail}
+                    alt={country.name}
+                    loading="lazy"
+                  />
+                )}
+                <div class="country-shade"></div>
+              </div>
+              <div class="country-info">
+                <h3>
+                  <span
+                    class="country-flag"
+                    aria-hidden="true"
+                  >
+                    {country.flag}
+                  </span>
+                  <span>{country.name}</span>
+                </h3>
+                <span>
+                  {country.cityCount} {label('cities')} ·
+                  {country.videoCount} {label('videos')}
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+      <section class="cities-section">
+        <div class="section-heading">
+          <span class="section-kicker">
+            {label('destinations')}
+          </span>
+          <h2>{label('cities')}</h2>
+        </div>
+        <div class="city-grid">
+          {citySummaries.map((city) => (
+            <a href={city.url} class="city-card">
+              <div class="city-thumb">
+                {city.thumbnail && (
+                  <img
+                    src={city.thumbnail}
+                    alt={city.name}
+                    loading="lazy"
+                  />
+                )}
+                <div class="city-shade"></div>
+              </div>
+              <div class="city-info">
+                <h3>{city.name}</h3>
+                {city.country && (
+                  <span class="city-country">
+                    {city.country}
+                  </span>
+                )}
+                <span class="city-video-count">
+                  {city.videoCount} {label('videos')}
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
     </div>
   </main>
-
   <script
     type="application/ld+json"
     set:html={JSON.stringify(mapSchema)}
   />
-
   <script
     src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
     crossorigin=""
   ></script>
-
+  <script
+    src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"
+    crossorigin=""
+  ></script>
   <script
     is:inline
     define:vars={{
@@ -829,26 +1079,75 @@ const clientLabels = {
     }}
   >
     const mapElement = document.getElementById('worldMap');
-
-    if (mapElement && window.L) {
+    if (mapElement && window.L && L.markerClusterGroup) {
       const map = L.map(mapElement, {
         worldCopyJump: true,
         minZoom: 2,
-        zoomControl: true
-      }).setView([24, 8], 2);
+        maxZoom: 21,
+        zoomControl: true,
+        zoomSnap: 0.25,
+        zoomDelta: 0.5
+      }).setView([23, 8], 2);
+
+      map.attributionControl.setPrefix(false);
 
       L.tileLayer(
-        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         {
-          maxZoom: 19,
+          maxNativeZoom: 19,
+          maxZoom: 21,
           attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+            'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'
         }
       ).addTo(map);
 
-      const markerLayer = L.layerGroup().addTo(map);
-      const markerRecords = [];
+      L.tileLayer(
+        'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        {
+          maxNativeZoom: 19,
+          maxZoom: 21,
+          opacity: 0.76,
+          attribution: 'Labels &copy; Esri'
+        }
+      ).addTo(map);
 
+      const markerLayer = L.markerClusterGroup({
+        maxClusterRadius: 64,
+        disableClusteringAtZoom: 9,
+        showCoverageOnHover: false,
+        spiderfyOnMaxZoom: false,
+        removeOutsideVisibleBounds: true,
+        animate: true,
+        animateAddingMarkers: false,
+        iconCreateFunction: (cluster) => {
+          const childMarkers = cluster.getAllChildMarkers();
+          const totalVideos = childMarkers.reduce(
+            (sum, marker) =>
+              sum + Number(marker.options.videoCount || 0),
+            0
+          );
+
+          const sizeClass =
+            totalVideos >= 500
+              ? 'cluster-xl'
+              : totalVideos >= 150
+                ? 'cluster-lg'
+                : totalVideos >= 50
+                  ? 'cluster-md'
+                  : 'cluster-sm';
+
+          return L.divIcon({
+            html: `
+              <div class="video-cluster ${sizeClass}">
+                <span>${totalVideos.toLocaleString()}</span>
+              </div>
+            `,
+            className: 'video-cluster-icon',
+            iconSize: [58, 58]
+          });
+        }
+      }).addTo(map);
+      const markerRecords = [];
       const escapeHtml = (value) =>
         String(value || '')
           .replace(/&/g, '&amp;')
@@ -856,24 +1155,20 @@ const clientLabels = {
           .replace(/>/g, '&gt;')
           .replace(/"/g, '&quot;')
           .replace(/'/g, '&#039;');
-
       const createPopup = (point) => {
         const city = escapeHtml(point.city);
         const country = escapeHtml(point.country);
         const cityUrl = escapeHtml(point.cityUrl);
         const countryUrl = escapeHtml(point.countryUrl);
         const thumbnail = escapeHtml(point.thumbnail);
-
         const image = thumbnail
           ? `<img src="${thumbnail}" alt="${city}" class="map-popup-image" />`
           : '';
-
         const countryLine = country
           ? countryUrl
             ? `<a href="${countryUrl}" class="map-popup-country">${country}</a>`
             : `<span class="map-popup-country">${country}</span>`
           : '';
-
         return `
           <div class="map-popup-card">
             ${image}
@@ -888,23 +1183,30 @@ const clientLabels = {
           </div>
         `;
       };
-
       mapPoints.forEach((point) => {
-        const radius = Math.min(
-          13,
-          5 + Math.log2(Math.max(1, point.videoCount)) * 1.7
-        );
+        const markerIcon = L.divIcon({
+          html: `
+            <div class="city-map-marker">
+              <span class="city-map-marker-core"></span>
+              <span class="city-map-marker-count">
+                ${point.videoCount}
+              </span>
+            </div>
+          `,
+          className: 'city-map-marker-icon',
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
+          popupAnchor: [0, -18]
+        });
 
-        const marker = L.circleMarker(
+        const marker = L.marker(
           [point.lat, point.lng],
           {
-            radius,
-            weight: 2,
-            opacity: 1,
-            fillOpacity: 0.78
+            icon: markerIcon,
+            videoCount: point.videoCount,
+            riseOnHover: true
           }
         );
-
         marker.bindPopup(
           createPopup(point),
           {
@@ -912,7 +1214,6 @@ const clientLabels = {
             minWidth: 220
           }
         );
-
         marker.on('click', () => {
           map.flyTo(
             [point.lat, point.lng],
@@ -922,101 +1223,79 @@ const clientLabels = {
             }
           );
         });
-
         marker.addTo(markerLayer);
-
         markerRecords.push({
           marker,
           point
         });
       });
-
       const searchInput =
         document.getElementById('mapSearch');
-
       const countrySelect =
         document.getElementById('countryFilter');
-
       const destinationCards =
         Array.from(
           document.querySelectorAll(
             '[data-destination-card]'
           )
         );
-
       const visibleCount =
         document.getElementById(
           'visibleDestinationCount'
         );
-
       const updateFilters = () => {
         const searchTerm =
           String(searchInput?.value || '')
             .toLowerCase()
             .trim();
-
         const selectedCountry =
           String(countrySelect?.value || '')
             .toLowerCase()
             .trim();
-
         markerLayer.clearLayers();
-
         let shown = 0;
         const visibleMarkers = [];
-
         markerRecords.forEach((record) => {
           const city =
             String(record.point.city || '')
               .toLowerCase();
-
           const country =
             String(record.point.country || '')
               .toLowerCase();
-
           const matchesSearch =
             !searchTerm ||
             city.includes(searchTerm) ||
             country.includes(searchTerm);
-
           const matchesCountry =
             !selectedCountry ||
             country === selectedCountry;
-
           if (matchesSearch && matchesCountry) {
             record.marker.addTo(markerLayer);
             visibleMarkers.push(record.marker);
             shown += 1;
           }
         });
-
         destinationCards.forEach((card) => {
           const city =
             String(card.dataset.city || '');
-
           const country =
             String(card.dataset.country || '');
-
           const matchesSearch =
             !searchTerm ||
             city.includes(searchTerm) ||
             country.includes(searchTerm);
-
           const matchesCountry =
             !selectedCountry ||
             country === selectedCountry;
-
           card.classList.toggle(
             'is-hidden',
             !(matchesSearch && matchesCountry)
           );
         });
-
         if (visibleCount) {
           visibleCount.textContent =
             String(shown);
         }
-
         if (visibleMarkers.length === 1) {
           const marker = visibleMarkers[0];
           map.flyTo(
@@ -1029,7 +1308,6 @@ const clientLabels = {
         } else if (visibleMarkers.length > 1) {
           const group =
             L.featureGroup(visibleMarkers);
-
           map.fitBounds(
             group.getBounds().pad(0.18),
             {
@@ -1039,27 +1317,22 @@ const clientLabels = {
           );
         }
       };
-
       searchInput?.addEventListener(
         'input',
         updateFilters
       );
-
       countrySelect?.addEventListener(
         'change',
         updateFilters
       );
-
       destinationCards.forEach((card) => {
         card.addEventListener(
           'mouseenter',
           () => {
             const city =
               String(card.dataset.city || '');
-
             const country =
               String(card.dataset.country || '');
-
             const record =
               markerRecords.find((item) => {
                 return (
@@ -1069,14 +1342,12 @@ const clientLabels = {
                     .toLowerCase() === country
                 );
               });
-
             if (record) {
               record.marker.openPopup();
             }
           }
         );
       });
-
       window.addEventListener(
         'resize',
         () => {
@@ -1085,11 +1356,50 @@ const clientLabels = {
       );
     }
   </script>
-</BaseLayout>
+  <script is:inline>
+    const countryNavTriggers = Array.from(
+      document.querySelectorAll('[data-country-nav-trigger]')
+    );
+    const countryNavPanels = Array.from(
+      document.querySelectorAll('[data-country-nav-panel]')
+    );
 
+    const activateCountryPanel = (key) => {
+      countryNavTriggers.forEach((trigger) => {
+        trigger.classList.toggle(
+          'is-active',
+          trigger.dataset.countryNavTrigger === key
+        );
+      });
+
+      countryNavPanels.forEach((panel) => {
+        panel.classList.toggle(
+          'is-active',
+          panel.dataset.countryNavPanel === key
+        );
+      });
+    };
+
+    countryNavTriggers.forEach((trigger) => {
+      const key = trigger.dataset.countryNavTrigger;
+      if (!key) return;
+
+      trigger.addEventListener(
+        'mouseenter',
+        () => activateCountryPanel(key)
+      );
+
+      trigger.addEventListener(
+        'focus',
+        () => activateCountryPanel(key)
+      );
+    });
+  </script>
+</BaseLayout>
 <style is:global>
   @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
-
+  @import url('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css');
+  @import url('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css');
   .map-page {
     min-height: 100vh;
     padding: 98px 24px 72px;
@@ -1102,12 +1412,10 @@ const clientLabels = {
       #0b0f17;
     color: #f1f5f9;
   }
-
   .map-shell {
     width: min(1500px, 100%);
     margin: 0 auto;
   }
-
   .breadcrumbs {
     display: flex;
     align-items: center;
@@ -1117,16 +1425,13 @@ const clientLabels = {
     color: #778291;
     font-size: 12px;
   }
-
   .breadcrumbs a {
     color: #aab4c3;
     transition: color 0.2s ease;
   }
-
   .breadcrumbs a:hover {
     color: #ffffff;
   }
-
   .map-hero {
     display: flex;
     align-items: flex-end;
@@ -1142,7 +1447,6 @@ const clientLabels = {
     border: 1px solid #24303d;
     border-radius: 18px;
   }
-
   .eyebrow,
   .section-kicker {
     display: block;
@@ -1152,7 +1456,6 @@ const clientLabels = {
     letter-spacing: 0.14em;
     text-transform: uppercase;
   }
-
   .map-hero h1 {
     margin: 8px 0 0;
     color: #ffffff;
@@ -1160,20 +1463,17 @@ const clientLabels = {
     line-height: 1;
     letter-spacing: -0.04em;
   }
-
   .map-hero p {
     margin: 12px 0 0;
     color: #aeb8c6;
     font-size: 15px;
   }
-
   .hero-stats {
     display: flex;
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 10px;
   }
-
   .stat {
     min-width: 105px;
     padding: 12px 14px;
@@ -1181,14 +1481,12 @@ const clientLabels = {
     border: 1px solid #26313d;
     border-radius: 10px;
   }
-
   .stat strong {
     display: block;
     color: #ffffff;
     font-size: 22px;
     line-height: 1;
   }
-
   .stat span {
     display: block;
     margin-top: 6px;
@@ -1197,7 +1495,6 @@ const clientLabels = {
     font-weight: 800;
     text-transform: uppercase;
   }
-
   .intro-card {
     margin-top: 16px;
     padding: 18px 20px;
@@ -1205,14 +1502,12 @@ const clientLabels = {
     border: 1px solid #222c38;
     border-radius: 12px;
   }
-
   .intro-card p {
     margin: 0;
     color: #aeb8c6;
     font-size: 13px;
     line-height: 1.7;
   }
-
   .map-layout {
     display: grid;
     grid-template-columns:
@@ -1222,15 +1517,16 @@ const clientLabels = {
     margin-top: 18px;
     align-items: stretch;
   }
-
   .map-panel,
   .destination-panel {
     overflow: hidden;
-    background: #10161e;
-    border: 1px solid #232d39;
-    border-radius: 15px;
+    background: rgba(10, 17, 26, 0.96);
+    border: 1px solid rgba(83, 116, 146, 0.34);
+    border-radius: 18px;
+    box-shadow:
+      0 24px 70px rgba(0, 0, 0, 0.36),
+      inset 0 1px 0 rgba(255, 255, 255, 0.03);
   }
-
   .map-toolbar {
     display: flex;
     gap: 10px;
@@ -1238,7 +1534,6 @@ const clientLabels = {
     background: #121922;
     border-bottom: 1px solid #232d39;
   }
-
   .search-box {
     flex: 1;
     display: flex;
@@ -1250,12 +1545,10 @@ const clientLabels = {
     border: 1px solid #283340;
     border-radius: 9px;
   }
-
   .search-box span {
     color: #7d8998;
     font-size: 18px;
   }
-
   .search-box input {
     width: 100%;
     height: 40px;
@@ -1266,11 +1559,9 @@ const clientLabels = {
     font: inherit;
     font-size: 13px;
   }
-
   .search-box input::placeholder {
     color: #677383;
   }
-
   #countryFilter {
     width: 220px;
     height: 42px;
@@ -1283,26 +1574,145 @@ const clientLabels = {
     font: inherit;
     font-size: 12px;
   }
-
   .world-map {
     width: 100%;
     height: 660px;
-    background: #111820;
+    background:
+      radial-gradient(
+        circle at 50% 0%,
+        #12314a 0%,
+        #07111c 48%,
+        #050a10 100%
+      );
   }
-
   .leaflet-container {
     font-family:
       'Plus Jakarta Sans',
       sans-serif;
-    background: #111820;
+    background: #06101a;
   }
-
+  .leaflet-tile-pane {
+    filter:
+      saturate(1.08)
+      brightness(0.82)
+      contrast(1.08);
+  }
+  .leaflet-overlay-pane,
+  .leaflet-marker-pane,
+  .leaflet-tooltip-pane,
+  .leaflet-popup-pane {
+    filter: none;
+  }
+  .video-cluster-icon,
+  .city-map-marker-icon {
+    background: transparent !important;
+    border: 0 !important;
+  }
+  .video-cluster {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 54px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 50%;
+    background:
+      radial-gradient(
+        circle at 35% 30%,
+        rgba(255, 255, 255, 0.28),
+        transparent 34%
+      ),
+      linear-gradient(
+        145deg,
+        rgba(12, 111, 255, 0.96),
+        rgba(0, 184, 255, 0.88)
+      );
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    box-shadow:
+      0 0 0 7px rgba(27, 139, 255, 0.12),
+      0 0 28px rgba(26, 151, 255, 0.82),
+      inset 0 0 16px rgba(255, 255, 255, 0.16);
+    backdrop-filter: blur(4px);
+  }
+  .video-cluster::after {
+    content: '';
+    position: absolute;
+    inset: -12px;
+    border: 1px solid rgba(79, 178, 255, 0.25);
+    border-radius: 50%;
+    animation: clusterPulse 2.8s ease-out infinite;
+  }
+  .video-cluster.cluster-md {
+    background: linear-gradient(145deg, #087cf0, #00bdd6);
+  }
+  .video-cluster.cluster-lg {
+    background: linear-gradient(145deg, #d88b05, #f7c843);
+    box-shadow:
+      0 0 0 7px rgba(240, 170, 27, 0.12),
+      0 0 30px rgba(240, 170, 27, 0.78),
+      inset 0 0 16px rgba(255, 255, 255, 0.18);
+  }
+  .video-cluster.cluster-xl {
+    width: 60px;
+    height: 60px;
+    background: linear-gradient(145deg, #824dff, #e24cff);
+    font-size: 13px;
+    box-shadow:
+      0 0 0 8px rgba(169, 76, 255, 0.12),
+      0 0 34px rgba(172, 76, 255, 0.76),
+      inset 0 0 18px rgba(255, 255, 255, 0.18);
+  }
+  .city-map-marker {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+  }
+  .city-map-marker-core {
+    width: 12px;
+    height: 12px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    background: #d7b675;
+    box-shadow:
+      0 0 0 6px rgba(215, 182, 117, 0.16),
+      0 0 20px rgba(215, 182, 117, 0.82);
+  }
+  .city-map-marker-count {
+    position: absolute;
+    top: -4px;
+    left: 24px;
+    min-width: 22px;
+    padding: 3px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    background: rgba(6, 13, 21, 0.92);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.28);
+  }
+  @keyframes clusterPulse {
+    0% {
+      transform: scale(0.82);
+      opacity: 0.62;
+    }
+    72%,
+    100% {
+      transform: scale(1.22);
+      opacity: 0;
+    }
+  }
   .leaflet-control-zoom a {
     background: #111821 !important;
     color: #dfe6ee !important;
     border-color: #2c3744 !important;
   }
-
   .leaflet-control-attribution {
     background: rgba(
       10,
@@ -1312,17 +1722,14 @@ const clientLabels = {
     ) !important;
     color: #8995a4 !important;
   }
-
   .leaflet-control-attribution a {
     color: #d7b675 !important;
   }
-
   .leaflet-popup-content-wrapper,
   .leaflet-popup-tip {
     background: #111821;
     color: #e8edf3;
   }
-
   .leaflet-popup-content-wrapper {
     padding: 0;
     overflow: hidden;
@@ -1332,16 +1739,13 @@ const clientLabels = {
       0 18px 45px
       rgba(0, 0, 0, 0.38);
   }
-
   .leaflet-popup-content {
     margin: 0;
     width: 250px !important;
   }
-
   .map-popup-card {
     overflow: hidden;
   }
-
   .map-popup-image {
     display: block;
     width: 100%;
@@ -1349,17 +1753,14 @@ const clientLabels = {
     object-fit: cover;
     background: #1a222c;
   }
-
   .map-popup-body {
     padding: 12px;
   }
-
   .map-popup-body strong {
     display: block;
     color: #ffffff;
     font-size: 15px;
   }
-
   .map-popup-country {
     display: inline-block;
     margin-top: 4px;
@@ -1367,14 +1768,12 @@ const clientLabels = {
     font-size: 11px;
     font-weight: 700;
   }
-
   .map-popup-body span {
     display: block;
     margin-top: 6px;
     color: #8d99a8;
     font-size: 11px;
   }
-
   .map-popup-button {
     display: block;
     margin-top: 10px;
@@ -1386,7 +1785,6 @@ const clientLabels = {
     font-weight: 800;
     text-align: center;
   }
-
   .map-footer {
     display: flex;
     align-items: center;
@@ -1399,13 +1797,11 @@ const clientLabels = {
     border-top: 1px solid #232d39;
     font-size: 10px;
   }
-
   .destination-panel {
     display: flex;
     flex-direction: column;
     height: 758px;
   }
-
   .panel-heading {
     min-height: 76px;
     display: flex;
@@ -1416,14 +1812,12 @@ const clientLabels = {
     background: #121922;
     border-bottom: 1px solid #232d39;
   }
-
   .panel-heading h2,
   .section-heading h2 {
     margin: 5px 0 0;
     color: #ffffff;
     font-size: 18px;
   }
-
   .destination-count {
     min-width: 32px;
     height: 32px;
@@ -1436,22 +1830,18 @@ const clientLabels = {
     font-size: 11px;
     font-weight: 800;
   }
-
   .destination-list {
     flex: 1;
     overflow-y: auto;
     padding: 8px;
   }
-
   .destination-list::-webkit-scrollbar {
     width: 6px;
   }
-
   .destination-list::-webkit-scrollbar-thumb {
     background: #35404d;
     border-radius: 10px;
   }
-
   .destination-card {
     display: grid;
     grid-template-columns:
@@ -1462,15 +1852,12 @@ const clientLabels = {
     border-radius: 10px;
     transition: background 0.18s ease;
   }
-
   .destination-card:hover {
     background: #19212b;
   }
-
   .destination-card.is-hidden {
     display: none;
   }
-
   .destination-thumb {
     width: 104px;
     aspect-ratio: 16 / 9;
@@ -1478,14 +1865,12 @@ const clientLabels = {
     border-radius: 8px;
     background: #1a222c;
   }
-
   .destination-thumb img {
     width: 100%;
     height: 100%;
     display: block;
     object-fit: cover;
   }
-
   .destination-placeholder {
     width: 100%;
     height: 100%;
@@ -1496,11 +1881,9 @@ const clientLabels = {
     font-size: 22px;
     font-weight: 800;
   }
-
   .destination-info {
     min-width: 0;
   }
-
   .destination-info h3 {
     margin: 1px 0 0;
     overflow: hidden;
@@ -1510,7 +1893,6 @@ const clientLabels = {
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-
   .destination-info p {
     margin: 4px 0 0;
     overflow: hidden;
@@ -1519,7 +1901,6 @@ const clientLabels = {
     white-space: nowrap;
     text-overflow: ellipsis;
   }
-
   .destination-info span {
     display: block;
     margin-top: 5px;
@@ -1527,121 +1908,357 @@ const clientLabels = {
     font-size: 9px;
     font-weight: 800;
   }
-
-  .more-destinations {
-    margin-top: 38px;
+  .country-browser-section {
+    margin-top: 28px;
   }
-
-  .section-heading {
-    margin-bottom: 16px;
-  }
-
-  .more-grid {
+  .country-browser {
     display: grid;
-    grid-template-columns:
-      repeat(4, minmax(0, 1fr));
-    gap: 10px;
+    grid-template-columns: minmax(260px, 330px) minmax(0, 1fr);
+    min-height: 520px;
+    overflow: hidden;
+    border: 1px solid #242f3b;
+    border-radius: 14px;
+    background: #10161e;
   }
-
-  .more-card {
+  .country-nav-list {
+    max-height: 560px;
+    overflow-y: auto;
+    padding: 8px;
+    border-right: 1px solid #242f3b;
+    background: #0f151d;
+  }
+  .country-nav-trigger {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr) auto 14px;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    color: #dfe6ee;
+    transition: background 0.16s ease, color 0.16s ease;
+  }
+  .country-nav-trigger:hover,
+  .country-nav-trigger:focus-visible,
+  .country-nav-trigger.is-active {
+    background: #19212b;
+    color: #ffffff;
+    outline: none;
+  }
+  .country-nav-flag {
+    font-size: 20px;
+    line-height: 1;
+  }
+  .country-nav-name {
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .country-nav-count {
+    color: #d7b675;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .country-nav-arrow {
+    color: #697687;
+    font-size: 18px;
+    line-height: 1;
+  }
+  .country-city-panels {
+    min-width: 0;
+    padding: 18px;
+  }
+  .country-nav-panel {
+    display: none;
+  }
+  .country-nav-panel.is-active {
+    display: block;
+  }
+  .country-nav-panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid #242f3b;
+  }
+  .country-nav-panel-heading > div {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .country-nav-panel-flag {
+    flex: 0 0 auto;
+    font-size: 26px;
+    line-height: 1;
+  }
+  .country-nav-panel-heading h3 {
+    margin: 0;
+    overflow: hidden;
+    color: #ffffff;
+    font-size: 18px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .country-nav-panel-heading > a {
+    flex: 0 0 auto;
+    color: #d7b675;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .country-city-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .country-city-link {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 14px;
-    min-height: 68px;
-    padding: 13px 14px;
+    min-width: 0;
+    padding: 11px 12px;
+    border: 1px solid #26313d;
+    border-radius: 9px;
+    background: #121922;
+    transition: border-color 0.16s ease, background 0.16s ease;
+  }
+  .country-city-link:hover {
+    border-color: rgba(215, 182, 117, 0.42);
+    background: #17202a;
+  }
+  .country-city-link span {
+    overflow: hidden;
+    color: #e6ecf2;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .country-city-link strong {
+    flex: 0 0 auto;
+    color: #d7b675;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .country-section {
+    margin-top: 28px;
+  }
+  .country-grid {
+    display: grid;
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .country-card {
+    overflow: hidden;
+    display: block;
+    min-width: 0;
     border: 1px solid #242f3b;
-    border-radius: 11px;
+    border-radius: 12px;
     background: #121922;
     transition:
       border-color 0.2s ease,
+      transform 0.2s ease,
       background 0.2s ease;
   }
-
-  .more-card:hover {
+  .country-card:hover {
+    transform: translateY(-2px);
     border-color:
-      rgba(215, 182, 117, 0.4);
+      rgba(215, 182, 117, 0.42);
     background: #17202a;
   }
-
-  .more-card strong {
-    display: block;
-    color: #edf1f5;
-    font-size: 12px;
+  .country-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    overflow: hidden;
+    background: #1a222c;
   }
-
-  .more-card span {
+  .country-thumb img {
+    width: 100%;
+    height: 100%;
     display: block;
-    margin-top: 4px;
+    object-fit: cover;
+  }
+  .country-shade {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        to top,
+        rgba(10, 14, 20, 0.5),
+        transparent 60%
+      );
+  }
+  .country-info {
+    padding: 12px 13px 13px;
+  }
+  .country-info h3 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #edf1f5;
+    font-size: 13px;
+  }
+  .country-flag {
+    flex: 0 0 auto;
+    font-size: 20px;
+    line-height: 1;
+  }
+  .country-info span {
+    display: block;
+    margin-top: 5px;
+    color: #d7b675;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .cities-section {
+    margin-top: 38px;
+  }
+  .section-heading {
+    margin-bottom: 16px;
+  }
+  .city-grid {
+    display: grid;
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr));
+    gap: 12px;
+  }
+  .city-card {
+    overflow: hidden;
+    display: block;
+    min-width: 0;
+    border: 1px solid #242f3b;
+    border-radius: 12px;
+    background: #121922;
+    transition:
+      border-color 0.2s ease,
+      transform 0.2s ease,
+      background 0.2s ease;
+  }
+  .city-card:hover {
+    transform: translateY(-2px);
+    border-color:
+      rgba(215, 182, 117, 0.42);
+    background: #17202a;
+  }
+  .city-thumb {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 7;
+    overflow: hidden;
+    background: #1a222c;
+  }
+  .city-thumb img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: cover;
+  }
+  .city-shade {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(
+        to top,
+        rgba(10, 14, 20, 0.5),
+        transparent 60%
+      );
+  }
+  .city-info {
+    padding: 12px 13px 13px;
+  }
+  .city-info h3 {
+    margin: 0;
+    color: #edf1f5;
+    font-size: 13px;
+  }
+  .city-country {
+    display: block;
+    margin-top: 5px;
     color: #7e8998;
     font-size: 10px;
   }
-
-  .more-card em {
+  .city-video-count {
+    display: block;
+    margin-top: 5px;
     color: #d7b675;
-    font-size: 9px;
-    font-style: normal;
+    font-size: 10px;
     font-weight: 800;
-    white-space: nowrap;
   }
-
   @media (max-width: 1100px) {
     .map-layout {
       grid-template-columns: 1fr;
     }
-
     .destination-panel {
       height: auto;
       max-height: 560px;
     }
-
     .destination-list {
       display: grid;
       grid-template-columns:
         repeat(2, minmax(0, 1fr));
     }
-
-    .more-grid {
+    .country-grid,
+    .city-grid {
       grid-template-columns:
         repeat(2, minmax(0, 1fr));
     }
+    .country-browser {
+      grid-template-columns: minmax(230px, 290px) minmax(0, 1fr);
+    }
   }
-
   @media (max-width: 760px) {
     .map-page {
       padding: 86px 12px 48px;
     }
-
     .map-hero {
       align-items: flex-start;
       flex-direction: column;
       padding: 24px 20px;
     }
-
     .hero-stats {
       justify-content: flex-start;
     }
-
     .map-toolbar {
       flex-direction: column;
     }
-
     #countryFilter {
       width: 100%;
     }
-
     .world-map {
       height: 520px;
     }
-
     .map-footer {
       align-items: flex-start;
       flex-direction: column;
       gap: 5px;
     }
-
     .destination-list,
-    .more-grid {
+    .country-grid,
+    .city-grid {
+      grid-template-columns: 1fr;
+    }
+    .country-browser {
+      grid-template-columns: 1fr;
+      min-height: 0;
+    }
+    .country-nav-list {
+      max-height: 360px;
+      border-right: 0;
+      border-bottom: 1px solid #242f3b;
+    }
+    .country-city-panels {
+      padding: 14px;
+    }
+    .country-city-list {
       grid-template-columns: 1fr;
     }
   }

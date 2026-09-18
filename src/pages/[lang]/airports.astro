@@ -1,0 +1,2190 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, defaultLang } from '../../i18n/ui';
+import videos from '../../data/videos.json';
+
+interface Video {
+  id: string;
+  title: string;
+  thumbnail?: string;
+  category?: string;
+  city?: string;
+  country?: string;
+  active?: boolean | number;
+}
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const { lang } = Astro.params;
+
+const currentLang =
+  lang && lang in languages
+    ? lang
+    : defaultLang;
+
+const labels: Record<string, Record<string, string>> = {
+  title: {
+    en: 'Airport Map', tr: 'Havaalanı Haritası', de: 'Flughafenkarte',
+    es: 'Mapa de Aeropuertos', it: 'Mappa degli Aeroporti',
+    fr: 'Carte des Aéroports', ja: '空港マップ', pt: 'Mapa de Aeroportos',
+    ru: 'Карта аэропортов', zh: '机场地图', ko: '공항 지도',
+    ar: 'خريطة المطارات', hi: 'हवाई अड्डा मानचित्र',
+    nl: 'Luchthavenkaart', pl: 'Mapa Lotnisk', sv: 'Flygplatskarta',
+    id: 'Peta Bandara', vi: 'Bản Đồ Sân Bay'
+  },
+  subtitle: {
+    en: 'Explore airports worldwide and discover airport walking videos.',
+    tr: 'Dünyadaki havaalanlarını keşfet ve havaalanı yürüyüş videolarını bul.',
+    de: 'Entdecke Flughäfen weltweit und passende Airport-Walking-Videos.',
+    es: 'Explora aeropuertos de todo el mundo y videos de recorridos por aeropuertos.',
+    it: 'Esplora gli aeroporti del mondo e i video di passeggiate aeroportuali.',
+    fr: 'Explorez les aéroports du monde et les vidéos de marche dans les aéroports.',
+    ja: '世界中の空港と空港ウォーク動画を探索できます。',
+    pt: 'Explore aeroportos do mundo e vídeos de caminhadas em aeroportos.',
+    ru: 'Исследуйте аэропорты мира и прогулочные видео по аэропортам.',
+    zh: '探索世界各地机场及机场步行视频。',
+    ko: '전 세계 공항과 공항 워킹 영상을 탐색하세요.',
+    ar: 'استكشف مطارات العالم وفيديوهات المشي داخل المطارات.',
+    hi: 'दुनिया भर के हवाई अड्डों और एयरपोर्ट वॉक वीडियो खोजें।',
+    nl: 'Ontdek luchthavens wereldwijd en luchthavenwandelvideo’s.',
+    pl: 'Odkrywaj lotniska świata i filmy spacerowe z lotnisk.',
+    sv: 'Utforska flygplatser världen över och flygplatspromenader.',
+    id: 'Jelajahi bandara dunia dan video jalan kaki di bandara.',
+    vi: 'Khám phá các sân bay trên thế giới và video đi bộ tại sân bay.'
+  },
+  home: {
+    en: 'Home', tr: 'Ana Sayfa', de: 'Startseite', es: 'Inicio',
+    it: 'Home', fr: 'Accueil', ja: 'ホーム', pt: 'Início',
+    ru: 'Главная', zh: '首页', ko: '홈', ar: 'الرئيسية',
+    hi: 'होम', nl: 'Home', pl: 'Strona Główna', sv: 'Hem',
+    id: 'Beranda', vi: 'Trang Chủ'
+  },
+  search: {
+    en: 'Search airport, city, country, IATA or ICAO',
+    tr: 'Havaalanı, şehir, ülke, IATA veya ICAO ara',
+    de: 'Flughafen, Stadt, Land, IATA oder ICAO suchen',
+    es: 'Buscar aeropuerto, ciudad, país, IATA o ICAO',
+    it: 'Cerca aeroporto, città, paese, IATA o ICAO',
+    fr: 'Rechercher aéroport, ville, pays, IATA ou ICAO',
+    ja: '空港・都市・国・IATA・ICAOを検索',
+    pt: 'Buscar aeroporto, cidade, país, IATA ou ICAO',
+    ru: 'Поиск аэропорта, города, страны, IATA или ICAO',
+    zh: '搜索机场、城市、国家、IATA 或 ICAO',
+    ko: '공항, 도시, 국가, IATA 또는 ICAO 검색',
+    ar: 'ابحث عن مطار أو مدينة أو دولة أو IATA أو ICAO',
+    hi: 'हवाई अड्डा, शहर, देश, IATA या ICAO खोजें',
+    nl: 'Zoek luchthaven, stad, land, IATA of ICAO',
+    pl: 'Szukaj lotniska, miasta, kraju, IATA lub ICAO',
+    sv: 'Sök flygplats, stad, land, IATA eller ICAO',
+    id: 'Cari bandara, kota, negara, IATA atau ICAO',
+    vi: 'Tìm sân bay, thành phố, quốc gia, IATA hoặc ICAO'
+  },
+  allCountries: {
+    en: 'All countries', tr: 'Tüm ülkeler', de: 'Alle Länder',
+    es: 'Todos los países', it: 'Tutti i paesi', fr: 'Tous les pays',
+    ja: 'すべての国', pt: 'Todos os países', ru: 'Все страны',
+    zh: '所有国家', ko: '모든 국가', ar: 'كل الدول',
+    hi: 'सभी देश', nl: 'Alle landen', pl: 'Wszystkie kraje',
+    sv: 'Alla länder', id: 'Semua negara', vi: 'Tất cả quốc gia'
+  },
+  airports: {
+    en: 'Airports', tr: 'Havaalanı', de: 'Flughäfen', es: 'Aeropuertos',
+    it: 'Aeroporti', fr: 'Aéroports', ja: '空港', pt: 'Aeroportos',
+    ru: 'Аэропорты', zh: '机场', ko: '공항', ar: 'المطارات',
+    hi: 'हवाई अड्डे', nl: 'Luchthavens', pl: 'Lotniska',
+    sv: 'Flygplatser', id: 'Bandara', vi: 'Sân Bay'
+  },
+  countries: {
+    en: 'Countries', tr: 'Ülke', de: 'Länder', es: 'Países',
+    it: 'Paesi', fr: 'Pays', ja: '国', pt: 'Países',
+    ru: 'Страны', zh: '国家', ko: '국가', ar: 'الدول',
+    hi: 'देश', nl: 'Landen', pl: 'Kraje', sv: 'Länder',
+    id: 'Negara', vi: 'Quốc Gia'
+  },
+  videos: {
+    en: 'Airport videos', tr: 'Havaalanı videosu', de: 'Airport-Videos',
+    es: 'Videos de aeropuerto', it: 'Video aeroportuali',
+    fr: 'Vidéos d’aéroport', ja: '空港動画', pt: 'Vídeos de aeroporto',
+    ru: 'Видео аэропортов', zh: '机场视频', ko: '공항 영상',
+    ar: 'فيديوهات المطارات', hi: 'हवाई अड्डा वीडियो',
+    nl: 'Luchthavenvideo’s', pl: 'Filmy lotniskowe',
+    sv: 'Flygplatsvideor', id: 'Video bandara', vi: 'Video sân bay'
+  },
+  explore: {
+    en: 'Explore', tr: 'Keşfet', de: 'Entdecken', es: 'Explorar',
+    it: 'Esplora', fr: 'Explorer', ja: '探索', pt: 'Explorar',
+    ru: 'Исследовать', zh: '探索', ko: '탐색', ar: 'استكشف',
+    hi: 'खोजें', nl: 'Ontdek', pl: 'Odkrywaj', sv: 'Utforska',
+    id: 'Jelajahi', vi: 'Khám phá'
+  },
+  airportWalks: {
+    en: 'Airport Walks', tr: 'Havaalanı Yürüyüşleri', de: 'Airport Walks',
+    es: 'Paseos por Aeropuertos', it: 'Passeggiate in Aeroporto',
+    fr: 'Balades dans les Aéroports', ja: '空港ウォーク',
+    pt: 'Caminhadas em Aeroportos', ru: 'Прогулки по аэропортам',
+    zh: '机场步行', ko: '공항 워크', ar: 'جولات المطارات',
+    hi: 'एयरपोर्ट वॉक', nl: 'Luchthavenwandelingen',
+    pl: 'Spacery po Lotniskach', sv: 'Flygplatspromenader',
+    id: 'Jalan Kaki Bandara', vi: 'Đi Bộ Sân Bay'
+  },
+  loading: {
+    en: 'Loading worldwide airport data…',
+    tr: 'Dünya havaalanı verileri yükleniyor…',
+    de: 'Weltweite Flughafendaten werden geladen…',
+    es: 'Cargando datos mundiales de aeropuertos…',
+    it: 'Caricamento dati aeroportuali mondiali…',
+    fr: 'Chargement des données aéroportuaires mondiales…',
+    ja: '世界の空港データを読み込み中…',
+    pt: 'Carregando dados mundiais de aeroportos…',
+    ru: 'Загрузка данных аэропортов мира…',
+    zh: '正在加载全球机场数据…',
+    ko: '전 세계 공항 데이터를 불러오는 중…',
+    ar: 'جارٍ تحميل بيانات مطارات العالم…',
+    hi: 'विश्व हवाई अड्डा डेटा लोड हो रहा है…',
+    nl: 'Wereldwijde luchthavengegevens laden…',
+    pl: 'Ładowanie danych lotnisk świata…',
+    sv: 'Laddar världens flygplatsdata…',
+    id: 'Memuat data bandara dunia…',
+    vi: 'Đang tải dữ liệu sân bay toàn cầu…'
+  }
+};
+
+function label(key: string) {
+  return labels[key]?.[currentLang] || labels[key]?.en || key;
+}
+
+function normalize(value: string) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+const allVideos = videos as Video[];
+
+const airportVideos = allVideos
+  .filter((video) => {
+    if (video.active === false || video.active === 0) return false;
+
+    const category = normalize(video.category || '');
+    const title = normalize(video.title || '');
+
+    return (
+      category.includes('airport') ||
+      title.includes('airport')
+    );
+  })
+  .map((video) => ({
+    id: video.id,
+    title: video.title,
+    thumbnail:
+      video.thumbnail ||
+      `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`,
+    city: video.city || '',
+    country: video.country || '',
+    cityKey: normalize(video.city || ''),
+    countryKey: normalize(video.country || ''),
+    titleKey: normalize(video.title || ''),
+    url: `/${currentLang}/walks/${video.id}`
+  }));
+
+function mixedVideos<T extends { countryKey: string; cityKey: string }>(
+  items: T[]
+) {
+  const buckets = new Map<string, T[]>();
+
+  for (const item of items) {
+    const key =
+      item.countryKey ||
+      item.cityKey ||
+      'other';
+
+    if (!buckets.has(key)) {
+      buckets.set(key, []);
+    }
+
+    buckets.get(key)?.push(item);
+  }
+
+  const queues = Array.from(buckets.values());
+  const result: T[] = [];
+  let previousKey = '';
+
+  while (queues.some((queue) => queue.length > 0)) {
+    queues.sort(
+      (a, b) =>
+        b.length - a.length
+    );
+
+    let chosenIndex = queues.findIndex((queue) => {
+      const first = queue[0];
+      if (!first) return false;
+
+      const key =
+        first.countryKey ||
+        first.cityKey ||
+        'other';
+
+      return key !== previousKey;
+    });
+
+    if (chosenIndex < 0) {
+      chosenIndex = queues.findIndex(
+        (queue) => queue.length > 0
+      );
+    }
+
+    const queue = queues[chosenIndex];
+    const item = queue?.shift();
+
+    if (!item) break;
+
+    result.push(item);
+    previousKey =
+      item.countryKey ||
+      item.cityKey ||
+      'other';
+  }
+
+  return result;
+}
+
+const mixedAirportVideos =
+  mixedVideos(airportVideos);
+
+const pageTitle =
+  `${label('title')} | Old Towns Walks`;
+
+const pageDescription =
+  label('subtitle');
+
+const pageUrl =
+  Astro.url.href;
+
+const airportMapSchema = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'CollectionPage',
+      '@id': `${pageUrl}#airport-map`,
+      url: pageUrl,
+      name: pageTitle,
+      description: pageDescription,
+      inLanguage: currentLang,
+      isPartOf: {
+        '@type': 'WebSite',
+        name: 'Old Towns Walks',
+        url: Astro.url.origin
+      }
+    },
+    {
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        {
+          '@type': 'ListItem',
+          position: 1,
+          name: label('home'),
+          item: new URL(
+            `/${currentLang}/`,
+            Astro.url.origin
+          ).href
+        },
+        {
+          '@type': 'ListItem',
+          position: 2,
+          name: label('title'),
+          item: pageUrl
+        }
+      ]
+    }
+  ]
+};
+
+const clientLabels = {
+  loading: label('loading'),
+  airports: label('airports'),
+  countries: label('countries'),
+  videos: label('videos')
+};
+---
+
+<BaseLayout
+  title={pageTitle}
+  description={pageDescription}
+>
+  <main class="airport-page">
+    <div class="airport-shell">
+      <nav class="breadcrumbs" aria-label="Breadcrumb">
+        <a href={`/${currentLang}/`}>
+          {label('home')}
+        </a>
+        <span>/</span>
+        <span aria-current="page">
+          {label('title')}
+        </span>
+      </nav>
+
+      <section class="airport-hero">
+        <div>
+          <span class="eyebrow">
+            Old Towns Walks
+          </span>
+          <h1>
+            <span aria-hidden="true">✈</span>
+            {label('title')}
+          </h1>
+          <p>{label('subtitle')}</p>
+        </div>
+
+        <div class="hero-stats">
+          <div class="stat">
+            <strong id="airportCount">—</strong>
+            <span>{label('airports')}</span>
+          </div>
+          <div class="stat">
+            <strong id="countryCount">—</strong>
+            <span>{label('countries')}</span>
+          </div>
+          <div class="stat">
+            <strong>{airportVideos.length}</strong>
+            <span>{label('videos')}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="map-layout">
+        <div class="map-panel">
+          <div class="map-toolbar">
+            <div class="search-box">
+              <span aria-hidden="true">⌕</span>
+              <input
+                id="airportSearch"
+                type="search"
+                placeholder={label('search')}
+                autocomplete="off"
+              />
+            </div>
+
+            <select
+              id="airportCountryFilter"
+              aria-label={label('countries')}
+            >
+              <option value="">
+                {label('allCountries')}
+              </option>
+            </select>
+          </div>
+
+          <div class="map-stage">
+            <div
+              id="airportMap"
+              class="airport-map"
+              aria-label={label('title')}
+            ></div>
+
+            <div
+              id="airportLoading"
+              class="airport-loading"
+              role="status"
+            >
+              <span class="airport-loading-plane" aria-hidden="true">
+                ✈
+              </span>
+              <span>{label('loading')}</span>
+            </div>
+          </div>
+
+          <div class="map-footer">
+            <span id="visibleAirportCount">
+              — {label('airports')}
+            </span>
+            <span>
+              OurAirports · Esri Satellite
+            </span>
+          </div>
+        </div>
+
+        <aside class="destination-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">
+                {label('explore')}
+              </span>
+              <h2>{label('airportWalks')}</h2>
+            </div>
+
+            <span class="destination-count">
+              {airportVideos.length}
+            </span>
+          </div>
+
+          <div
+            id="airportVideoList"
+            class="destination-list"
+          >
+            {mixedAirportVideos.map((video) => (
+              <a
+                href={video.url}
+                class="destination-card"
+                data-airport-video
+                data-video-id={video.id}
+                data-city={video.cityKey}
+                data-country={video.countryKey}
+              >
+                <div class="destination-thumb">
+                  <img
+                    src={video.thumbnail}
+                    alt={video.title}
+                    loading="lazy"
+                  />
+                </div>
+
+                <div class="destination-info">
+                  <h3>{video.title}</h3>
+
+                  {(video.city || video.country) && (
+                    <p>
+                      {[video.city, video.country]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  )}
+
+                  <span>
+                    {label('airportWalks')}
+                  </span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </aside>
+      </section>
+    </div>
+  </main>
+
+  <script
+    type="application/ld+json"
+    set:html={JSON.stringify(airportMapSchema)}
+  />
+
+  <!--
+    FIX: these two library scripts must be `is:inline`.
+
+    Without `is:inline`, Astro hoists/processes external <script src="..."> tags
+    and re-emits them as `type="module"`. Module scripts are always deferred
+    (they only run after the whole document has finished parsing), while the
+    big `is:inline` script below them is a classic script that runs the
+    instant the parser reaches it. That meant the map-init script was running
+    BEFORE Leaflet / Leaflet.markercluster had executed, so `window.L` and
+    `L.markerClusterGroup` were undefined, the `if (mapElement && window.L &&
+    L.markerClusterGroup)` guard silently evaluated to false, and none of the
+    map/fetch/counter/overlay logic ever ran.
+
+    Adding `is:inline` here keeps all three scripts as classic, blocking
+    scripts that execute synchronously in document order (Leaflet ->
+    markercluster plugin -> init script), so `window.L` is guaranteed to be
+    ready when the init script needs it.
+  -->
+  <script
+    is:inline
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    crossorigin=""
+  ></script>
+
+  <script
+    is:inline
+    src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"
+  ></script>
+
+  <script
+    is:inline
+    define:vars={{
+      airportVideos,
+      clientLabels
+    }}
+  >
+    const AIRPORT_DATA_URL =
+      '/data/airports.min.json';
+
+    const mapElement =
+      document.getElementById('airportMap');
+
+    const loadingElement =
+      document.getElementById('airportLoading');
+
+    const searchInput =
+      document.getElementById('airportSearch');
+
+    const countrySelect =
+      document.getElementById('airportCountryFilter');
+
+    const airportCountElement =
+      document.getElementById('airportCount');
+
+    const countryCountElement =
+      document.getElementById('countryCount');
+
+    const visibleAirportCount =
+      document.getElementById('visibleAirportCount');
+
+    const airportVideoCards =
+      Array.from(
+        document.querySelectorAll(
+          '[data-airport-video]'
+        )
+      );
+
+    const normalizeText = (value) =>
+      String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim();
+
+    const canonicalCountryKey = (value) => {
+      const key = normalizeText(value);
+
+      const aliases = {
+        turkiye: 'turkey',
+        turkey: 'turkey',
+        'united states of america': 'united states',
+        usa: 'united states',
+        'u s a': 'united states',
+        uk: 'united kingdom',
+        'u k': 'united kingdom',
+        'republic of korea': 'south korea',
+        korea: 'south korea',
+        'viet nam': 'vietnam',
+        uae: 'united arab emirates',
+        'czech republic': 'czechia'
+      };
+
+      return aliases[key] || key;
+    };
+
+    const escapeHtml = (value) =>
+      String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+
+    const debounce = (fn, wait) => {
+      let timeoutId;
+
+      return (...args) => {
+        window.clearTimeout(timeoutId);
+
+        timeoutId = window.setTimeout(
+          () => fn(...args),
+          wait
+        );
+      };
+    };
+
+    const countryDisplayNames =
+      typeof Intl !== 'undefined' &&
+      Intl.DisplayNames
+        ? new Intl.DisplayNames(
+            ['en'],
+            { type: 'region' }
+          )
+        : null;
+
+    const getCountryName = (code) => {
+      if (!code) return '';
+
+      try {
+        return (
+          countryDisplayNames?.of(code) ||
+          code
+        );
+      } catch {
+        return code;
+      }
+    };
+
+    const typeRank = {
+      large_airport: 4,
+      medium_airport: 3,
+      small_airport: 2,
+      heliport: 1,
+      seaplane_base: 1,
+      balloonport: 1
+    };
+
+    const cleanAirportName = (value) =>
+      normalizeText(value)
+        .replace(
+          /\b(international|airport|airfield|aerodrome|municipal|regional)\b/g,
+          ' '
+        )
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const findBestAirportForVideo = (
+      video,
+      airports,
+      codeIndex,
+      cityCountryIndex
+    ) => {
+      const title =
+        normalizeText(video.titleKey);
+
+      const codeMatches =
+        String(video.title || '')
+          .toUpperCase()
+          .match(/\b[A-Z0-9]{3,4}\b/g) ||
+        [];
+
+      for (const code of codeMatches) {
+        const match =
+          codeIndex.get(code);
+
+        if (match) {
+          return match;
+        }
+      }
+
+      const cityKey =
+        normalizeText(video.city);
+
+      const countryKey =
+        canonicalCountryKey(
+          video.country
+        );
+
+      const candidates =
+        cityCountryIndex.get(
+          `${cityKey}|${countryKey}`
+        ) ||
+        cityCountryIndex.get(
+          `${cityKey}|`
+        ) ||
+        [];
+
+      if (candidates.length === 0) {
+        return null;
+      }
+
+      let best = null;
+      let bestScore = -Infinity;
+
+      for (const airport of candidates) {
+        const properties =
+          airport.properties;
+
+        const airportName =
+          cleanAirportName(
+            properties.name
+          );
+
+        let score =
+          Number(
+            typeRank[properties.type] || 0
+          ) * 10;
+
+        if (
+          properties.scheduled === 'yes'
+        ) {
+          score += 8;
+        }
+
+        if (
+          airportName.length >= 4 &&
+          title.includes(airportName)
+        ) {
+          score += 60;
+        }
+
+        if (
+          properties.iata &&
+          title.includes(
+            normalizeText(
+              properties.iata
+            )
+          )
+        ) {
+          score += 80;
+        }
+
+        if (
+          properties.icao &&
+          title.includes(
+            normalizeText(
+              properties.icao
+            )
+          )
+        ) {
+          score += 80;
+        }
+
+        if (score > bestScore) {
+          bestScore = score;
+          best = airport;
+        }
+      }
+
+      return best;
+    };
+
+    if (
+      mapElement &&
+      window.L &&
+      L.markerClusterGroup
+    ) {
+      const worldBounds = L.latLngBounds(
+        [-85, -180],
+        [85, 180]
+      );
+
+      const map = L.map(
+        mapElement,
+        {
+          worldCopyJump: false,
+          maxBoundsViscosity: 1,
+          maxZoom: 21,
+          zoomControl: true,
+          zoomSnap: 0.25,
+          zoomDelta: 0.5
+        }
+      );
+
+      const fitMinZoomToContainer = () => {
+        const boundsZoom = map.getBoundsZoom(
+          worldBounds,
+          true
+        );
+
+        map.setMinZoom(boundsZoom);
+
+        if (map.getZoom() < boundsZoom) {
+          map.setView(
+            [23, 8],
+            boundsZoom
+          );
+        }
+      };
+
+      fitMinZoomToContainer();
+      map.setView([23, 8], map.getMinZoom());
+
+      map.setMaxBounds(worldBounds);
+
+      map.attributionControl.setPrefix(
+        false
+      );
+
+      L.tileLayer(
+        'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        {
+          noWrap: true,
+          maxNativeZoom: 19,
+          maxZoom: 21,
+          attribution:
+            'Tiles &copy; Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+        }
+      ).addTo(map);
+
+      L.tileLayer(
+        'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',
+        {
+          noWrap: true,
+          maxNativeZoom: 19,
+          maxZoom: 21,
+          opacity: 0.76,
+          attribution:
+            'Labels &copy; Esri'
+        }
+      ).addTo(map);
+
+      const markerLayer =
+        L.markerClusterGroup({
+          maxClusterRadius: 42,
+          disableClusteringAtZoom: 7,
+          showCoverageOnHover: false,
+          spiderfyOnMaxZoom: true,
+          removeOutsideVisibleBounds: true,
+          animate: true,
+          animateAddingMarkers: false,
+          chunkedLoading: true,
+          chunkInterval: 80,
+          chunkDelay: 20,
+          chunkProgress: (processed, total) => {
+            if (loadingElement && total > 0) {
+              loadingElement.innerHTML = `
+                <span class="airport-loading-plane" aria-hidden="true">✈</span>
+                <span>${processed.toLocaleString()} / ${total.toLocaleString()} ${clientLabels.airports}</span>
+              `;
+            }
+          },
+          iconCreateFunction: (cluster) => {
+            const markers =
+              cluster.getAllChildMarkers();
+
+            const videoCount =
+              markers.reduce(
+                (sum, marker) =>
+                  sum +
+                  Number(
+                    marker.options.relatedVideoCount ||
+                    0
+                  ),
+                0
+              );
+
+            const airportCount =
+              cluster.getChildCount();
+
+            const hasVideos =
+              videoCount > 0;
+
+            const className =
+              hasVideos
+                ? 'airport-cluster has-videos'
+                : 'airport-cluster';
+
+            return L.divIcon({
+              html: `
+                <div class="${className}">
+                  <span class="cluster-plane">✈</span>
+                  <strong>${airportCount.toLocaleString()}</strong>
+                </div>
+              `,
+              className:
+                'airport-cluster-icon',
+              iconSize: [50, 50]
+            });
+          }
+        }).addTo(map);
+
+      const markerRecords = [];
+      const airports = [];
+      const airportById = new Map();
+      const videoAirportMap = new Map();
+
+      const createPlaneIcon = (
+        hasVideo,
+        size = 20
+      ) =>
+        L.divIcon({
+          html: `
+            <div class="airport-plane ${
+              hasVideo
+                ? 'has-video'
+                : ''
+            }">
+              ✈
+            </div>
+          `,
+          className:
+            'airport-plane-marker',
+          iconSize: [size, size],
+          iconAnchor: [
+            size / 2,
+            size / 2
+          ]
+        });
+
+      const createPopup = (airport) => {
+        const properties =
+          airport.properties;
+
+        const country =
+          getCountryName(
+            properties.isoCountry
+          );
+
+        const relatedVideos =
+          properties.relatedVideos ||
+          [];
+
+        const videosHtml =
+          relatedVideos.length > 0
+            ? `
+              <div class="airport-popup-videos">
+                ${relatedVideos
+                  .slice(0, 6)
+                  .map(
+                    (video) => `
+                      <a
+                        href="${escapeHtml(video.url)}"
+                        class="airport-popup-video"
+                      >
+                        <img
+                          src="${escapeHtml(video.thumbnail)}"
+                          alt=""
+                          loading="lazy"
+                        />
+                        <span>
+                          ${escapeHtml(video.title)}
+                        </span>
+                      </a>
+                    `
+                  )
+                  .join('')}
+              </div>
+            `
+            : '';
+
+        return `
+          <div class="airport-popup">
+            <div class="airport-popup-code">
+              <span>✈</span>
+              <strong>
+                ${escapeHtml(
+                  properties.iata ||
+                  properties.icao ||
+                  properties.ident
+                )}
+              </strong>
+            </div>
+
+            <h3>
+              ${escapeHtml(properties.name)}
+            </h3>
+
+            <p>
+              ${escapeHtml(
+                properties.municipality
+              )}
+              ${
+                properties.municipality &&
+                country
+                  ? ' · '
+                  : ''
+              }
+              ${escapeHtml(country)}
+            </p>
+
+            <div class="airport-popup-meta">
+              ${
+                properties.iata
+                  ? `<span>IATA ${escapeHtml(properties.iata)}</span>`
+                  : ''
+              }
+              ${
+                properties.icao
+                  ? `<span>ICAO ${escapeHtml(properties.icao)}</span>`
+                  : ''
+              }
+              <span>
+                ${escapeHtml(
+                  String(properties.type || '')
+                    .replace(/_/g, ' ')
+                )}
+              </span>
+            </div>
+
+            ${videosHtml}
+          </div>
+        `;
+      };
+
+      const updateVisibleCount = () => {
+        const visible =
+          markerRecords.filter(
+            (record) =>
+              markerLayer.hasLayer(
+                record.marker
+              )
+          ).length;
+
+        if (visibleAirportCount) {
+          visibleAirportCount.textContent =
+            `${visible.toLocaleString()} ${clientLabels.airports}`;
+        }
+      };
+
+      const applyFilters = () => {
+        const query =
+          normalizeText(
+            searchInput?.value || ''
+          );
+
+        const selectedCountry =
+          String(
+            countrySelect?.value || ''
+          );
+
+        markerLayer.clearLayers();
+
+        const visibleMarkers = [];
+
+        for (
+          const record of markerRecords
+        ) {
+          const properties =
+            record.airport.properties;
+
+          const matchesSearch =
+            !query ||
+            record.searchText.includes(
+              query
+            );
+
+          const matchesCountry =
+            !selectedCountry ||
+            properties.isoCountry ===
+              selectedCountry;
+
+          if (
+            matchesSearch &&
+            matchesCountry
+          ) {
+            visibleMarkers.push(
+              record.marker
+            );
+          }
+        }
+
+        markerLayer.addLayers(
+          visibleMarkers
+        );
+
+        if (visibleAirportCount) {
+          visibleAirportCount.textContent =
+            `${visibleMarkers.length.toLocaleString()} ${clientLabels.airports}`;
+        }
+
+        if (
+          query &&
+          visibleMarkers.length === 1
+        ) {
+          const marker =
+            visibleMarkers[0];
+
+          map.flyTo(
+            marker.getLatLng(),
+            11,
+            {
+              duration: 0.8
+            }
+          );
+
+          marker.openPopup();
+        } else if (
+          query &&
+          visibleMarkers.length > 1 &&
+          visibleMarkers.length <= 100
+        ) {
+          const group =
+            L.featureGroup(
+              visibleMarkers
+            );
+
+          map.fitBounds(
+            group
+              .getBounds()
+              .pad(0.18),
+            {
+              maxZoom: 7,
+              animate: true
+            }
+          );
+        }
+      };
+
+      const focusVideoAirport = (
+        videoId
+      ) => {
+        const airport =
+          videoAirportMap.get(videoId);
+
+        if (!airport) return;
+
+        const record =
+          markerRecords.find(
+            (item) =>
+              item.airport.properties.id ===
+              airport.properties.id
+          );
+
+        if (!record) return;
+
+        map.flyTo(
+          record.marker.getLatLng(),
+          Math.max(
+            map.getZoom(),
+            10
+          ),
+          {
+            duration: 0.8
+          }
+        );
+
+        setTimeout(
+          () => record.marker.openPopup(),
+          500
+        );
+      };
+
+      fetch(AIRPORT_DATA_URL, {
+        cache: 'force-cache'
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error(
+              `Airport data request failed: ${response.status}`
+            );
+          }
+
+          return response.json();
+        })
+        .then((records) => {
+          if (!Array.isArray(records)) {
+            throw new Error(
+              'Airport data format is invalid.'
+            );
+          }
+
+          const countryCodes =
+            new Set();
+
+          const codeIndex =
+            new Map();
+
+          const cityCountryIndex =
+            new Map();
+
+          for (
+            let index = 0;
+            index < records.length;
+            index += 1
+          ) {
+            const record = records[index];
+
+            const latitude =
+              Number(record.lat);
+
+            const longitude =
+              Number(record.lng);
+
+            if (
+              !Number.isFinite(latitude) ||
+              !Number.isFinite(longitude)
+            ) {
+              continue;
+            }
+
+            const type =
+              String(record.type || '');
+
+            if (
+              !type ||
+              type === 'closed'
+            ) {
+              continue;
+            }
+
+            const id =
+              String(
+                record.id ||
+                record.ident ||
+                index
+              );
+
+            const isoCountry =
+              String(record.country || '');
+
+            const municipality =
+              String(record.city || '');
+
+            const countryName =
+              getCountryName(
+                isoCountry
+              );
+
+            const airport = {
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [
+                  longitude,
+                  latitude
+                ]
+              },
+              properties: {
+                id,
+                ident:
+                  String(
+                    record.ident || ''
+                  ),
+                type,
+                name:
+                  String(
+                    record.name || ''
+                  ),
+                isoCountry,
+                municipality,
+                scheduled:
+                  String(
+                    record.scheduled || ''
+                  ),
+                iata:
+                  String(
+                    record.iata || ''
+                  ),
+                icao:
+                  String(
+                    record.icao || ''
+                  ),
+                relatedVideos: []
+              }
+            };
+
+            airports.push(airport);
+            airportById.set(
+              id,
+              airport
+            );
+
+            if (isoCountry) {
+              countryCodes.add(
+                isoCountry
+              );
+            }
+
+            [
+              airport.properties.iata,
+              airport.properties.icao,
+              airport.properties.ident
+            ]
+              .filter(Boolean)
+              .forEach((code) => {
+                codeIndex.set(
+                  String(code)
+                    .toUpperCase(),
+                  airport
+                );
+              });
+
+            const cityKey =
+              normalizeText(
+                municipality
+              );
+
+            const countryKey =
+              canonicalCountryKey(
+                countryName
+              );
+
+            const exactKey =
+              `${cityKey}|${countryKey}`;
+
+            if (
+              !cityCountryIndex.has(
+                exactKey
+              )
+            ) {
+              cityCountryIndex.set(
+                exactKey,
+                []
+              );
+            }
+
+            cityCountryIndex
+              .get(exactKey)
+              ?.push(airport);
+
+            const cityOnlyKey =
+              `${cityKey}|`;
+
+            if (
+              !cityCountryIndex.has(
+                cityOnlyKey
+              )
+            ) {
+              cityCountryIndex.set(
+                cityOnlyKey,
+                []
+              );
+            }
+
+            cityCountryIndex
+              .get(cityOnlyKey)
+              ?.push(airport);
+          }
+
+          for (
+            const video of airportVideos
+          ) {
+            const airport =
+              findBestAirportForVideo(
+                video,
+                airports,
+                codeIndex,
+                cityCountryIndex
+              );
+
+            if (!airport) continue;
+
+            airport.properties
+              .relatedVideos
+              .push(video);
+
+            videoAirportMap.set(
+              video.id,
+              airport
+            );
+          }
+
+          const sortedCountries =
+            Array.from(countryCodes)
+              .sort(
+                (a, b) =>
+                  getCountryName(a)
+                    .localeCompare(
+                      getCountryName(b)
+                    )
+              );
+
+          for (
+            const code of sortedCountries
+          ) {
+            const option =
+              document.createElement(
+                'option'
+              );
+
+            option.value = code;
+            option.textContent =
+              getCountryName(code);
+
+            countrySelect
+              ?.appendChild(option);
+          }
+
+          if (airportCountElement) {
+            airportCountElement.textContent =
+              airports.length
+                .toLocaleString();
+          }
+
+          if (countryCountElement) {
+            countryCountElement.textContent =
+              countryCodes.size
+                .toLocaleString();
+          }
+
+          const markersToAdd = [];
+
+          for (
+            const airport of airports
+          ) {
+            const properties =
+              airport.properties;
+
+            const hasVideo =
+              properties.relatedVideos
+                .length > 0;
+
+            const marker =
+              L.marker(
+                [
+                  airport.geometry
+                    .coordinates[1],
+                  airport.geometry
+                    .coordinates[0]
+                ],
+                {
+                  icon:
+                    createPlaneIcon(
+                      hasVideo,
+                      hasVideo
+                        ? 22
+                        : 16
+                    ),
+                  relatedVideoCount:
+                    properties
+                      .relatedVideos
+                      .length
+                }
+              );
+
+            marker.bindPopup(
+              createPopup(airport),
+              {
+                maxWidth: 340,
+                minWidth: 250
+              }
+            );
+
+            markersToAdd.push(marker);
+
+            const searchText =
+              [
+                properties.name,
+                properties.municipality,
+                getCountryName(
+                  properties.isoCountry
+                ),
+                properties.iata,
+                properties.icao,
+                properties.ident
+              ]
+                .map(normalizeText)
+                .join(' ');
+
+            markerRecords.push({
+              marker,
+              airport,
+              searchText
+            });
+          }
+
+          if (visibleAirportCount) {
+            visibleAirportCount.textContent =
+              `${airports.length.toLocaleString()} ${clientLabels.airports}`;
+          }
+
+          markerLayer.addLayers(markersToAdd);
+
+          const waitForClusterLoad = () => {
+            if (markerLayer.getLayers().length >= markersToAdd.length) {
+              loadingElement
+                ?.classList
+                .add('is-hidden');
+              return;
+            }
+
+            window.setTimeout(waitForClusterLoad, 120);
+          };
+
+          waitForClusterLoad();
+
+          airportVideoCards
+            .forEach((card) => {
+              const videoId =
+                card.dataset.videoId;
+
+              if (!videoId) return;
+
+              card.addEventListener(
+                'mouseenter',
+                () =>
+                  focusVideoAirport(
+                    videoId
+                  )
+              );
+
+              card.addEventListener(
+                'focus',
+                () =>
+                  focusVideoAirport(
+                    videoId
+                  )
+              );
+            });
+        })
+        .catch((error) => {
+          console.error(error);
+
+          if (loadingElement) {
+            loadingElement.innerHTML = `
+              <span class="airport-loading-plane">!</span>
+              <span>Airport data could not be loaded.</span>
+            `;
+          }
+        });
+
+      const debouncedApplyFilters =
+        debounce(applyFilters, 200);
+
+      searchInput?.addEventListener(
+        'input',
+        debouncedApplyFilters
+      );
+
+      countrySelect?.addEventListener(
+        'change',
+        applyFilters
+      );
+
+      window.addEventListener(
+        'resize',
+        () => {
+          map.invalidateSize();
+          fitMinZoomToContainer();
+        }
+      );
+    }
+  </script>
+</BaseLayout>
+
+<style is:global>
+  @import url('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css');
+  @import url('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css');
+  @import url('https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css');
+
+  .airport-page {
+    min-height: 100vh;
+    padding: 98px 24px 72px;
+    background:
+      radial-gradient(
+        circle at top right,
+        rgba(215, 182, 117, 0.06),
+        transparent 28%
+      ),
+      #0b0f17;
+    color: #f1f5f9;
+  }
+
+  .airport-shell {
+    width: min(1500px, 100%);
+    margin: 0 auto;
+  }
+
+  .breadcrumbs {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+    color: #778291;
+    font-size: 12px;
+  }
+
+  .breadcrumbs a {
+    color: #aab4c3;
+  }
+
+  .breadcrumbs a:hover {
+    color: #ffffff;
+  }
+
+  .airport-hero {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 36px;
+    padding: 34px 36px;
+    background:
+      linear-gradient(
+        135deg,
+        #151d29,
+        #101720
+      );
+    border: 1px solid #24303d;
+    border-radius: 18px;
+  }
+
+  .eyebrow,
+  .section-kicker {
+    display: block;
+    color: #d7b675;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .airport-hero h1 {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 8px 0 0;
+    color: #ffffff;
+    font-size: clamp(40px, 5vw, 68px);
+    line-height: 1;
+    letter-spacing: -0.04em;
+  }
+
+  .airport-hero h1 span {
+    color: #d7b675;
+    font-size: 0.78em;
+  }
+
+  .airport-hero p {
+    margin: 12px 0 0;
+    color: #aeb8c6;
+    font-size: 15px;
+  }
+
+  .hero-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  .stat {
+    min-width: 105px;
+    padding: 12px 14px;
+    background: #0f151e;
+    border: 1px solid #26313d;
+    border-radius: 10px;
+  }
+
+  .stat strong {
+    display: block;
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .stat span {
+    display: block;
+    margin-top: 6px;
+    color: #7f8a99;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .map-layout {
+    display: grid;
+    grid-template-columns:
+      minmax(0, 1fr)
+      340px;
+    gap: 16px;
+    margin-top: 18px;
+    align-items: stretch;
+  }
+
+  .map-panel,
+  .destination-panel {
+    overflow: hidden;
+    background: #10161e;
+    border: 1px solid #232d39;
+    border-radius: 15px;
+  }
+
+  .map-toolbar {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    background: #121922;
+    border-bottom: 1px solid #232d39;
+  }
+
+  .search-box {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    padding: 0 12px;
+    background: #0e141c;
+    border: 1px solid #283340;
+    border-radius: 9px;
+  }
+
+  .search-box span {
+    color: #7d8998;
+    font-size: 18px;
+  }
+
+  .search-box input {
+    width: 100%;
+    height: 40px;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #f2f5f8;
+    font: inherit;
+    font-size: 13px;
+  }
+
+  .search-box input::placeholder {
+    color: #677383;
+  }
+
+  #airportCountryFilter {
+    width: 220px;
+    height: 42px;
+    padding: 0 11px;
+    border: 1px solid #283340;
+    border-radius: 9px;
+    outline: 0;
+    background: #0e141c;
+    color: #dce3eb;
+    font: inherit;
+    font-size: 12px;
+  }
+
+  .map-stage {
+    position: relative;
+  }
+
+  .airport-map {
+    width: 100%;
+    height: 660px;
+    background: #111820;
+  }
+
+  .leaflet-container {
+    font-family:
+      'Plus Jakarta Sans',
+      sans-serif;
+    background: #111820;
+  }
+
+  .leaflet-tile-pane {
+    filter:
+      saturate(0.93)
+      contrast(1.04)
+      brightness(0.84);
+  }
+
+  .leaflet-overlay-pane,
+  .leaflet-marker-pane,
+  .leaflet-tooltip-pane,
+  .leaflet-popup-pane {
+    filter: none;
+  }
+
+  .airport-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background:
+      rgba(8, 13, 20, 0.72);
+    color: #dce4ec;
+    font-size: 13px;
+    backdrop-filter: blur(5px);
+    transition:
+      opacity 0.2s ease,
+      visibility 0.2s ease;
+  }
+
+  .airport-loading.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .airport-loading-plane {
+    color: #d7b675;
+    font-size: 25px;
+  }
+
+  .map-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 10px 13px;
+    border-top: 1px solid #232d39;
+    color: #718091;
+    font-size: 9px;
+  }
+
+  .destination-panel {
+    display: flex;
+    flex-direction: column;
+    height: 730px;
+  }
+
+  .panel-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 16px;
+    border-bottom: 1px solid #232d39;
+  }
+
+  .panel-heading h2 {
+    margin: 5px 0 0;
+    color: #ffffff;
+    font-size: 18px;
+  }
+
+  .destination-count {
+    display: grid;
+    place-items: center;
+    min-width: 34px;
+    height: 34px;
+    padding: 0 8px;
+    background: #17212b;
+    border: 1px solid #273442;
+    border-radius: 8px;
+    color: #d7b675;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .destination-list {
+    display: grid;
+    gap: 5px;
+    overflow-y: auto;
+    padding: 10px;
+  }
+
+  .destination-card {
+    display: grid;
+    grid-template-columns:
+      96px
+      minmax(0, 1fr);
+    gap: 9px;
+    min-width: 0;
+    padding: 5px;
+    border-radius: 8px;
+    color: inherit;
+    transition:
+      background 0.18s ease;
+  }
+
+  .destination-card:hover,
+  .destination-card:focus-visible {
+    background: #18212b;
+    outline: none;
+  }
+
+  .destination-thumb {
+    overflow: hidden;
+    width: 96px;
+    aspect-ratio: 16 / 9;
+    border-radius: 6px;
+    background: #19222c;
+  }
+
+  .destination-thumb img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .destination-info {
+    min-width: 0;
+  }
+
+  .destination-info h3 {
+    display: -webkit-box;
+    overflow: hidden;
+    margin: 1px 0 0;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .destination-info p {
+    margin: 4px 0 0;
+    overflow: hidden;
+    color: #83909f;
+    font-size: 9px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .destination-info span {
+    display: block;
+    margin-top: 5px;
+    color: #d7b675;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .airport-plane-marker {
+    background: transparent !important;
+    border: 0 !important;
+  }
+
+  .airport-plane {
+    display: grid;
+    place-items: center;
+    width: 16px;
+    height: 16px;
+    color: rgba(235, 240, 245, 0.64);
+    font-size: 13px;
+    line-height: 1;
+    text-shadow:
+      0 1px 2px
+      rgba(0, 0, 0, 0.9);
+    transform: rotate(-12deg);
+  }
+
+  .airport-plane.has-video {
+    width: 22px;
+    height: 22px;
+    color: #f2c45f;
+    font-size: 18px;
+    text-shadow:
+      0 0 5px
+      rgba(242, 196, 95, 0.65),
+      0 2px 3px
+      rgba(0, 0, 0, 0.95);
+  }
+
+  .airport-cluster-icon {
+    background: transparent !important;
+    border: 0 !important;
+  }
+
+  .airport-cluster {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 48px;
+    height: 48px;
+    background:
+      rgba(26, 34, 44, 0.9);
+    border: 2px solid
+      rgba(210, 219, 228, 0.72);
+    border-radius: 50%;
+    box-shadow:
+      0 5px 18px
+      rgba(0, 0, 0, 0.38);
+    color: #f1f5f9;
+  }
+
+  .airport-cluster.has-videos {
+    border-color: #d7b675;
+    box-shadow:
+      0 0 0 4px
+      rgba(215, 182, 117, 0.11),
+      0 5px 18px
+      rgba(0, 0, 0, 0.38);
+  }
+
+  .cluster-plane {
+    color: #aeb8c4;
+    font-size: 13px;
+  }
+
+  .airport-cluster.has-videos
+  .cluster-plane {
+    color: #f2c45f;
+  }
+
+  .airport-cluster strong {
+    font-size: 10px;
+  }
+
+  .leaflet-control-zoom a {
+    background: #111821 !important;
+    color: #dfe6ee !important;
+    border-color: #2c3744 !important;
+  }
+
+  .leaflet-control-attribution {
+    background:
+      rgba(
+        10,
+        14,
+        20,
+        0.78
+      ) !important;
+    color: #8995a4 !important;
+  }
+
+  .leaflet-control-attribution a {
+    color: #d7b675 !important;
+  }
+
+  .leaflet-popup-content-wrapper,
+  .leaflet-popup-tip {
+    background: #111821;
+    color: #e8edf3;
+  }
+
+  .leaflet-popup-content-wrapper {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #2a3542;
+    border-radius: 12px;
+    box-shadow:
+      0 18px 45px
+      rgba(0, 0, 0, 0.38);
+  }
+
+  .leaflet-popup-content {
+    margin: 0;
+    width: 290px !important;
+  }
+
+  .airport-popup {
+    padding: 14px;
+  }
+
+  .airport-popup-code {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #d7b675;
+  }
+
+  .airport-popup-code strong {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  .airport-popup h3 {
+    margin: 8px 24px 0 0;
+    color: #ffffff;
+    font-size: 15px;
+    line-height: 1.3;
+  }
+
+  .airport-popup p {
+    margin: 5px 0 0;
+    color: #8996a5;
+    font-size: 10px;
+  }
+
+  .airport-popup-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 9px;
+  }
+
+  .airport-popup-meta span {
+    padding: 4px 6px;
+    background: #19222d;
+    border: 1px solid #293643;
+    border-radius: 5px;
+    color: #b8c3cf;
+    font-size: 8px;
+    font-weight: 700;
+  }
+
+  .airport-popup-videos {
+    display: grid;
+    gap: 6px;
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px solid #26313d;
+  }
+
+  .airport-popup-video {
+    display: grid;
+    grid-template-columns:
+      72px
+      minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    color: #e6ecf2;
+  }
+
+  .airport-popup-video img {
+    display: block;
+    width: 72px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 5px;
+  }
+
+  .airport-popup-video span {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 9px;
+    font-weight: 700;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  @media (max-width: 1100px) {
+    .map-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .destination-panel {
+      height: auto;
+      max-height: 520px;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .airport-page {
+      padding:
+        82px 12px
+        56px;
+    }
+
+    .airport-hero {
+      align-items: flex-start;
+      flex-direction: column;
+      padding: 25px 22px;
+    }
+
+    .hero-stats {
+      justify-content: flex-start;
+    }
+
+    .map-toolbar {
+      flex-direction: column;
+    }
+
+    #airportCountryFilter {
+      width: 100%;
+    }
+
+    .airport-map {
+      height: 560px;
+    }
+
+    .map-footer {
+      align-items: flex-start;
+      flex-direction: column;
+    }
+
+    .destination-panel {
+      max-height: 600px;
+    }
+  }
+
+  @media (max-width: 520px) {
+    .airport-page {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+
+    .airport-hero {
+      padding: 21px 17px;
+      border-radius: 13px;
+    }
+
+    .airport-hero h1 {
+      font-size: 38px;
+    }
+
+    .hero-stats {
+      display: grid;
+      grid-template-columns:
+        repeat(3, minmax(0, 1fr));
+      width: 100%;
+    }
+
+    .stat {
+      min-width: 0;
+      padding: 10px;
+    }
+
+    .stat strong {
+      font-size: 18px;
+    }
+
+    .airport-map {
+      height: 500px;
+    }
+
+    .destination-card {
+      grid-template-columns:
+        88px
+        minmax(0, 1fr);
+    }
+
+    .destination-thumb {
+      width: 88px;
+    }
+  }
+</style>

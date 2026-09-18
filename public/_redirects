@@ -1,5 +1,4 @@
-﻿@'
-/es/about/ /about 301
+﻿/es/about/ /about 301
 /tr/about/ /about 301
 /ar/about/ /about 301
 /it/about/ /about 301
@@ -9,10 +8,7 @@
 /id/about/ /about 301
 /ru/about/ /about 301
 /ja/about/ /about 301
-
 /zh/privacy/ /privacy 301
 /it/privacy/ /privacy 301
-
 /hotels /en/hotels 301
 /journal /en/ 301
-'@ | Set-Content -Encoding utf8 .\public\_redirects

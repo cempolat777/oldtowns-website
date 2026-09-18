@@ -1,62 +1,79 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const metaTitle = 'About Us | Old Towns Walks';
+const metaDescription = 'Learn about Old Towns Walks, a travel video platform for immersive walking tours, destination discovery, original 4K footage, and curated travel videos.';
+const canonicalUrl = new URL('/about', Astro.url.origin).href;
+
+const aboutSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'AboutPage',
+  url: canonicalUrl,
+  name: metaTitle,
+  description: metaDescription,
+  inLanguage: 'en',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Old Towns Walks',
+    url: Astro.url.origin
+  }
+};
 ---
 
-<BaseLayout title="About Us - Old Towns Walks" description="Learn more about Old Towns Walks, our mission, and high-quality 4K walking tour video production.">
+<BaseLayout title={metaTitle} description={metaDescription} canonical={canonicalUrl}>
   <div class="about-container">
-    
-    <!-- Başlık Kartı -->
+    <a href="/en/" class="back-link">← Back to Home</a>
+
     <div class="info-card header-card">
-      <h1>About <span class="highlight">Old Towns Walks</span></h1>
-      <p class="subtitle">Your ultimate destination for immersive, high-definition 4K walking tours around the world.</p>
+      <h1>About Us <span class="highlight">Old Towns Walks</span></h1>
+      <p class="subtitle">Immersive walking tours and destination videos that help you explore places around the world from your screen.</p>
     </div>
 
-    <!-- Hikaye Kartı -->
     <div class="info-card">
       <p>
-        Welcome to <strong>Old Towns Walks</strong>. Whether you are looking to explore historic European old towns, tranquil coastal paths, bustling street food markets, or relaxing rain walks, our videos deliver authentic sights and real ambient soundscapes.
+        Old Towns Walks is a travel video discovery platform focused on real streets, neighborhoods,
+        old towns, waterfronts, airports, markets, and everyday city life. Our goal is to make
+        destinations easy to explore through long-form, visually clear video experiences.
       </p>
       <p>
-        We focus entirely on pure point-of-view (POV) perspectives without intrusive music commentary, allowing you to experience every destination as if you were walking there yourself.
+        We publish original walking content and may also organize selected videos that are publicly
+        embeddable from third-party platforms. External videos remain hosted by and belong to their
+        original publishers. Our original productions prioritize natural point-of-view footage,
+        real ambient sound, and a calm, narration-free viewing style.
       </p>
     </div>
 
-    <!-- Özellikler Kartı -->
     <div class="info-card">
-      <h2 class="card-title">Our Production Quality</h2>
-      
+      <h2 class="card-title">How Old Towns Walks Works</h2>
       <div class="features-grid">
         <div class="feature-box">
-          <h3>Ultra HD 4K 60FPS</h3>
-          <p>Crystal clear video footage recorded in native 4K resolution optimized for large screens.</p>
+          <h3>Original Walking Tours</h3>
+          <p>Our own productions are created for immersive viewing, with high-resolution footage and on-location sound whenever available.</p>
         </div>
-
         <div class="feature-box">
-          <h3>Binaural 3D Audio</h3>
-          <p>Immersive spatial sound recorded on-site to recreate authentic ambient soundscapes.</p>
+          <h3>Curated Destination Videos</h3>
+          <p>Selected embeddable travel videos help expand coverage across cities and destinations beyond our own filming locations.</p>
         </div>
-
         <div class="feature-box">
-          <h3>Natural Experience</h3>
-          <p>Pure walking perspectives without speech interruptions for total relaxation.</p>
+          <h3>Useful Travel Context</h3>
+          <p>Pages are organized around destinations, routes, airports, and nearby travel information so visitors can discover related places more easily.</p>
         </div>
       </div>
     </div>
 
-    <!-- İletişim Kartı -->
     <div class="info-card contact-card">
       <div>
         <h2>Get in Touch</h2>
-        <p>Have questions, location suggestions, or business inquiries?</p>
+        <p>Have a question, location suggestion, content inquiry, or business request?</p>
       </div>
       <a href="/contact" class="btn-primary">Contact Us</a>
     </div>
-
   </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(aboutSchema)} />
 </BaseLayout>
 
 <style>
-  /* Sayfayı Merkeze Alma */
   .about-container {
     max-width: 900px;
     width: 100%;
@@ -65,7 +82,15 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     box-sizing: border-box;
   }
 
-  /* Ortak Kart Yapısı */
+  .back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: #fbc02d;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
   .info-card {
     background-color: #181818;
     border: 1px solid #272727;
@@ -76,7 +101,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     box-sizing: border-box;
   }
 
-  /* Başlık Kartına Özel Stiller */
   .header-card h1 {
     font-size: 2.25rem;
     font-weight: 800;
@@ -84,9 +108,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin: 0 0 8px 0;
   }
 
-  .highlight {
-    color: #fbc02d;
-  }
+  .highlight { color: #fbc02d; }
 
   .subtitle {
     font-size: 1.05rem;
@@ -95,7 +117,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin: 0;
   }
 
-  /* İçerik Yazıları */
   .info-card p {
     font-size: 1.05rem;
     line-height: 1.7;
@@ -103,13 +124,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin: 0 0 16px 0;
   }
 
-  .info-card p:last-child {
-    margin-bottom: 0;
-  }
-
-  .info-card p strong {
-    color: #ffffff;
-  }
+  .info-card p:last-child { margin-bottom: 0; }
 
   .card-title {
     font-size: 1.35rem;
@@ -118,7 +133,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin: 0 0 20px 0;
   }
 
-  /* 3'lü Izgara Yapısı */
   .features-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -146,7 +160,6 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     margin: 0;
   }
 
-  /* İletişim Kartı */
   .contact-card {
     display: flex;
     align-items: center;
@@ -175,28 +188,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-radius: 8px;
     text-decoration: none;
     white-space: nowrap;
-    transition: background-color 0.2s ease;
   }
 
-  .btn-primary:hover {
-    background-color: #fdd835;
-  }
-
-  /* Mobil Uyum */
   @media (max-width: 640px) {
-    .about-container {
-      padding: 20px 16px;
-    }
-    
-    .contact-card {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .btn-primary {
-      width: 100%;
-      text-align: center;
-      box-sizing: border-box;
-    }
+    .about-container { padding: 20px 16px; }
+    .contact-card { flex-direction: column; align-items: flex-start; }
+    .btn-primary { width: 100%; text-align: center; box-sizing: border-box; }
   }
 </style>

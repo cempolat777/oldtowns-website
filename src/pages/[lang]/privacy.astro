@@ -1,0 +1,884 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, defaultLang } from '../../i18n/ui';
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const privacyContent = {
+  en: {
+    "metaTitle": "Privacy Policy | Old Towns Walks",
+    "metaDescription": "Learn how Old Towns Walks handles website data, analytics, cookies, embedded content, advertising technologies, privacy choices, and third-party services.",
+    "backHome": "Back to Home",
+    "headingLead": "Privacy",
+    "headingAccent": "Policy",
+    "lastUpdated": "Last updated: September 16, 2026",
+    "intro1": "Old Towns Walks respects your privacy. This policy explains what information may be processed when you use oldtownswalks.com, why it may be processed, which third-party services may receive data, and what choices are available to you.",
+    "intro2": "This policy applies to this website. External websites, video platforms, advertisers, booking providers, and other third-party services have their own privacy practices and policies.",
+    "s1Title": "Information We Process",
+    "s1Text": "When you contact us, you may voluntarily provide your name, email address, message content, and other details. When you visit the site, technical data may also be processed automatically, including IP address, browser and device information, operating system, referring page, requested pages, timestamps, approximate network-derived location, and security or performance logs.",
+    "s2Title": "Analytics and Server Logs",
+    "s2Text": "We use Google Analytics 4 to understand website usage and measure traffic and performance. Google may process device, browser, network, identifier, and interaction information according to its policies and our configuration. Hosting, content-delivery, and security providers may also process technical request data and security logs to operate and protect the site.",
+    "s3Title": "Cookies and Similar Technologies",
+    "s3Text": "The site and services used on it may use cookies, local storage, pixels, or similar technologies for essential operation, security, analytics, preferences, embedded content, and advertising where enabled. You can control or delete cookies through your browser, although blocking some technologies may affect website features.",
+    "s4Title": "Embedded Content and Third Parties",
+    "s4Text": "Pages may contain embedded videos or other content from platforms such as YouTube. Loading or interacting with embedded content may allow the provider to receive technical and usage information and to use cookies or similar identifiers under its own policies. External content remains hosted by the relevant third party.",
+    "s5Title": "Advertising and Google Services",
+    "s5Text": "If advertising services such as Google AdSense are enabled, Google and other advertising vendors may use cookies or similar technologies to serve, measure, limit, and personalize ads. Google advertising cookies can allow Google and its partners to serve ads based on visits to this website and/or other websites. Google advertising preferences can be managed through My Ad Center.",
+    "s6Title": "Sharing, International Processing, and Retention",
+    "s6Text": "Information may be processed by providers supporting hosting, security, analytics, embedded media, advertising, communications, or other website functions, and may be disclosed when required by law or to protect rights and security. Because providers may operate internationally, data may be processed outside your country. We retain information only as long as reasonably necessary for the relevant purpose or legal obligations.",
+    "s7Title": "Your Privacy Choices and Rights",
+    "s7Text": "Depending on where you live, you may have rights to request access, correction, deletion, restriction, portability, objection to certain processing, or withdrawal of consent where processing relies on consent. Legal exceptions may apply. Browser controls, available consent controls, Google advertising settings, and third-party settings may also help manage certain choices.",
+    "s8Title": "Children, Security, and Policy Changes",
+    "s8Text": "Old Towns Walks is not directed to children under 13 and we do not knowingly request personal information from children under 13. We use reasonable technical and organizational measures to protect the site, but no internet transmission or storage method can be guaranteed completely secure. We may update this policy when the site, services, legal requirements, or third-party tools change.",
+    "resourcesTitle": "Third-Party Privacy Resources",
+    "resourcesIntro": "These links provide additional information about services that may process data when you use this website:",
+    "googlePrivacy": "Google Privacy Policy",
+    "googlePartners": "Google Partner Sites",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Cloudflare Privacy Policy",
+    "contactTitle": "Privacy Questions?",
+    "contactText": "Contact us if you have a privacy question or want to make a privacy-related request.",
+    "contactButton": "Contact Us",
+  },
+  tr: {
+    "metaTitle": "Gizlilik Politikası | Old Towns Walks",
+    "metaDescription": "Old Towns Walks sitesinde verilerin, analizlerin, çerezlerin, gömülü içeriklerin, reklam teknolojilerinin, gizlilik tercihlerinin ve üçüncü taraf hizmetlerinin nasıl ele alındığını öğrenin.",
+    "backHome": "Ana Sayfaya Dön",
+    "headingLead": "Gizlilik",
+    "headingAccent": "Politikası",
+    "lastUpdated": "Son güncelleme: 16 Eylül 2026",
+    "intro1": "Old Towns Walks gizliliğinize saygı duyar. Bu politika, oldtownswalks.com sitesini kullandığınızda hangi bilgilerin işlenebileceğini, neden işlenebileceğini, hangi üçüncü taraf hizmetlerin veri alabileceğini ve hangi seçeneklere sahip olduğunuzu açıklar.",
+    "intro2": "Bu politika bu web sitesi için geçerlidir. Harici web siteleri, video platformları, reklamverenler, rezervasyon sağlayıcıları ve diğer üçüncü taraf hizmetlerin kendi gizlilik uygulamaları ve politikaları vardır.",
+    "s1Title": "İşleyebileceğimiz Bilgiler",
+    "s1Text": "Bizimle iletişime geçtiğinizde adınızı, e-posta adresinizi, mesaj içeriğinizi ve diğer bilgileri gönüllü olarak paylaşabilirsiniz. Siteyi ziyaret ettiğinizde IP adresi, tarayıcı ve cihaz bilgileri, işletim sistemi, yönlendiren sayfa, istenen sayfalar, zaman damgaları, ağdan türetilen yaklaşık konum ve güvenlik veya performans günlükleri gibi teknik veriler de otomatik olarak işlenebilir.",
+    "s2Title": "Analiz ve Sunucu Günlükleri",
+    "s2Text": "Web sitesi kullanımını anlamak, trafik ve performansı ölçmek için Google Analytics 4 kullanıyoruz. Google, kendi politikaları ve yapılandırmamıza göre cihaz, tarayıcı, ağ, tanımlayıcı ve etkileşim bilgilerini işleyebilir. Barındırma, içerik dağıtımı ve güvenlik sağlayıcıları da siteyi çalıştırmak ve korumak için teknik istek verilerini ve güvenlik günlüklerini işleyebilir.",
+    "s3Title": "Çerezler ve Benzer Teknolojiler",
+    "s3Text": "Site ve üzerinde kullanılan hizmetler; temel işlevler, güvenlik, analiz, tercihler, gömülü içerik ve etkinleştirilmişse reklam amacıyla çerezler, yerel depolama, pikseller veya benzer teknolojiler kullanabilir. Çerezleri tarayıcınızdan kontrol edebilir veya silebilirsiniz; ancak bazı teknolojilerin engellenmesi site özelliklerini etkileyebilir.",
+    "s4Title": "Gömülü İçerik ve Üçüncü Taraflar",
+    "s4Text": "Sayfalarda YouTube gibi platformlardan gömülü videolar veya başka içerikler bulunabilir. Gömülü içeriğin yüklenmesi ya da onunla etkileşim kurulması, sağlayıcının teknik ve kullanım bilgileri almasına ve kendi politikaları uyarınca çerezler veya benzer tanımlayıcılar kullanmasına olanak verebilir. Harici içerik ilgili üçüncü taraf tarafından barındırılmaya devam eder.",
+    "s5Title": "Reklamcılık ve Google Hizmetleri",
+    "s5Text": "Google AdSense gibi reklam hizmetleri etkinleştirilirse Google ve diğer reklam sağlayıcıları reklam sunmak, ölçmek, sınırlandırmak ve kişiselleştirmek için çerezler veya benzer teknolojiler kullanabilir. Google reklam çerezleri, Google ve iş ortaklarının bu siteye ve/veya diğer sitelere yapılan ziyaretlere göre reklam göstermesine olanak tanıyabilir. Google reklam tercihleri My Ad Center üzerinden yönetilebilir.",
+    "s6Title": "Paylaşım, Uluslararası İşleme ve Saklama",
+    "s6Text": "Bilgiler; barındırma, güvenlik, analiz, gömülü medya, reklam, iletişim veya diğer site işlevlerini destekleyen sağlayıcılar tarafından işlenebilir ve yasa gerektirdiğinde ya da hakları ve güvenliği korumak için açıklanabilir. Sağlayıcılar uluslararası faaliyet gösterebildiği için veriler ülkeniz dışında işlenebilir. Bilgileri yalnızca ilgili amaç veya yasal yükümlülükler için makul ölçüde gerekli olduğu sürece saklarız.",
+    "s7Title": "Gizlilik Seçenekleriniz ve Haklarınız",
+    "s7Text": "Yaşadığınız yere bağlı olarak erişim, düzeltme, silme, kısıtlama, veri taşınabilirliği, belirli işlemlere itiraz veya işlemenin rızaya dayandığı durumlarda rızayı geri çekme haklarına sahip olabilirsiniz. Yasal istisnalar uygulanabilir. Tarayıcı kontrolleri, mevcut onay kontrolleri, Google reklam ayarları ve üçüncü taraf ayarları da bazı tercihleri yönetmenize yardımcı olabilir.",
+    "s8Title": "Çocuklar, Güvenlik ve Politika Değişiklikleri",
+    "s8Text": "Old Towns Walks 13 yaşın altındaki çocuklara yönelik değildir ve 13 yaşın altındaki çocuklardan bilerek kişisel bilgi talep etmeyiz. Siteyi korumak için makul teknik ve organizasyonel önlemler kullanırız; ancak hiçbir internet iletimi veya depolama yöntemi tamamen güvenli olarak garanti edilemez. Site, hizmetler, yasal gereklilikler veya üçüncü taraf araçlar değiştiğinde bu politikayı güncelleyebiliriz.",
+    "resourcesTitle": "Üçüncü Taraf Gizlilik Kaynakları",
+    "resourcesIntro": "Bu bağlantılar, bu web sitesini kullandığınızda veri işleyebilecek hizmetler hakkında ek bilgi sağlar:",
+    "googlePrivacy": "Google Gizlilik Politikası",
+    "googlePartners": "Google İş Ortağı Siteleri",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Cloudflare Gizlilik Politikası",
+    "contactTitle": "Gizlilik Sorunuz mu Var?",
+    "contactText": "Gizlilikle ilgili bir sorunuz veya talebiniz varsa bizimle iletişime geçin.",
+    "contactButton": "Bize Ulaşın",
+  },
+  de: {
+    "metaTitle": "Datenschutz | Old Towns Walks",
+    "metaDescription": "Erfahren Sie, wie Old Towns Walks Websitedaten, Analysen, Cookies, eingebettete Inhalte, Werbetechnologien, Datenschutzoptionen und Drittanbieter behandelt.",
+    "backHome": "Zur Startseite",
+    "headingLead": "Datenschutz",
+    "headingAccent": "richtlinie",
+    "lastUpdated": "Zuletzt aktualisiert: 16. September 2026",
+    "intro1": "Old Towns Walks respektiert Ihre Privatsphäre. Diese Richtlinie erklärt, welche Informationen bei der Nutzung von oldtownswalks.com verarbeitet werden können, warum dies geschieht, welche Drittanbieter Daten erhalten können und welche Wahlmöglichkeiten Sie haben.",
+    "intro2": "Diese Richtlinie gilt für diese Website. Externe Websites, Videoplattformen, Werbeanbieter, Buchungsanbieter und andere Drittanbieterdienste haben eigene Datenschutzpraktiken und Richtlinien.",
+    "s1Title": "Informationen, die wir verarbeiten",
+    "s1Text": "Wenn Sie uns kontaktieren, können Sie freiwillig Ihren Namen, Ihre E-Mail-Adresse, den Inhalt Ihrer Nachricht und weitere Angaben übermitteln. Beim Besuch der Website können außerdem automatisch technische Daten verarbeitet werden, darunter IP-Adresse, Browser- und Geräteinformationen, Betriebssystem, verweisende Seite, aufgerufene Seiten, Zeitstempel, ungefähre netzwerkbasierte Position sowie Sicherheits- oder Leistungsprotokolle.",
+    "s2Title": "Analysen und Serverprotokolle",
+    "s2Text": "Wir verwenden Google Analytics 4, um die Nutzung der Website zu verstehen sowie Traffic und Leistung zu messen. Google kann Geräte-, Browser-, Netzwerk-, Kennungs- und Interaktionsdaten gemäß seinen Richtlinien und unserer Konfiguration verarbeiten. Hosting-, Content-Delivery- und Sicherheitsanbieter können ebenfalls technische Anfragedaten und Sicherheitsprotokolle verarbeiten, um die Website zu betreiben und zu schützen.",
+    "s3Title": "Cookies und ähnliche Technologien",
+    "s3Text": "Die Website und die darauf verwendeten Dienste können Cookies, lokalen Speicher, Pixel oder ähnliche Technologien für grundlegende Funktionen, Sicherheit, Analysen, Einstellungen, eingebettete Inhalte und – sofern aktiviert – Werbung verwenden. Sie können Cookies über Ihren Browser steuern oder löschen; das Blockieren bestimmter Technologien kann jedoch Funktionen der Website beeinträchtigen.",
+    "s4Title": "Eingebettete Inhalte und Drittanbieter",
+    "s4Text": "Seiten können eingebettete Videos oder andere Inhalte von Plattformen wie YouTube enthalten. Das Laden oder die Interaktion mit solchen Inhalten kann dem Anbieter ermöglichen, technische und Nutzungsinformationen zu erhalten und gemäß seinen eigenen Richtlinien Cookies oder ähnliche Kennungen zu verwenden. Externe Inhalte bleiben beim jeweiligen Drittanbieter gehostet.",
+    "s5Title": "Werbung und Google-Dienste",
+    "s5Text": "Wenn Werbedienste wie Google AdSense aktiviert werden, können Google und andere Werbeanbieter Cookies oder ähnliche Technologien nutzen, um Anzeigen auszuliefern, zu messen, zu begrenzen und zu personalisieren. Google-Werbecookies können Google und seinen Partnern ermöglichen, Anzeigen auf Grundlage von Besuchen dieser und/oder anderer Websites zu schalten. Google-Werbeeinstellungen können über My Ad Center verwaltet werden.",
+    "s6Title": "Weitergabe, internationale Verarbeitung und Speicherung",
+    "s6Text": "Informationen können von Anbietern verarbeitet werden, die Hosting, Sicherheit, Analysen, eingebettete Medien, Werbung, Kommunikation oder andere Websitefunktionen unterstützen, und können offengelegt werden, wenn dies gesetzlich erforderlich ist oder dem Schutz von Rechten und Sicherheit dient. Da Anbieter international tätig sein können, können Daten außerhalb Ihres Landes verarbeitet werden. Wir speichern Informationen nur so lange, wie dies für den jeweiligen Zweck oder gesetzliche Pflichten angemessen erforderlich ist.",
+    "s7Title": "Ihre Datenschutzoptionen und Rechte",
+    "s7Text": "Je nach Ihrem Wohnort können Sie Rechte auf Auskunft, Berichtigung, Löschung, Einschränkung, Datenübertragbarkeit, Widerspruch gegen bestimmte Verarbeitungen oder Widerruf einer Einwilligung haben, wenn die Verarbeitung auf Einwilligung beruht. Gesetzliche Ausnahmen können gelten. Browserkontrollen, verfügbare Einwilligungsoptionen, Google-Werbeeinstellungen und Drittanbietereinstellungen können ebenfalls bei der Verwaltung bestimmter Entscheidungen helfen.",
+    "s8Title": "Kinder, Sicherheit und Änderungen dieser Richtlinie",
+    "s8Text": "Old Towns Walks richtet sich nicht an Kinder unter 13 Jahren und wir fordern wissentlich keine personenbezogenen Daten von Kindern unter 13 Jahren an. Wir setzen angemessene technische und organisatorische Maßnahmen zum Schutz der Website ein, doch keine Internetübertragung oder Speichermethode kann als vollständig sicher garantiert werden. Wir können diese Richtlinie aktualisieren, wenn sich Website, Dienste, gesetzliche Anforderungen oder Drittanbieterwerkzeuge ändern.",
+    "resourcesTitle": "Datenschutzressourcen von Drittanbietern",
+    "resourcesIntro": "Diese Links bieten zusätzliche Informationen zu Diensten, die bei der Nutzung dieser Website Daten verarbeiten können:",
+    "googlePrivacy": "Google-Datenschutzerklärung",
+    "googlePartners": "Google-Partnerwebsites",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Cloudflare-Datenschutzerklärung",
+    "contactTitle": "Fragen zum Datenschutz?",
+    "contactText": "Kontaktieren Sie uns, wenn Sie eine Datenschutzfrage haben oder eine datenschutzbezogene Anfrage stellen möchten.",
+    "contactButton": "Kontakt",
+  },
+  es: {
+    "metaTitle": "Política de Privacidad | Old Towns Walks",
+    "metaDescription": "Conoce cómo Old Towns Walks gestiona datos del sitio, analítica, cookies, contenido incrustado, tecnologías publicitarias, opciones de privacidad y servicios de terceros.",
+    "backHome": "Volver al inicio",
+    "headingLead": "Política de",
+    "headingAccent": "Privacidad",
+    "lastUpdated": "Última actualización: 16 de septiembre de 2026",
+    "intro1": "Old Towns Walks respeta tu privacidad. Esta política explica qué información puede procesarse cuando utilizas oldtownswalks.com, por qué puede procesarse, qué servicios de terceros pueden recibir datos y qué opciones tienes disponibles.",
+    "intro2": "Esta política se aplica a este sitio web. Los sitios externos, plataformas de vídeo, anunciantes, proveedores de reservas y otros servicios de terceros tienen sus propias prácticas y políticas de privacidad.",
+    "s1Title": "Información que procesamos",
+    "s1Text": "Cuando te pones en contacto con nosotros, puedes proporcionar voluntariamente tu nombre, dirección de correo electrónico, contenido del mensaje y otros datos. Al visitar el sitio, también pueden procesarse automáticamente datos técnicos como dirección IP, información del navegador y dispositivo, sistema operativo, página de referencia, páginas solicitadas, marcas de tiempo, ubicación aproximada derivada de la red y registros de seguridad o rendimiento.",
+    "s2Title": "Analítica y registros del servidor",
+    "s2Text": "Utilizamos Google Analytics 4 para comprender el uso del sitio web y medir el tráfico y el rendimiento. Google puede procesar información del dispositivo, navegador, red, identificadores e interacciones según sus políticas y nuestra configuración. Los proveedores de alojamiento, distribución de contenido y seguridad también pueden procesar datos técnicos de solicitudes y registros de seguridad para operar y proteger el sitio.",
+    "s3Title": "Cookies y tecnologías similares",
+    "s3Text": "El sitio y los servicios utilizados en él pueden usar cookies, almacenamiento local, píxeles o tecnologías similares para funciones esenciales, seguridad, analítica, preferencias, contenido incrustado y publicidad cuando esté habilitada. Puedes controlar o eliminar cookies desde tu navegador, aunque bloquear algunas tecnologías puede afectar funciones del sitio.",
+    "s4Title": "Contenido incrustado y terceros",
+    "s4Text": "Las páginas pueden incluir vídeos incrustados u otro contenido de plataformas como YouTube. Cargar o interactuar con contenido incrustado puede permitir al proveedor recibir información técnica y de uso y utilizar cookies o identificadores similares conforme a sus propias políticas. El contenido externo permanece alojado por el tercero correspondiente.",
+    "s5Title": "Publicidad y servicios de Google",
+    "s5Text": "Si se habilitan servicios publicitarios como Google AdSense, Google y otros proveedores de publicidad pueden usar cookies o tecnologías similares para servir, medir, limitar y personalizar anuncios. Las cookies publicitarias de Google pueden permitir que Google y sus socios muestren anuncios basados en visitas a este y/o otros sitios web. Las preferencias publicitarias de Google pueden gestionarse mediante My Ad Center.",
+    "s6Title": "Compartición, procesamiento internacional y conservación",
+    "s6Text": "La información puede ser procesada por proveedores que apoyan el alojamiento, seguridad, analítica, medios incrustados, publicidad, comunicaciones u otras funciones del sitio, y puede divulgarse cuando lo exija la ley o para proteger derechos y seguridad. Como los proveedores pueden operar internacionalmente, los datos pueden procesarse fuera de tu país. Conservamos la información solo durante el tiempo razonablemente necesario para la finalidad correspondiente o las obligaciones legales.",
+    "s7Title": "Tus opciones y derechos de privacidad",
+    "s7Text": "Según dónde vivas, puedes tener derechos para solicitar acceso, corrección, eliminación, restricción, portabilidad, oponerte a determinados tratamientos o retirar el consentimiento cuando el tratamiento dependa de él. Pueden aplicarse excepciones legales. Los controles del navegador, controles de consentimiento disponibles, ajustes publicitarios de Google y ajustes de terceros también pueden ayudarte a gestionar determinadas opciones.",
+    "s8Title": "Menores, seguridad y cambios en la política",
+    "s8Text": "Old Towns Walks no está dirigido a menores de 13 años y no solicitamos conscientemente información personal de menores de 13 años. Utilizamos medidas técnicas y organizativas razonables para proteger el sitio, pero ningún método de transmisión o almacenamiento por Internet puede garantizarse como completamente seguro. Podemos actualizar esta política cuando cambien el sitio, los servicios, los requisitos legales o las herramientas de terceros.",
+    "resourcesTitle": "Recursos de privacidad de terceros",
+    "resourcesIntro": "Estos enlaces ofrecen información adicional sobre servicios que pueden procesar datos cuando utilizas este sitio web:",
+    "googlePrivacy": "Política de Privacidad de Google",
+    "googlePartners": "Sitios asociados de Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Política de Privacidad de Cloudflare",
+    "contactTitle": "¿Preguntas sobre privacidad?",
+    "contactText": "Contáctanos si tienes una pregunta sobre privacidad o deseas realizar una solicitud relacionada con tus datos.",
+    "contactButton": "Contáctanos",
+  },
+  fr: {
+    "metaTitle": "Politique de confidentialité | Old Towns Walks",
+    "metaDescription": "Découvrez comment Old Towns Walks traite les données du site, les analyses, les cookies, les contenus intégrés, les technologies publicitaires, les choix de confidentialité et les services tiers.",
+    "backHome": "Retour à l’accueil",
+    "headingLead": "Politique de",
+    "headingAccent": "confidentialité",
+    "lastUpdated": "Dernière mise à jour : 16 septembre 2026",
+    "intro1": "Old Towns Walks respecte votre vie privée. Cette politique explique quelles informations peuvent être traitées lorsque vous utilisez oldtownswalks.com, pourquoi elles peuvent l’être, quels services tiers peuvent recevoir des données et quels choix s’offrent à vous.",
+    "intro2": "Cette politique s’applique à ce site web. Les sites externes, plateformes vidéo, annonceurs, services de réservation et autres services tiers disposent de leurs propres pratiques et politiques de confidentialité.",
+    "s1Title": "Informations que nous traitons",
+    "s1Text": "Lorsque vous nous contactez, vous pouvez fournir volontairement votre nom, votre adresse e-mail, le contenu de votre message et d’autres informations. Lorsque vous visitez le site, des données techniques peuvent également être traitées automatiquement, notamment l’adresse IP, les informations sur le navigateur et l’appareil, le système d’exploitation, la page de provenance, les pages demandées, les horodatages, la localisation approximative dérivée du réseau et les journaux de sécurité ou de performance.",
+    "s2Title": "Analyses et journaux serveur",
+    "s2Text": "Nous utilisons Google Analytics 4 pour comprendre l’utilisation du site et mesurer le trafic et les performances. Google peut traiter des informations relatives à l’appareil, au navigateur, au réseau, aux identifiants et aux interactions conformément à ses politiques et à notre configuration. Les fournisseurs d’hébergement, de diffusion de contenu et de sécurité peuvent également traiter des données techniques de requête et des journaux de sécurité afin d’exploiter et de protéger le site.",
+    "s3Title": "Cookies et technologies similaires",
+    "s3Text": "Le site et les services qui y sont utilisés peuvent recourir à des cookies, au stockage local, à des pixels ou à des technologies similaires pour le fonctionnement essentiel, la sécurité, les analyses, les préférences, les contenus intégrés et la publicité lorsqu’elle est activée. Vous pouvez contrôler ou supprimer les cookies depuis votre navigateur, même si le blocage de certaines technologies peut affecter certaines fonctionnalités.",
+    "s4Title": "Contenus intégrés et tiers",
+    "s4Text": "Les pages peuvent contenir des vidéos intégrées ou d’autres contenus provenant de plateformes telles que YouTube. Le chargement ou l’interaction avec ces contenus peut permettre au fournisseur de recevoir des informations techniques et d’utilisation et d’employer des cookies ou identifiants similaires selon ses propres politiques. Les contenus externes restent hébergés par le tiers concerné.",
+    "s5Title": "Publicité et services Google",
+    "s5Text": "Si des services publicitaires tels que Google AdSense sont activés, Google et d’autres fournisseurs publicitaires peuvent utiliser des cookies ou des technologies similaires pour diffuser, mesurer, limiter et personnaliser les annonces. Les cookies publicitaires de Google peuvent permettre à Google et à ses partenaires de diffuser des annonces en fonction des visites sur ce site et/ou d’autres sites. Les préférences publicitaires Google peuvent être gérées dans My Ad Center.",
+    "s6Title": "Partage, traitement international et conservation",
+    "s6Text": "Les informations peuvent être traitées par des prestataires prenant en charge l’hébergement, la sécurité, les analyses, les médias intégrés, la publicité, les communications ou d’autres fonctions du site, et peuvent être divulguées lorsque la loi l’exige ou pour protéger des droits et la sécurité. Les prestataires pouvant opérer à l’international, les données peuvent être traitées hors de votre pays. Nous conservons les informations uniquement pendant la durée raisonnablement nécessaire à la finalité concernée ou aux obligations légales.",
+    "s7Title": "Vos choix et droits en matière de confidentialité",
+    "s7Text": "Selon votre lieu de résidence, vous pouvez disposer de droits d’accès, de rectification, d’effacement, de limitation, de portabilité, d’opposition à certains traitements ou de retrait du consentement lorsque le traitement repose sur celui-ci. Des exceptions légales peuvent s’appliquer. Les contrôles du navigateur, les outils de consentement disponibles, les paramètres publicitaires Google et les paramètres des tiers peuvent également vous aider à gérer certains choix.",
+    "s8Title": "Enfants, sécurité et modifications de la politique",
+    "s8Text": "Old Towns Walks ne s’adresse pas aux enfants de moins de 13 ans et nous ne demandons pas sciemment d’informations personnelles à des enfants de moins de 13 ans. Nous utilisons des mesures techniques et organisationnelles raisonnables pour protéger le site, mais aucune méthode de transmission ou de stockage sur Internet ne peut être garantie comme totalement sûre. Nous pouvons mettre à jour cette politique lorsque le site, les services, les exigences légales ou les outils tiers évoluent.",
+    "resourcesTitle": "Ressources de confidentialité tierces",
+    "resourcesIntro": "Ces liens fournissent des informations supplémentaires sur les services susceptibles de traiter des données lorsque vous utilisez ce site :",
+    "googlePrivacy": "Politique de confidentialité de Google",
+    "googlePartners": "Sites partenaires de Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Politique de confidentialité de Cloudflare",
+    "contactTitle": "Une question sur la confidentialité ?",
+    "contactText": "Contactez-nous si vous avez une question sur la confidentialité ou souhaitez effectuer une demande liée à vos données.",
+    "contactButton": "Nous contacter",
+  },
+  it: {
+    "metaTitle": "Informativa sulla Privacy | Old Towns Walks",
+    "metaDescription": "Scopri come Old Towns Walks gestisce dati del sito, analisi, cookie, contenuti incorporati, tecnologie pubblicitarie, scelte sulla privacy e servizi di terze parti.",
+    "backHome": "Torna alla Home",
+    "headingLead": "Informativa sulla",
+    "headingAccent": "Privacy",
+    "lastUpdated": "Ultimo aggiornamento: 16 settembre 2026",
+    "intro1": "Old Towns Walks rispetta la tua privacy. Questa informativa spiega quali informazioni possono essere trattate quando utilizzi oldtownswalks.com, perché possono essere trattate, quali servizi di terze parti possono ricevere dati e quali opzioni hai a disposizione.",
+    "intro2": "Questa informativa si applica a questo sito web. Siti esterni, piattaforme video, inserzionisti, fornitori di prenotazioni e altri servizi di terze parti hanno proprie pratiche e informative sulla privacy.",
+    "s1Title": "Informazioni che trattiamo",
+    "s1Text": "Quando ci contatti, puoi fornire volontariamente nome, indirizzo e-mail, contenuto del messaggio e altri dettagli. Quando visiti il sito possono inoltre essere trattati automaticamente dati tecnici, inclusi indirizzo IP, informazioni su browser e dispositivo, sistema operativo, pagina di provenienza, pagine richieste, timestamp, posizione approssimativa derivata dalla rete e registri di sicurezza o prestazioni.",
+    "s2Title": "Analisi e registri del server",
+    "s2Text": "Utilizziamo Google Analytics 4 per comprendere l’uso del sito e misurare traffico e prestazioni. Google può trattare informazioni relative a dispositivo, browser, rete, identificatori e interazioni secondo le proprie politiche e la nostra configurazione. I fornitori di hosting, distribuzione dei contenuti e sicurezza possono inoltre trattare dati tecnici delle richieste e registri di sicurezza per gestire e proteggere il sito.",
+    "s3Title": "Cookie e tecnologie simili",
+    "s3Text": "Il sito e i servizi utilizzati possono usare cookie, archiviazione locale, pixel o tecnologie simili per funzioni essenziali, sicurezza, analisi, preferenze, contenuti incorporati e pubblicità quando abilitata. Puoi controllare o eliminare i cookie tramite il browser, anche se il blocco di alcune tecnologie può influire sulle funzionalità del sito.",
+    "s4Title": "Contenuti incorporati e terze parti",
+    "s4Text": "Le pagine possono contenere video incorporati o altri contenuti provenienti da piattaforme come YouTube. Il caricamento o l’interazione con tali contenuti può consentire al fornitore di ricevere informazioni tecniche e di utilizzo e di usare cookie o identificatori simili secondo le proprie politiche. I contenuti esterni restano ospitati dalla relativa terza parte.",
+    "s5Title": "Pubblicità e servizi Google",
+    "s5Text": "Se vengono abilitati servizi pubblicitari come Google AdSense, Google e altri fornitori pubblicitari possono usare cookie o tecnologie simili per mostrare, misurare, limitare e personalizzare gli annunci. I cookie pubblicitari di Google possono consentire a Google e ai suoi partner di mostrare annunci in base alle visite a questo sito e/o ad altri siti. Le preferenze pubblicitarie di Google possono essere gestite tramite My Ad Center.",
+    "s6Title": "Condivisione, trattamento internazionale e conservazione",
+    "s6Text": "Le informazioni possono essere trattate da fornitori che supportano hosting, sicurezza, analisi, media incorporati, pubblicità, comunicazioni o altre funzioni del sito, e possono essere divulgate quando richiesto dalla legge o per proteggere diritti e sicurezza. Poiché i fornitori possono operare a livello internazionale, i dati possono essere trattati fuori dal tuo Paese. Conserviamo le informazioni solo per il tempo ragionevolmente necessario alla finalità pertinente o agli obblighi di legge.",
+    "s7Title": "Le tue scelte e i tuoi diritti sulla privacy",
+    "s7Text": "A seconda del luogo in cui vivi, potresti avere diritti di accesso, rettifica, cancellazione, limitazione, portabilità, opposizione a determinati trattamenti o revoca del consenso quando il trattamento si basa su di esso. Possono applicarsi eccezioni di legge. I controlli del browser, gli strumenti di consenso disponibili, le impostazioni pubblicitarie di Google e quelle di terze parti possono inoltre aiutarti a gestire determinate scelte.",
+    "s8Title": "Minori, sicurezza e modifiche alla politica",
+    "s8Text": "Old Towns Walks non è rivolto a minori di 13 anni e non richiediamo consapevolmente informazioni personali a minori di 13 anni. Utilizziamo misure tecniche e organizzative ragionevoli per proteggere il sito, ma nessun metodo di trasmissione o archiviazione su Internet può essere garantito come completamente sicuro. Possiamo aggiornare questa informativa quando cambiano il sito, i servizi, i requisiti legali o gli strumenti di terze parti.",
+    "resourcesTitle": "Risorse sulla privacy di terze parti",
+    "resourcesIntro": "Questi link forniscono ulteriori informazioni sui servizi che possono trattare dati durante l’utilizzo di questo sito:",
+    "googlePrivacy": "Informativa sulla Privacy di Google",
+    "googlePartners": "Siti partner di Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Informativa sulla Privacy di Cloudflare",
+    "contactTitle": "Domande sulla privacy?",
+    "contactText": "Contattaci se hai una domanda sulla privacy o vuoi presentare una richiesta relativa ai tuoi dati.",
+    "contactButton": "Contattaci",
+  },
+  nl: {
+    "metaTitle": "Privacybeleid | Old Towns Walks",
+    "metaDescription": "Lees hoe Old Towns Walks websitegegevens, analytics, cookies, ingesloten inhoud, advertentietechnologieën, privacykeuzes en diensten van derden verwerkt.",
+    "backHome": "Terug naar Home",
+    "headingLead": "Privacy",
+    "headingAccent": "beleid",
+    "lastUpdated": "Laatst bijgewerkt: 16 september 2026",
+    "intro1": "Old Towns Walks respecteert je privacy. Dit beleid legt uit welke informatie kan worden verwerkt wanneer je oldtownswalks.com gebruikt, waarom dit kan gebeuren, welke diensten van derden gegevens kunnen ontvangen en welke keuzes je hebt.",
+    "intro2": "Dit beleid geldt voor deze website. Externe websites, videoplatforms, adverteerders, boekingsaanbieders en andere diensten van derden hebben hun eigen privacypraktijken en -beleid.",
+    "s1Title": "Informatie die we verwerken",
+    "s1Text": "Wanneer je contact met ons opneemt, kun je vrijwillig je naam, e-mailadres, berichtinhoud en andere gegevens verstrekken. Bij een bezoek aan de site kunnen ook automatisch technische gegevens worden verwerkt, waaronder IP-adres, browser- en apparaatinformatie, besturingssysteem, verwijzende pagina, opgevraagde pagina’s, tijdstempels, geschatte netwerklocatie en beveiligings- of prestatielogboeken.",
+    "s2Title": "Analytics en serverlogboeken",
+    "s2Text": "We gebruiken Google Analytics 4 om websitegebruik te begrijpen en verkeer en prestaties te meten. Google kan apparaat-, browser-, netwerk-, identificatie- en interactiegegevens verwerken volgens zijn beleid en onze configuratie. Hosting-, contentdelivery- en beveiligingsproviders kunnen ook technische aanvraaggegevens en beveiligingslogboeken verwerken om de site te beheren en te beschermen.",
+    "s3Title": "Cookies en vergelijkbare technologieën",
+    "s3Text": "De site en diensten die erop worden gebruikt kunnen cookies, lokale opslag, pixels of vergelijkbare technologieën gebruiken voor essentiële werking, beveiliging, analytics, voorkeuren, ingesloten inhoud en advertenties wanneer die zijn ingeschakeld. Je kunt cookies via je browser beheren of verwijderen, hoewel het blokkeren van bepaalde technologieën functies van de site kan beïnvloeden.",
+    "s4Title": "Ingesloten inhoud en derden",
+    "s4Text": "Pagina’s kunnen ingesloten video’s of andere inhoud van platforms zoals YouTube bevatten. Het laden van of interactie met ingesloten inhoud kan de aanbieder in staat stellen technische en gebruiksinformatie te ontvangen en cookies of vergelijkbare identificatoren te gebruiken volgens het eigen beleid. Externe inhoud blijft gehost door de betreffende derde partij.",
+    "s5Title": "Advertenties en Google-diensten",
+    "s5Text": "Als advertentiediensten zoals Google AdSense worden ingeschakeld, kunnen Google en andere advertentieaanbieders cookies of vergelijkbare technologieën gebruiken om advertenties te tonen, meten, beperken en personaliseren. Google-advertentiecookies kunnen Google en partners in staat stellen advertenties te tonen op basis van bezoeken aan deze en/of andere websites. Google-advertentievoorkeuren kunnen worden beheerd via My Ad Center.",
+    "s6Title": "Delen, internationale verwerking en bewaartermijnen",
+    "s6Text": "Informatie kan worden verwerkt door providers die hosting, beveiliging, analytics, ingesloten media, advertenties, communicatie of andere websitefuncties ondersteunen en kan worden verstrekt wanneer dit wettelijk vereist is of om rechten en veiligheid te beschermen. Omdat providers internationaal actief kunnen zijn, kunnen gegevens buiten je land worden verwerkt. We bewaren informatie alleen zolang dit redelijkerwijs nodig is voor het betreffende doel of wettelijke verplichtingen.",
+    "s7Title": "Je privacykeuzes en rechten",
+    "s7Text": "Afhankelijk van waar je woont, kun je rechten hebben op inzage, correctie, verwijdering, beperking, overdraagbaarheid, bezwaar tegen bepaalde verwerking of intrekking van toestemming wanneer verwerking daarop is gebaseerd. Wettelijke uitzonderingen kunnen gelden. Browserinstellingen, beschikbare toestemmingsopties, Google-advertentie-instellingen en instellingen van derden kunnen ook helpen bij het beheren van bepaalde keuzes.",
+    "s8Title": "Kinderen, beveiliging en beleidswijzigingen",
+    "s8Text": "Old Towns Walks is niet gericht op kinderen jonger dan 13 jaar en we vragen niet bewust om persoonsgegevens van kinderen jonger dan 13 jaar. We gebruiken redelijke technische en organisatorische maatregelen om de site te beschermen, maar geen enkele internetoverdracht of opslagmethode kan als volledig veilig worden gegarandeerd. We kunnen dit beleid bijwerken wanneer de site, diensten, wettelijke vereisten of tools van derden veranderen.",
+    "resourcesTitle": "Privacybronnen van derden",
+    "resourcesIntro": "Deze links geven aanvullende informatie over diensten die gegevens kunnen verwerken wanneer je deze website gebruikt:",
+    "googlePrivacy": "Privacybeleid van Google",
+    "googlePartners": "Google-partnersites",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Privacybeleid van Cloudflare",
+    "contactTitle": "Vragen over privacy?",
+    "contactText": "Neem contact met ons op als je een privacyvraag hebt of een privacygerelateerd verzoek wilt indienen.",
+    "contactButton": "Contact opnemen",
+  },
+  pl: {
+    "metaTitle": "Polityka prywatności | Old Towns Walks",
+    "metaDescription": "Dowiedz się, jak Old Towns Walks przetwarza dane witryny, analitykę, pliki cookie, treści osadzone, technologie reklamowe, wybory dotyczące prywatności i usługi stron trzecich.",
+    "backHome": "Wróć do strony głównej",
+    "headingLead": "Polityka",
+    "headingAccent": "prywatności",
+    "lastUpdated": "Ostatnia aktualizacja: 16 września 2026",
+    "intro1": "Old Towns Walks szanuje Twoją prywatność. Niniejsza polityka wyjaśnia, jakie informacje mogą być przetwarzane podczas korzystania z oldtownswalks.com, dlaczego mogą być przetwarzane, jakie usługi stron trzecich mogą otrzymywać dane oraz jakie masz możliwości wyboru.",
+    "intro2": "Niniejsza polityka dotyczy tej witryny. Zewnętrzne strony internetowe, platformy wideo, reklamodawcy, dostawcy rezerwacji i inne usługi stron trzecich mają własne praktyki i polityki prywatności.",
+    "s1Title": "Informacje, które przetwarzamy",
+    "s1Text": "Gdy kontaktujesz się z nami, możesz dobrowolnie podać imię i nazwisko, adres e-mail, treść wiadomości i inne dane. Podczas odwiedzania witryny mogą być również automatycznie przetwarzane dane techniczne, w tym adres IP, informacje o przeglądarce i urządzeniu, system operacyjny, strona odsyłająca, żądane strony, znaczniki czasu, przybliżona lokalizacja wynikająca z sieci oraz dzienniki bezpieczeństwa lub wydajności.",
+    "s2Title": "Analityka i logi serwera",
+    "s2Text": "Korzystamy z Google Analytics 4, aby rozumieć sposób korzystania z witryny oraz mierzyć ruch i wydajność. Google może przetwarzać informacje o urządzeniu, przeglądarce, sieci, identyfikatorach i interakcjach zgodnie ze swoimi zasadami i naszą konfiguracją. Dostawcy hostingu, dystrybucji treści i bezpieczeństwa mogą również przetwarzać techniczne dane żądań i logi bezpieczeństwa w celu działania i ochrony witryny.",
+    "s3Title": "Pliki cookie i podobne technologie",
+    "s3Text": "Witryna i używane w niej usługi mogą korzystać z plików cookie, pamięci lokalnej, pikseli lub podobnych technologii do podstawowego działania, bezpieczeństwa, analityki, preferencji, treści osadzonych i reklam, jeśli są włączone. Możesz kontrolować lub usuwać pliki cookie w przeglądarce, choć blokowanie niektórych technologii może wpływać na funkcje witryny.",
+    "s4Title": "Treści osadzone i strony trzecie",
+    "s4Text": "Strony mogą zawierać osadzone filmy lub inne treści z platform takich jak YouTube. Załadowanie lub interakcja z osadzoną treścią może umożliwić dostawcy otrzymywanie informacji technicznych i dotyczących użytkowania oraz stosowanie plików cookie lub podobnych identyfikatorów zgodnie z własnymi zasadami. Treści zewnętrzne pozostają hostowane przez odpowiednią stronę trzecią.",
+    "s5Title": "Reklamy i usługi Google",
+    "s5Text": "Jeśli zostaną włączone usługi reklamowe takie jak Google AdSense, Google i inni dostawcy reklam mogą używać plików cookie lub podobnych technologii do wyświetlania, mierzenia, ograniczania i personalizowania reklam. Reklamowe pliki cookie Google mogą umożliwiać Google i jego partnerom wyświetlanie reklam na podstawie wizyt w tej i/lub innych witrynach. Preferencjami reklamowymi Google można zarządzać w My Ad Center.",
+    "s6Title": "Udostępnianie, przetwarzanie międzynarodowe i przechowywanie",
+    "s6Text": "Informacje mogą być przetwarzane przez dostawców wspierających hosting, bezpieczeństwo, analitykę, media osadzone, reklamy, komunikację lub inne funkcje witryny i mogą być ujawniane, gdy wymaga tego prawo lub w celu ochrony praw i bezpieczeństwa. Ponieważ dostawcy mogą działać międzynarodowo, dane mogą być przetwarzane poza Twoim krajem. Przechowujemy informacje tylko tak długo, jak jest to rozsądnie konieczne do odpowiedniego celu lub obowiązków prawnych.",
+    "s7Title": "Twoje wybory i prawa dotyczące prywatności",
+    "s7Text": "W zależności od miejsca zamieszkania możesz mieć prawa do dostępu, sprostowania, usunięcia, ograniczenia, przenoszenia danych, sprzeciwu wobec określonego przetwarzania lub wycofania zgody, gdy przetwarzanie opiera się na zgodzie. Mogą obowiązywać wyjątki prawne. Ustawienia przeglądarki, dostępne mechanizmy zgody, ustawienia reklam Google i ustawienia stron trzecich mogą również pomóc w zarządzaniu określonymi wyborami.",
+    "s8Title": "Dzieci, bezpieczeństwo i zmiany polityki",
+    "s8Text": "Old Towns Walks nie jest skierowany do dzieci poniżej 13 roku życia i nie prosimy świadomie dzieci poniżej 13 roku życia o dane osobowe. Stosujemy rozsądne środki techniczne i organizacyjne w celu ochrony witryny, ale żadna metoda transmisji ani przechowywania w Internecie nie może być zagwarantowana jako całkowicie bezpieczna. Możemy aktualizować tę politykę, gdy zmieniają się witryna, usługi, wymagania prawne lub narzędzia stron trzecich.",
+    "resourcesTitle": "Zasoby prywatności stron trzecich",
+    "resourcesIntro": "Te linki zawierają dodatkowe informacje o usługach, które mogą przetwarzać dane podczas korzystania z tej witryny:",
+    "googlePrivacy": "Polityka prywatności Google",
+    "googlePartners": "Witryny partnerów Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Polityka prywatności Cloudflare",
+    "contactTitle": "Pytania o prywatność?",
+    "contactText": "Skontaktuj się z nami, jeśli masz pytanie dotyczące prywatności lub chcesz złożyć wniosek związany z danymi.",
+    "contactButton": "Kontakt",
+  },
+  pt: {
+    "metaTitle": "Política de Privacidade | Old Towns Walks",
+    "metaDescription": "Saiba como o Old Towns Walks trata dados do site, análises, cookies, conteúdo incorporado, tecnologias de publicidade, opções de privacidade e serviços de terceiros.",
+    "backHome": "Voltar ao início",
+    "headingLead": "Política de",
+    "headingAccent": "Privacidade",
+    "lastUpdated": "Última atualização: 16 de setembro de 2026",
+    "intro1": "Old Towns Walks respeita sua privacidade. Esta política explica quais informações podem ser processadas quando você usa oldtownswalks.com, por que podem ser processadas, quais serviços de terceiros podem receber dados e quais opções estão disponíveis para você.",
+    "intro2": "Esta política se aplica a este site. Sites externos, plataformas de vídeo, anunciantes, provedores de reservas e outros serviços de terceiros possuem suas próprias práticas e políticas de privacidade.",
+    "s1Title": "Informações que processamos",
+    "s1Text": "Ao entrar em contato conosco, você pode fornecer voluntariamente seu nome, endereço de e-mail, conteúdo da mensagem e outros dados. Ao visitar o site, dados técnicos também podem ser processados automaticamente, incluindo endereço IP, informações de navegador e dispositivo, sistema operacional, página de referência, páginas solicitadas, horários, localização aproximada derivada da rede e registros de segurança ou desempenho.",
+    "s2Title": "Análises e registros do servidor",
+    "s2Text": "Usamos o Google Analytics 4 para entender o uso do site e medir tráfego e desempenho. O Google pode processar informações de dispositivo, navegador, rede, identificadores e interações de acordo com suas políticas e nossa configuração. Provedores de hospedagem, distribuição de conteúdo e segurança também podem processar dados técnicos de solicitações e registros de segurança para operar e proteger o site.",
+    "s3Title": "Cookies e tecnologias semelhantes",
+    "s3Text": "O site e os serviços utilizados nele podem usar cookies, armazenamento local, pixels ou tecnologias semelhantes para funcionamento essencial, segurança, análises, preferências, conteúdo incorporado e publicidade quando ativada. Você pode controlar ou excluir cookies pelo navegador, embora o bloqueio de algumas tecnologias possa afetar funcionalidades do site.",
+    "s4Title": "Conteúdo incorporado e terceiros",
+    "s4Text": "As páginas podem conter vídeos incorporados ou outro conteúdo de plataformas como YouTube. Carregar ou interagir com conteúdo incorporado pode permitir que o provedor receba informações técnicas e de uso e utilize cookies ou identificadores semelhantes conforme suas próprias políticas. O conteúdo externo permanece hospedado pelo respectivo terceiro.",
+    "s5Title": "Publicidade e serviços do Google",
+    "s5Text": "Se serviços de publicidade como o Google AdSense forem ativados, o Google e outros fornecedores de publicidade poderão usar cookies ou tecnologias semelhantes para exibir, medir, limitar e personalizar anúncios. Cookies de publicidade do Google podem permitir que o Google e seus parceiros exibam anúncios com base em visitas a este site e/ou outros sites. As preferências de publicidade do Google podem ser gerenciadas no My Ad Center.",
+    "s6Title": "Compartilhamento, processamento internacional e retenção",
+    "s6Text": "As informações podem ser processadas por provedores que dão suporte a hospedagem, segurança, análises, mídia incorporada, publicidade, comunicações ou outras funções do site e podem ser divulgadas quando exigido por lei ou para proteger direitos e segurança. Como os provedores podem operar internacionalmente, os dados podem ser processados fora do seu país. Mantemos informações apenas pelo tempo razoavelmente necessário para a finalidade relevante ou obrigações legais.",
+    "s7Title": "Suas opções e direitos de privacidade",
+    "s7Text": "Dependendo de onde você vive, pode ter direitos de solicitar acesso, correção, exclusão, restrição, portabilidade, oposição a certos tratamentos ou retirada do consentimento quando o tratamento depender dele. Exceções legais podem se aplicar. Controles do navegador, controles de consentimento disponíveis, configurações de publicidade do Google e configurações de terceiros também podem ajudar a gerenciar determinadas escolhas.",
+    "s8Title": "Crianças, segurança e alterações da política",
+    "s8Text": "Old Towns Walks não é direcionado a crianças menores de 13 anos e não solicitamos conscientemente informações pessoais de menores de 13 anos. Usamos medidas técnicas e organizacionais razoáveis para proteger o site, mas nenhum método de transmissão ou armazenamento na Internet pode ser garantido como totalmente seguro. Podemos atualizar esta política quando o site, os serviços, os requisitos legais ou as ferramentas de terceiros mudarem.",
+    "resourcesTitle": "Recursos de privacidade de terceiros",
+    "resourcesIntro": "Estes links fornecem informações adicionais sobre serviços que podem processar dados quando você usa este site:",
+    "googlePrivacy": "Política de Privacidade do Google",
+    "googlePartners": "Sites parceiros do Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Política de Privacidade da Cloudflare",
+    "contactTitle": "Dúvidas sobre privacidade?",
+    "contactText": "Entre em contato conosco se tiver uma dúvida sobre privacidade ou quiser fazer uma solicitação relacionada aos seus dados.",
+    "contactButton": "Fale conosco",
+  },
+  sv: {
+    "metaTitle": "Integritetspolicy | Old Towns Walks",
+    "metaDescription": "Läs om hur Old Towns Walks hanterar webbplatsdata, analys, cookies, inbäddat innehåll, annonsteknik, integritetsval och tredjepartstjänster.",
+    "backHome": "Tillbaka till startsidan",
+    "headingLead": "Integritets",
+    "headingAccent": "policy",
+    "lastUpdated": "Senast uppdaterad: 16 september 2026",
+    "intro1": "Old Towns Walks respekterar din integritet. Denna policy förklarar vilken information som kan behandlas när du använder oldtownswalks.com, varför den kan behandlas, vilka tredjepartstjänster som kan ta emot data och vilka val du har.",
+    "intro2": "Denna policy gäller denna webbplats. Externa webbplatser, videoplattformar, annonsörer, bokningsleverantörer och andra tredjepartstjänster har egna integritetsrutiner och policyer.",
+    "s1Title": "Information vi behandlar",
+    "s1Text": "När du kontaktar oss kan du frivilligt lämna namn, e-postadress, meddelandeinnehåll och andra uppgifter. När du besöker webbplatsen kan tekniska data också behandlas automatiskt, inklusive IP-adress, information om webbläsare och enhet, operativsystem, hänvisande sida, begärda sidor, tidsstämplar, ungefärlig nätverksbaserad plats samt säkerhets- eller prestandaloggar.",
+    "s2Title": "Analys och serverloggar",
+    "s2Text": "Vi använder Google Analytics 4 för att förstå hur webbplatsen används och mäta trafik och prestanda. Google kan behandla information om enhet, webbläsare, nätverk, identifierare och interaktioner enligt sina policyer och vår konfiguration. Leverantörer av hosting, innehållsdistribution och säkerhet kan också behandla tekniska begärandedata och säkerhetsloggar för att driva och skydda webbplatsen.",
+    "s3Title": "Cookies och liknande tekniker",
+    "s3Text": "Webbplatsen och tjänster som används på den kan använda cookies, lokal lagring, pixlar eller liknande tekniker för grundläggande funktion, säkerhet, analys, inställningar, inbäddat innehåll och annonsering när den är aktiverad. Du kan styra eller radera cookies via din webbläsare, men blockering av vissa tekniker kan påverka webbplatsens funktioner.",
+    "s4Title": "Inbäddat innehåll och tredje parter",
+    "s4Text": "Sidor kan innehålla inbäddade videor eller annat innehåll från plattformar som YouTube. Att ladda eller interagera med sådant innehåll kan göra det möjligt för leverantören att ta emot teknisk information och användningsdata samt använda cookies eller liknande identifierare enligt sina egna policyer. Externt innehåll fortsätter att vara hostat av den berörda tredje parten.",
+    "s5Title": "Annonsering och Google-tjänster",
+    "s5Text": "Om annonstjänster som Google AdSense aktiveras kan Google och andra annonsleverantörer använda cookies eller liknande tekniker för att visa, mäta, begränsa och anpassa annonser. Googles annonscookies kan göra det möjligt för Google och dess partner att visa annonser baserat på besök på denna och/eller andra webbplatser. Googles annonsinställningar kan hanteras via My Ad Center.",
+    "s6Title": "Delning, internationell behandling och lagring",
+    "s6Text": "Information kan behandlas av leverantörer som stöder hosting, säkerhet, analys, inbäddade medier, annonsering, kommunikation eller andra webbplatsfunktioner och kan lämnas ut när lagen kräver det eller för att skydda rättigheter och säkerhet. Eftersom leverantörer kan verka internationellt kan data behandlas utanför ditt land. Vi behåller information endast så länge som rimligen behövs för relevant ändamål eller rättsliga skyldigheter.",
+    "s7Title": "Dina integritetsval och rättigheter",
+    "s7Text": "Beroende på var du bor kan du ha rätt att begära åtkomst, rättelse, radering, begränsning, dataportabilitet, invända mot viss behandling eller återkalla samtycke när behandlingen bygger på samtycke. Rättsliga undantag kan gälla. Webbläsarkontroller, tillgängliga samtyckesverktyg, Googles annonsinställningar och tredjepartsinställningar kan också hjälpa dig att hantera vissa val.",
+    "s8Title": "Barn, säkerhet och policyändringar",
+    "s8Text": "Old Towns Walks riktar sig inte till barn under 13 år och vi begär inte medvetet personuppgifter från barn under 13 år. Vi använder rimliga tekniska och organisatoriska åtgärder för att skydda webbplatsen, men ingen metod för internetöverföring eller lagring kan garanteras vara helt säker. Vi kan uppdatera denna policy när webbplatsen, tjänsterna, rättsliga krav eller tredjepartsverktyg förändras.",
+    "resourcesTitle": "Integritetsresurser från tredje part",
+    "resourcesIntro": "Dessa länkar ger ytterligare information om tjänster som kan behandla data när du använder denna webbplats:",
+    "googlePrivacy": "Googles integritetspolicy",
+    "googlePartners": "Googles partnerwebbplatser",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Cloudflares integritetspolicy",
+    "contactTitle": "Frågor om integritet?",
+    "contactText": "Kontakta oss om du har en integritetsfråga eller vill göra en begäran som rör dina uppgifter.",
+    "contactButton": "Kontakta oss",
+  },
+  ru: {
+    "metaTitle": "Политика конфиденциальности | Old Towns Walks",
+    "metaDescription": "Узнайте, как Old Towns Walks обрабатывает данные сайта, аналитику, файлы cookie, встроенный контент, рекламные технологии, настройки конфиденциальности и сервисы третьих сторон.",
+    "backHome": "На главную",
+    "headingLead": "Политика",
+    "headingAccent": "конфиденциальности",
+    "lastUpdated": "Последнее обновление: 16 сентября 2026 г.",
+    "intro1": "Old Towns Walks уважает вашу конфиденциальность. В этой политике объясняется, какие сведения могут обрабатываться при использовании oldtownswalks.com, зачем они могут обрабатываться, какие сторонние сервисы могут получать данные и какие варианты выбора доступны вам.",
+    "intro2": "Эта политика применяется к данному сайту. Внешние сайты, видеоплатформы, рекламодатели, сервисы бронирования и другие сторонние службы имеют собственные правила и практики конфиденциальности.",
+    "s1Title": "Информация, которую мы обрабатываем",
+    "s1Text": "При обращении к нам вы можете добровольно предоставить имя, адрес электронной почты, текст сообщения и другие сведения. При посещении сайта также могут автоматически обрабатываться технические данные, включая IP-адрес, сведения о браузере и устройстве, операционную систему, страницу-источник, запрошенные страницы, отметки времени, приблизительное местоположение на основе сети, а также журналы безопасности или производительности.",
+    "s2Title": "Аналитика и журналы сервера",
+    "s2Text": "Мы используем Google Analytics 4, чтобы понимать использование сайта и измерять трафик и производительность. Google может обрабатывать сведения об устройстве, браузере, сети, идентификаторах и взаимодействиях в соответствии со своими правилами и нашей конфигурацией. Поставщики хостинга, доставки контента и безопасности также могут обрабатывать технические данные запросов и журналы безопасности для работы и защиты сайта.",
+    "s3Title": "Файлы cookie и похожие технологии",
+    "s3Text": "Сайт и используемые на нем сервисы могут применять файлы cookie, локальное хранилище, пиксели или аналогичные технологии для основных функций, безопасности, аналитики, настроек, встроенного контента и рекламы, если она включена. Вы можете управлять файлами cookie или удалять их через браузер, хотя блокировка некоторых технологий может повлиять на функции сайта.",
+    "s4Title": "Встроенный контент и третьи стороны",
+    "s4Text": "Страницы могут содержать встроенные видео или другой контент с платформ, таких как YouTube. Загрузка или взаимодействие со встроенным контентом может позволить поставщику получать технические данные и сведения об использовании и применять файлы cookie или похожие идентификаторы согласно собственным правилам. Внешний контент остается размещенным у соответствующей третьей стороны.",
+    "s5Title": "Реклама и сервисы Google",
+    "s5Text": "Если будут включены рекламные сервисы, такие как Google AdSense, Google и другие рекламные поставщики могут использовать файлы cookie или аналогичные технологии для показа, измерения, ограничения и персонализации рекламы. Рекламные cookie Google могут позволить Google и его партнерам показывать рекламу на основе посещений этого и/или других сайтов. Рекламными настройками Google можно управлять через My Ad Center.",
+    "s6Title": "Передача, международная обработка и хранение",
+    "s6Text": "Информация может обрабатываться поставщиками, поддерживающими хостинг, безопасность, аналитику, встроенные медиа, рекламу, коммуникации или другие функции сайта, и может раскрываться, когда этого требует закон или для защиты прав и безопасности. Поскольку поставщики могут работать на международном уровне, данные могут обрабатываться за пределами вашей страны. Мы храним информацию только столько, сколько разумно необходимо для соответствующей цели или выполнения юридических обязательств.",
+    "s7Title": "Ваши настройки и права конфиденциальности",
+    "s7Text": "В зависимости от места проживания у вас могут быть права на доступ, исправление, удаление, ограничение, переносимость данных, возражение против определенной обработки или отзыв согласия, если обработка основана на согласии. Могут применяться юридические исключения. Настройки браузера, доступные инструменты согласия, рекламные настройки Google и настройки третьих сторон также могут помочь управлять отдельными вариантами выбора.",
+    "s8Title": "Дети, безопасность и изменения политики",
+    "s8Text": "Old Towns Walks не предназначен для детей младше 13 лет, и мы сознательно не запрашиваем персональные данные у детей младше 13 лет. Мы применяем разумные технические и организационные меры для защиты сайта, однако ни один способ передачи или хранения данных в Интернете не может быть гарантирован как полностью безопасный. Мы можем обновлять эту политику при изменении сайта, сервисов, требований закона или сторонних инструментов.",
+    "resourcesTitle": "Ресурсы о конфиденциальности третьих сторон",
+    "resourcesIntro": "Эти ссылки содержат дополнительную информацию о сервисах, которые могут обрабатывать данные при использовании этого сайта:",
+    "googlePrivacy": "Политика конфиденциальности Google",
+    "googlePartners": "Партнерские сайты Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Политика конфиденциальности Cloudflare",
+    "contactTitle": "Вопросы о конфиденциальности?",
+    "contactText": "Свяжитесь с нами, если у вас есть вопрос о конфиденциальности или вы хотите подать запрос, связанный с вашими данными.",
+    "contactButton": "Связаться",
+  },
+  ja: {
+    "metaTitle": "プライバシーポリシー | Old Towns Walks",
+    "metaDescription": "Old Towns Walks におけるサイトデータ、分析、Cookie、埋め込みコンテンツ、広告技術、プライバシー設定、第三者サービスの取り扱いについて説明します。",
+    "backHome": "ホームに戻る",
+    "headingLead": "プライバシー",
+    "headingAccent": "ポリシー",
+    "lastUpdated": "最終更新日：2026年9月16日",
+    "intro1": "Old Towns Walks はお客様のプライバシーを尊重します。本ポリシーでは、oldtownswalks.com の利用時にどのような情報が処理される可能性があるか、その理由、データを受け取る可能性のある第三者サービス、および利用できる選択肢について説明します。",
+    "intro2": "本ポリシーはこのウェブサイトに適用されます。外部サイト、動画プラットフォーム、広告事業者、予約サービスその他の第三者サービスには、それぞれ独自のプライバシー方針があります。",
+    "s1Title": "処理する情報",
+    "s1Text": "お問い合わせの際、氏名、メールアドレス、メッセージ内容その他の情報を任意で提供いただく場合があります。サイト閲覧時には、IPアドレス、ブラウザや端末情報、OS、参照元ページ、要求されたページ、時刻情報、ネットワークから推定されるおおよその位置情報、セキュリティまたはパフォーマンスログなどの技術情報が自動的に処理される場合もあります。",
+    "s2Title": "分析とサーバーログ",
+    "s2Text": "当サイトでは利用状況を把握し、トラフィックと性能を測定するため Google Analytics 4 を使用しています。Google は自社ポリシーおよび当サイトの設定に従い、端末、ブラウザ、ネットワーク、識別子、操作情報を処理する場合があります。ホスティング、コンテンツ配信、セキュリティ提供者も、サイト運営と保護のため技術的なリクエスト情報やセキュリティログを処理する場合があります。",
+    "s3Title": "Cookie と類似技術",
+    "s3Text": "サイトおよびサイト上で利用するサービスは、基本機能、セキュリティ、分析、設定、埋め込みコンテンツ、および有効な場合の広告のために Cookie、ローカルストレージ、ピクセルその他の類似技術を使用する場合があります。Cookie はブラウザから管理または削除できますが、一部技術をブロックするとサイト機能に影響する場合があります。",
+    "s4Title": "埋め込みコンテンツと第三者",
+    "s4Text": "ページには YouTube などのプラットフォームから埋め込まれた動画やその他のコンテンツが含まれる場合があります。埋め込みコンテンツの読み込みや操作により、提供者が技術情報や利用情報を受け取り、自社ポリシーに従って Cookie や類似識別子を使用できる場合があります。外部コンテンツは引き続き該当する第三者によってホストされます。",
+    "s5Title": "広告と Google サービス",
+    "s5Text": "Google AdSense などの広告サービスが有効になった場合、Google やその他の広告事業者は、広告の配信、測定、頻度制限、パーソナライズのために Cookie や類似技術を使用する場合があります。Google の広告 Cookie により、Google とそのパートナーが当サイトや他サイトへの訪問に基づいて広告を表示できる場合があります。Google の広告設定は My Ad Center で管理できます。",
+    "s6Title": "共有、国際的な処理、保存期間",
+    "s6Text": "情報は、ホスティング、セキュリティ、分析、埋め込みメディア、広告、通信その他のサイト機能を支援する事業者によって処理される場合があり、法令で求められる場合や権利・安全を保護するために開示されることがあります。提供者が国際的に事業を行うため、データは居住国外で処理される場合があります。情報は、関連する目的または法的義務のため合理的に必要な期間に限って保持します。",
+    "s7Title": "プライバシーに関する選択肢と権利",
+    "s7Text": "居住地によっては、アクセス、訂正、削除、制限、データポータビリティ、特定の処理への異議、または同意に基づく処理について同意を撤回する権利が認められる場合があります。法的な例外が適用されることがあります。ブラウザ設定、利用可能な同意管理、Google の広告設定、第三者の設定も一部の選択肢の管理に役立ちます。",
+    "s8Title": "子ども、安全性、ポリシー変更",
+    "s8Text": "Old Towns Walks は13歳未満の子どもを対象としておらず、13歳未満の子どもから意図的に個人情報を求めることはありません。サイト保護のため合理的な技術的・組織的対策を講じていますが、インターネット上の送信または保存方法が完全に安全であることを保証することはできません。サイト、サービス、法的要件、第三者ツールの変更に応じて本ポリシーを更新する場合があります。",
+    "resourcesTitle": "第三者のプライバシー情報",
+    "resourcesIntro": "以下のリンクでは、このウェブサイト利用時にデータを処理する可能性のあるサービスについて追加情報を確認できます。",
+    "googlePrivacy": "Google プライバシーポリシー",
+    "googlePartners": "Google パートナーサイト",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Cloudflare プライバシーポリシー",
+    "contactTitle": "プライバシーについてのご質問",
+    "contactText": "プライバシーに関するご質問やデータに関するリクエストがある場合はお問い合わせください。",
+    "contactButton": "お問い合わせ",
+  },
+  ko: {
+    "metaTitle": "개인정보 처리방침 | Old Towns Walks",
+    "metaDescription": "Old Towns Walks가 웹사이트 데이터, 분석, 쿠키, 임베드 콘텐츠, 광고 기술, 개인정보 선택권 및 제3자 서비스를 어떻게 처리하는지 확인하세요.",
+    "backHome": "홈으로 돌아가기",
+    "headingLead": "개인정보",
+    "headingAccent": "처리방침",
+    "lastUpdated": "최종 업데이트: 2026년 9월 16일",
+    "intro1": "Old Towns Walks는 사용자의 개인정보를 존중합니다. 본 정책은 oldtownswalks.com 이용 시 어떤 정보가 처리될 수 있는지, 처리 이유, 데이터를 받을 수 있는 제3자 서비스 및 사용 가능한 선택권을 설명합니다.",
+    "intro2": "본 정책은 이 웹사이트에 적용됩니다. 외부 웹사이트, 동영상 플랫폼, 광고주, 예약 제공업체 및 기타 제3자 서비스에는 각자의 개인정보 보호 관행과 정책이 있습니다.",
+    "s1Title": "처리할 수 있는 정보",
+    "s1Text": "문의 시 이름, 이메일 주소, 메시지 내용 및 기타 정보를 자발적으로 제공할 수 있습니다. 사이트 방문 시 IP 주소, 브라우저 및 기기 정보, 운영체제, 유입 페이지, 요청 페이지, 시간 정보, 네트워크 기반의 대략적인 위치, 보안 또는 성능 로그와 같은 기술 정보가 자동으로 처리될 수도 있습니다.",
+    "s2Title": "분석 및 서버 로그",
+    "s2Text": "웹사이트 이용 현황을 이해하고 트래픽과 성능을 측정하기 위해 Google Analytics 4를 사용합니다. Google은 자체 정책과 당사 설정에 따라 기기, 브라우저, 네트워크, 식별자 및 상호작용 정보를 처리할 수 있습니다. 호스팅, 콘텐츠 전송 및 보안 제공업체도 사이트 운영과 보호를 위해 기술적 요청 데이터와 보안 로그를 처리할 수 있습니다.",
+    "s3Title": "쿠키 및 유사 기술",
+    "s3Text": "사이트와 사이트에서 사용하는 서비스는 필수 기능, 보안, 분석, 환경설정, 임베드 콘텐츠 및 활성화된 경우 광고를 위해 쿠키, 로컬 저장소, 픽셀 또는 유사 기술을 사용할 수 있습니다. 브라우저에서 쿠키를 관리하거나 삭제할 수 있지만 일부 기술을 차단하면 사이트 기능에 영향을 줄 수 있습니다.",
+    "s4Title": "임베드 콘텐츠 및 제3자",
+    "s4Text": "페이지에는 YouTube와 같은 플랫폼의 임베드 동영상이나 기타 콘텐츠가 포함될 수 있습니다. 임베드 콘텐츠를 불러오거나 상호작용하면 제공업체가 기술 및 이용 정보를 받고 자체 정책에 따라 쿠키 또는 유사 식별자를 사용할 수 있습니다. 외부 콘텐츠는 해당 제3자가 계속 호스팅합니다.",
+    "s5Title": "광고 및 Google 서비스",
+    "s5Text": "Google AdSense와 같은 광고 서비스가 활성화되는 경우 Google과 기타 광고 제공업체는 광고 제공, 측정, 빈도 제한 및 개인화를 위해 쿠키 또는 유사 기술을 사용할 수 있습니다. Google 광고 쿠키를 통해 Google과 파트너가 이 웹사이트 및/또는 다른 웹사이트 방문을 기반으로 광고를 표시할 수 있습니다. Google 광고 환경설정은 My Ad Center에서 관리할 수 있습니다.",
+    "s6Title": "공유, 국제 처리 및 보관",
+    "s6Text": "정보는 호스팅, 보안, 분석, 임베드 미디어, 광고, 커뮤니케이션 또는 기타 사이트 기능을 지원하는 제공업체에 의해 처리될 수 있으며, 법률상 요구되거나 권리와 안전을 보호하기 위해 공개될 수 있습니다. 제공업체가 국제적으로 운영될 수 있으므로 데이터가 거주 국가 밖에서 처리될 수 있습니다. 관련 목적 또는 법적 의무에 합리적으로 필요한 기간 동안만 정보를 보관합니다.",
+    "s7Title": "개인정보 선택권 및 권리",
+    "s7Text": "거주 지역에 따라 접근, 정정, 삭제, 제한, 데이터 이동, 특정 처리에 대한 이의 제기 또는 동의에 기반한 처리의 경우 동의 철회 권리가 있을 수 있습니다. 법적 예외가 적용될 수 있습니다. 브라우저 설정, 이용 가능한 동의 제어, Google 광고 설정 및 제3자 설정도 일부 선택권을 관리하는 데 도움이 될 수 있습니다.",
+    "s8Title": "아동, 보안 및 정책 변경",
+    "s8Text": "Old Towns Walks는 만 13세 미만 아동을 대상으로 하지 않으며 만 13세 미만 아동에게 개인정보를 의도적으로 요청하지 않습니다. 사이트 보호를 위해 합리적인 기술적·관리적 조치를 사용하지만 인터넷 전송이나 저장 방식이 완전히 안전하다고 보장할 수는 없습니다. 사이트, 서비스, 법적 요구사항 또는 제3자 도구가 변경되면 본 정책을 업데이트할 수 있습니다.",
+    "resourcesTitle": "제3자 개인정보 관련 자료",
+    "resourcesIntro": "다음 링크에서 이 웹사이트 이용 시 데이터를 처리할 수 있는 서비스에 대한 추가 정보를 확인할 수 있습니다.",
+    "googlePrivacy": "Google 개인정보처리방침",
+    "googlePartners": "Google 파트너 사이트",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Cloudflare 개인정보처리방침",
+    "contactTitle": "개인정보 관련 문의",
+    "contactText": "개인정보 관련 질문이 있거나 데이터와 관련된 요청을 하려면 문의해 주세요.",
+    "contactButton": "문의하기",
+  },
+  zh: {
+    "metaTitle": "隐私政策 | Old Towns Walks",
+    "metaDescription": "了解 Old Towns Walks 如何处理网站数据、分析、Cookie、嵌入内容、广告技术、隐私选择和第三方服务。",
+    "backHome": "返回首页",
+    "headingLead": "隐私",
+    "headingAccent": "政策",
+    "lastUpdated": "最后更新：2026年9月16日",
+    "intro1": "Old Towns Walks 尊重您的隐私。本政策说明您使用 oldtownswalks.com 时可能处理哪些信息、处理这些信息的原因、哪些第三方服务可能接收数据，以及您可使用哪些选择。",
+    "intro2": "本政策适用于本网站。外部网站、视频平台、广告商、预订服务商及其他第三方服务均有各自的隐私做法和政策。",
+    "s1Title": "我们处理的信息",
+    "s1Text": "当您联系我们时，您可以自愿提供姓名、电子邮箱、消息内容和其他信息。访问网站时，还可能自动处理技术数据，包括 IP 地址、浏览器和设备信息、操作系统、来源页面、请求页面、时间戳、基于网络推断的大致位置以及安全或性能日志。",
+    "s2Title": "分析与服务器日志",
+    "s2Text": "我们使用 Google Analytics 4 了解网站使用情况并衡量流量和性能。Google 可能根据其政策及我们的配置处理设备、浏览器、网络、标识符和互动信息。托管、内容分发和安全服务商也可能处理技术请求数据和安全日志，以运营和保护网站。",
+    "s3Title": "Cookie 与类似技术",
+    "s3Text": "本网站及其使用的服务可能使用 Cookie、本地存储、像素或类似技术，用于基本运行、安全、分析、偏好设置、嵌入内容，以及在启用时用于广告。您可以通过浏览器控制或删除 Cookie，但阻止某些技术可能影响网站功能。",
+    "s4Title": "嵌入内容与第三方",
+    "s4Text": "页面可能包含来自 YouTube 等平台的嵌入视频或其他内容。加载或与嵌入内容互动可能使提供商接收技术和使用信息，并根据其自身政策使用 Cookie 或类似标识符。外部内容仍由相应第三方托管。",
+    "s5Title": "广告与 Google 服务",
+    "s5Text": "如果启用 Google AdSense 等广告服务，Google 和其他广告提供商可能使用 Cookie 或类似技术来投放、衡量、限制和个性化广告。Google 广告 Cookie 可能使 Google 及其合作伙伴根据对本网站和/或其他网站的访问展示广告。Google 广告偏好可通过 My Ad Center 管理。",
+    "s6Title": "共享、跨境处理与保留",
+    "s6Text": "信息可能由支持托管、安全、分析、嵌入媒体、广告、通信或其他网站功能的服务商处理，并可能在法律要求或为保护权利与安全时披露。由于服务商可能在全球运营，数据可能在您所在国家之外处理。我们仅在相关目的或法律义务合理需要的期限内保留信息。",
+    "s7Title": "您的隐私选择与权利",
+    "s7Text": "根据您所在地区，您可能拥有访问、更正、删除、限制、数据可携带、反对特定处理或在处理依赖同意时撤回同意的权利。可能存在法律例外。浏览器设置、可用的同意控制、Google 广告设置和第三方设置也可帮助管理某些选择。",
+    "s8Title": "儿童、安全与政策更新",
+    "s8Text": "Old Towns Walks 不面向 13 岁以下儿童，我们不会有意向 13 岁以下儿童索取个人信息。我们采取合理的技术和组织措施保护网站，但任何互联网传输或存储方式都无法保证完全安全。当网站、服务、法律要求或第三方工具发生变化时，我们可能更新本政策。",
+    "resourcesTitle": "第三方隐私资源",
+    "resourcesIntro": "以下链接提供有关您使用本网站时可能处理数据的服务的更多信息：",
+    "googlePrivacy": "Google 隐私政策",
+    "googlePartners": "Google 合作伙伴网站",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Cloudflare 隐私政策",
+    "contactTitle": "有隐私问题？",
+    "contactText": "如果您有隐私问题或希望提出与数据相关的请求，请联系我们。",
+    "contactButton": "联系我们",
+  },
+  hi: {
+    "metaTitle": "गोपनीयता नीति | Old Towns Walks",
+    "metaDescription": "जानें कि Old Towns Walks वेबसाइट डेटा, एनालिटिक्स, कुकीज़, एम्बेडेड सामग्री, विज्ञापन तकनीक, गोपनीयता विकल्प और तृतीय-पक्ष सेवाओं को कैसे संभालता है।",
+    "backHome": "होम पर वापस जाएँ",
+    "headingLead": "गोपनीयता",
+    "headingAccent": "नीति",
+    "lastUpdated": "अंतिम अपडेट: 16 सितंबर 2026",
+    "intro1": "Old Towns Walks आपकी गोपनीयता का सम्मान करता है। यह नीति बताती है कि oldtownswalks.com का उपयोग करते समय कौन-सी जानकारी संसाधित हो सकती है, क्यों संसाधित हो सकती है, कौन-सी तृतीय-पक्ष सेवाएँ डेटा प्राप्त कर सकती हैं और आपके पास कौन-से विकल्प उपलब्ध हैं।",
+    "intro2": "यह नीति इस वेबसाइट पर लागू होती है। बाहरी वेबसाइटों, वीडियो प्लेटफ़ॉर्म, विज्ञापनदाताओं, बुकिंग प्रदाताओं और अन्य तृतीय-पक्ष सेवाओं की अपनी गोपनीयता प्रथाएँ और नीतियाँ होती हैं।",
+    "s1Title": "हम जो जानकारी संसाधित करते हैं",
+    "s1Text": "जब आप हमसे संपर्क करते हैं, तो आप स्वेच्छा से अपना नाम, ईमेल पता, संदेश की सामग्री और अन्य विवरण दे सकते हैं। साइट पर आने पर IP पता, ब्राउज़र और डिवाइस जानकारी, ऑपरेटिंग सिस्टम, रेफरिंग पेज, अनुरोधित पेज, समय-सूचक, नेटवर्क से अनुमानित स्थान और सुरक्षा या प्रदर्शन लॉग जैसी तकनीकी जानकारी भी स्वतः संसाधित हो सकती है।",
+    "s2Title": "एनालिटिक्स और सर्वर लॉग",
+    "s2Text": "हम वेबसाइट के उपयोग को समझने और ट्रैफ़िक व प्रदर्शन मापने के लिए Google Analytics 4 का उपयोग करते हैं। Google अपनी नीतियों और हमारी कॉन्फ़िगरेशन के अनुसार डिवाइस, ब्राउज़र, नेटवर्क, पहचानकर्ता और इंटरैक्शन जानकारी संसाधित कर सकता है। होस्टिंग, कंटेंट डिलीवरी और सुरक्षा प्रदाता भी साइट चलाने और सुरक्षित रखने के लिए तकनीकी अनुरोध डेटा और सुरक्षा लॉग संसाधित कर सकते हैं।",
+    "s3Title": "कुकीज़ और समान तकनीकें",
+    "s3Text": "साइट और उस पर उपयोग की जाने वाली सेवाएँ आवश्यक संचालन, सुरक्षा, एनालिटिक्स, प्राथमिकताओं, एम्बेडेड सामग्री और सक्षम होने पर विज्ञापन के लिए कुकीज़, लोकल स्टोरेज, पिक्सेल या समान तकनीकों का उपयोग कर सकती हैं। आप ब्राउज़र से कुकीज़ नियंत्रित या हटा सकते हैं, हालांकि कुछ तकनीकों को ब्लॉक करने से साइट की सुविधाएँ प्रभावित हो सकती हैं।",
+    "s4Title": "एम्बेडेड सामग्री और तृतीय पक्ष",
+    "s4Text": "पेजों में YouTube जैसे प्लेटफ़ॉर्म से एम्बेडेड वीडियो या अन्य सामग्री हो सकती है। एम्बेडेड सामग्री लोड करने या उससे इंटरैक्ट करने पर प्रदाता तकनीकी और उपयोग संबंधी जानकारी प्राप्त कर सकता है और अपनी नीतियों के अनुसार कुकीज़ या समान पहचानकर्ताओं का उपयोग कर सकता है। बाहरी सामग्री संबंधित तृतीय पक्ष द्वारा ही होस्ट की जाती है।",
+    "s5Title": "विज्ञापन और Google सेवाएँ",
+    "s5Text": "यदि Google AdSense जैसी विज्ञापन सेवाएँ सक्षम की जाती हैं, तो Google और अन्य विज्ञापन प्रदाता विज्ञापन दिखाने, मापने, सीमित करने और वैयक्तिकृत करने के लिए कुकीज़ या समान तकनीकों का उपयोग कर सकते हैं। Google विज्ञापन कुकीज़ Google और उसके भागीदारों को इस वेबसाइट और/या अन्य वेबसाइटों की विज़िट के आधार पर विज्ञापन दिखाने की अनुमति दे सकती हैं। Google विज्ञापन प्राथमिकताएँ My Ad Center से प्रबंधित की जा सकती हैं।",
+    "s6Title": "साझाकरण, अंतरराष्ट्रीय प्रसंस्करण और संग्रह",
+    "s6Text": "जानकारी को होस्टिंग, सुरक्षा, एनालिटिक्स, एम्बेडेड मीडिया, विज्ञापन, संचार या अन्य वेबसाइट कार्यों का समर्थन करने वाले प्रदाताओं द्वारा संसाधित किया जा सकता है और कानून की आवश्यकता होने पर या अधिकारों व सुरक्षा की रक्षा के लिए प्रकट किया जा सकता है। प्रदाता अंतरराष्ट्रीय स्तर पर काम कर सकते हैं, इसलिए डेटा आपके देश के बाहर संसाधित हो सकता है। हम जानकारी केवल संबंधित उद्देश्य या कानूनी दायित्वों के लिए उचित रूप से आवश्यक अवधि तक रखते हैं।",
+    "s7Title": "आपके गोपनीयता विकल्प और अधिकार",
+    "s7Text": "आपके निवास स्थान के आधार पर आपको पहुँच, सुधार, हटाने, प्रतिबंध, डेटा पोर्टेबिलिटी, कुछ प्रसंस्करण पर आपत्ति या जहाँ प्रसंस्करण सहमति पर आधारित हो वहाँ सहमति वापस लेने के अधिकार मिल सकते हैं। कानूनी अपवाद लागू हो सकते हैं। ब्राउज़र नियंत्रण, उपलब्ध सहमति नियंत्रण, Google विज्ञापन सेटिंग्स और तृतीय-पक्ष सेटिंग्स भी कुछ विकल्पों को प्रबंधित करने में मदद कर सकती हैं।",
+    "s8Title": "बच्चे, सुरक्षा और नीति में बदलाव",
+    "s8Text": "Old Towns Walks 13 वर्ष से कम आयु के बच्चों के लिए लक्षित नहीं है और हम जानबूझकर 13 वर्ष से कम आयु के बच्चों से व्यक्तिगत जानकारी नहीं माँगते। साइट की सुरक्षा के लिए हम उचित तकनीकी और संगठनात्मक उपाय अपनाते हैं, लेकिन इंटरनेट पर किसी भी प्रसारण या संग्रह विधि को पूरी तरह सुरक्षित होने की गारंटी नहीं दी जा सकती। साइट, सेवाओं, कानूनी आवश्यकताओं या तृतीय-पक्ष टूल में बदलाव होने पर हम इस नीति को अपडेट कर सकते हैं।",
+    "resourcesTitle": "तृतीय-पक्ष गोपनीयता संसाधन",
+    "resourcesIntro": "ये लिंक उन सेवाओं के बारे में अतिरिक्त जानकारी देते हैं जो इस वेबसाइट के उपयोग के दौरान डेटा संसाधित कर सकती हैं:",
+    "googlePrivacy": "Google गोपनीयता नीति",
+    "googlePartners": "Google पार्टनर साइटें",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Cloudflare गोपनीयता नीति",
+    "contactTitle": "गोपनीयता से जुड़ा प्रश्न?",
+    "contactText": "यदि आपके पास गोपनीयता से जुड़ा प्रश्न है या डेटा से संबंधित अनुरोध करना चाहते हैं, तो हमसे संपर्क करें।",
+    "contactButton": "संपर्क करें",
+  },
+  id: {
+    "metaTitle": "Kebijakan Privasi | Old Towns Walks",
+    "metaDescription": "Pelajari bagaimana Old Towns Walks menangani data situs, analitik, cookie, konten tertanam, teknologi iklan, pilihan privasi, dan layanan pihak ketiga.",
+    "backHome": "Kembali ke Beranda",
+    "headingLead": "Kebijakan",
+    "headingAccent": "Privasi",
+    "lastUpdated": "Terakhir diperbarui: 16 September 2026",
+    "intro1": "Old Towns Walks menghormati privasi Anda. Kebijakan ini menjelaskan informasi apa yang dapat diproses saat Anda menggunakan oldtownswalks.com, mengapa informasi tersebut dapat diproses, layanan pihak ketiga mana yang dapat menerima data, dan pilihan apa yang tersedia bagi Anda.",
+    "intro2": "Kebijakan ini berlaku untuk situs web ini. Situs eksternal, platform video, pengiklan, penyedia pemesanan, dan layanan pihak ketiga lainnya memiliki praktik dan kebijakan privasi masing-masing.",
+    "s1Title": "Informasi yang Kami Proses",
+    "s1Text": "Saat menghubungi kami, Anda dapat secara sukarela memberikan nama, alamat email, isi pesan, dan detail lainnya. Saat mengunjungi situs, data teknis juga dapat diproses secara otomatis, termasuk alamat IP, informasi browser dan perangkat, sistem operasi, halaman rujukan, halaman yang diminta, stempel waktu, perkiraan lokasi berdasarkan jaringan, serta log keamanan atau kinerja.",
+    "s2Title": "Analitik dan Log Server",
+    "s2Text": "Kami menggunakan Google Analytics 4 untuk memahami penggunaan situs dan mengukur lalu lintas serta kinerja. Google dapat memproses informasi perangkat, browser, jaringan, pengenal, dan interaksi sesuai kebijakan mereka dan konfigurasi kami. Penyedia hosting, distribusi konten, dan keamanan juga dapat memproses data teknis permintaan dan log keamanan untuk mengoperasikan dan melindungi situs.",
+    "s3Title": "Cookie dan Teknologi Serupa",
+    "s3Text": "Situs dan layanan yang digunakan di dalamnya dapat menggunakan cookie, penyimpanan lokal, piksel, atau teknologi serupa untuk operasi penting, keamanan, analitik, preferensi, konten tertanam, dan iklan jika diaktifkan. Anda dapat mengontrol atau menghapus cookie melalui browser, meskipun memblokir teknologi tertentu dapat memengaruhi fitur situs.",
+    "s4Title": "Konten Tertanam dan Pihak Ketiga",
+    "s4Text": "Halaman dapat berisi video tertanam atau konten lain dari platform seperti YouTube. Memuat atau berinteraksi dengan konten tertanam dapat memungkinkan penyedia menerima informasi teknis dan penggunaan serta menggunakan cookie atau pengenal serupa sesuai kebijakan mereka sendiri. Konten eksternal tetap dihosting oleh pihak ketiga terkait.",
+    "s5Title": "Periklanan dan Layanan Google",
+    "s5Text": "Jika layanan iklan seperti Google AdSense diaktifkan, Google dan penyedia iklan lainnya dapat menggunakan cookie atau teknologi serupa untuk menayangkan, mengukur, membatasi, dan mempersonalisasi iklan. Cookie iklan Google dapat memungkinkan Google dan mitranya menampilkan iklan berdasarkan kunjungan ke situs ini dan/atau situs lain. Preferensi iklan Google dapat dikelola melalui My Ad Center.",
+    "s6Title": "Berbagi, Pemrosesan Internasional, dan Penyimpanan",
+    "s6Text": "Informasi dapat diproses oleh penyedia yang mendukung hosting, keamanan, analitik, media tertanam, iklan, komunikasi, atau fungsi situs lainnya, dan dapat diungkapkan ketika diwajibkan oleh hukum atau untuk melindungi hak dan keamanan. Karena penyedia dapat beroperasi secara internasional, data dapat diproses di luar negara Anda. Kami menyimpan informasi hanya selama secara wajar diperlukan untuk tujuan terkait atau kewajiban hukum.",
+    "s7Title": "Pilihan dan Hak Privasi Anda",
+    "s7Text": "Tergantung tempat tinggal Anda, Anda mungkin memiliki hak untuk meminta akses, koreksi, penghapusan, pembatasan, portabilitas, menolak pemrosesan tertentu, atau menarik persetujuan jika pemrosesan bergantung pada persetujuan. Pengecualian hukum dapat berlaku. Kontrol browser, kontrol persetujuan yang tersedia, pengaturan iklan Google, dan pengaturan pihak ketiga juga dapat membantu mengelola pilihan tertentu.",
+    "s8Title": "Anak-Anak, Keamanan, dan Perubahan Kebijakan",
+    "s8Text": "Old Towns Walks tidak ditujukan untuk anak di bawah 13 tahun dan kami tidak dengan sengaja meminta informasi pribadi dari anak di bawah 13 tahun. Kami menggunakan langkah teknis dan organisasi yang wajar untuk melindungi situs, tetapi tidak ada metode transmisi atau penyimpanan internet yang dapat dijamin sepenuhnya aman. Kami dapat memperbarui kebijakan ini ketika situs, layanan, persyaratan hukum, atau alat pihak ketiga berubah.",
+    "resourcesTitle": "Sumber Privasi Pihak Ketiga",
+    "resourcesIntro": "Tautan ini memberikan informasi tambahan tentang layanan yang dapat memproses data saat Anda menggunakan situs ini:",
+    "googlePrivacy": "Kebijakan Privasi Google",
+    "googlePartners": "Situs Mitra Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Kebijakan Privasi Cloudflare",
+    "contactTitle": "Pertanyaan tentang privasi?",
+    "contactText": "Hubungi kami jika Anda memiliki pertanyaan privasi atau ingin membuat permintaan terkait data.",
+    "contactButton": "Hubungi Kami",
+  },
+  vi: {
+    "metaTitle": "Chính Sách Bảo Mật | Old Towns Walks",
+    "metaDescription": "Tìm hiểu cách Old Towns Walks xử lý dữ liệu trang web, phân tích, cookie, nội dung nhúng, công nghệ quảng cáo, lựa chọn quyền riêng tư và dịch vụ bên thứ ba.",
+    "backHome": "Quay lại Trang Chủ",
+    "headingLead": "Chính Sách",
+    "headingAccent": "Bảo Mật",
+    "lastUpdated": "Cập nhật lần cuối: 16 tháng 9 năm 2026",
+    "intro1": "Old Towns Walks tôn trọng quyền riêng tư của bạn. Chính sách này giải thích thông tin nào có thể được xử lý khi bạn sử dụng oldtownswalks.com, lý do xử lý, dịch vụ bên thứ ba nào có thể nhận dữ liệu và các lựa chọn dành cho bạn.",
+    "intro2": "Chính sách này áp dụng cho trang web này. Các trang web bên ngoài, nền tảng video, nhà quảng cáo, nhà cung cấp đặt chỗ và dịch vụ bên thứ ba khác có thực tiễn và chính sách bảo mật riêng.",
+    "s1Title": "Thông tin chúng tôi xử lý",
+    "s1Text": "Khi liên hệ với chúng tôi, bạn có thể tự nguyện cung cấp tên, địa chỉ email, nội dung tin nhắn và các chi tiết khác. Khi truy cập trang web, dữ liệu kỹ thuật cũng có thể được xử lý tự động, bao gồm địa chỉ IP, thông tin trình duyệt và thiết bị, hệ điều hành, trang giới thiệu, các trang được yêu cầu, dấu thời gian, vị trí gần đúng suy ra từ mạng và nhật ký bảo mật hoặc hiệu suất.",
+    "s2Title": "Phân tích và nhật ký máy chủ",
+    "s2Text": "Chúng tôi sử dụng Google Analytics 4 để hiểu cách sử dụng trang web và đo lưu lượng cũng như hiệu suất. Google có thể xử lý thông tin về thiết bị, trình duyệt, mạng, mã định danh và tương tác theo chính sách của họ và cấu hình của chúng tôi. Nhà cung cấp lưu trữ, phân phối nội dung và bảo mật cũng có thể xử lý dữ liệu yêu cầu kỹ thuật và nhật ký bảo mật để vận hành và bảo vệ trang web.",
+    "s3Title": "Cookie và công nghệ tương tự",
+    "s3Text": "Trang web và các dịch vụ được sử dụng trên đó có thể dùng cookie, lưu trữ cục bộ, pixel hoặc công nghệ tương tự cho hoạt động thiết yếu, bảo mật, phân tích, tùy chọn, nội dung nhúng và quảng cáo khi được bật. Bạn có thể kiểm soát hoặc xóa cookie qua trình duyệt, mặc dù việc chặn một số công nghệ có thể ảnh hưởng đến tính năng của trang web.",
+    "s4Title": "Nội dung nhúng và bên thứ ba",
+    "s4Text": "Các trang có thể chứa video nhúng hoặc nội dung khác từ nền tảng như YouTube. Việc tải hoặc tương tác với nội dung nhúng có thể cho phép nhà cung cấp nhận thông tin kỹ thuật và sử dụng, đồng thời dùng cookie hoặc mã định danh tương tự theo chính sách riêng của họ. Nội dung bên ngoài vẫn do bên thứ ba liên quan lưu trữ.",
+    "s5Title": "Quảng cáo và dịch vụ Google",
+    "s5Text": "Nếu các dịch vụ quảng cáo như Google AdSense được bật, Google và các nhà cung cấp quảng cáo khác có thể dùng cookie hoặc công nghệ tương tự để phân phối, đo lường, giới hạn và cá nhân hóa quảng cáo. Cookie quảng cáo của Google có thể cho phép Google và đối tác hiển thị quảng cáo dựa trên lượt truy cập trang web này và/hoặc các trang web khác. Tùy chọn quảng cáo Google có thể được quản lý qua My Ad Center.",
+    "s6Title": "Chia sẻ, xử lý quốc tế và lưu giữ",
+    "s6Text": "Thông tin có thể được xử lý bởi các nhà cung cấp hỗ trợ lưu trữ, bảo mật, phân tích, phương tiện nhúng, quảng cáo, liên lạc hoặc các chức năng khác của trang web và có thể được tiết lộ khi pháp luật yêu cầu hoặc để bảo vệ quyền và an toàn. Vì nhà cung cấp có thể hoạt động quốc tế, dữ liệu có thể được xử lý ngoài quốc gia của bạn. Chúng tôi chỉ lưu giữ thông tin trong thời gian hợp lý cần thiết cho mục đích liên quan hoặc nghĩa vụ pháp lý.",
+    "s7Title": "Lựa chọn và quyền riêng tư của bạn",
+    "s7Text": "Tùy nơi bạn sinh sống, bạn có thể có quyền yêu cầu truy cập, chỉnh sửa, xóa, hạn chế, khả năng chuyển dữ liệu, phản đối một số hoạt động xử lý hoặc rút lại sự đồng ý khi việc xử lý dựa trên sự đồng ý. Có thể áp dụng ngoại lệ pháp lý. Kiểm soát trình duyệt, công cụ đồng ý hiện có, cài đặt quảng cáo Google và cài đặt bên thứ ba cũng có thể giúp quản lý một số lựa chọn.",
+    "s8Title": "Trẻ em, bảo mật và thay đổi chính sách",
+    "s8Text": "Old Towns Walks không hướng tới trẻ em dưới 13 tuổi và chúng tôi không cố ý yêu cầu thông tin cá nhân từ trẻ em dưới 13 tuổi. Chúng tôi sử dụng các biện pháp kỹ thuật và tổ chức hợp lý để bảo vệ trang web, nhưng không phương thức truyền hoặc lưu trữ trên Internet nào có thể được đảm bảo an toàn tuyệt đối. Chúng tôi có thể cập nhật chính sách này khi trang web, dịch vụ, yêu cầu pháp lý hoặc công cụ bên thứ ba thay đổi.",
+    "resourcesTitle": "Tài nguyên quyền riêng tư của bên thứ ba",
+    "resourcesIntro": "Các liên kết này cung cấp thêm thông tin về những dịch vụ có thể xử lý dữ liệu khi bạn sử dụng trang web này:",
+    "googlePrivacy": "Chính sách quyền riêng tư của Google",
+    "googlePartners": "Trang web đối tác của Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "Chính sách quyền riêng tư của Cloudflare",
+    "contactTitle": "Có câu hỏi về quyền riêng tư?",
+    "contactText": "Hãy liên hệ nếu bạn có câu hỏi về quyền riêng tư hoặc muốn gửi yêu cầu liên quan đến dữ liệu.",
+    "contactButton": "Liên hệ",
+  },
+  ar: {
+    "metaTitle": "سياسة الخصوصية | Old Towns Walks",
+    "metaDescription": "تعرّف على كيفية تعامل Old Towns Walks مع بيانات الموقع والتحليلات وملفات تعريف الارتباط والمحتوى المضمّن وتقنيات الإعلانات وخيارات الخصوصية وخدمات الجهات الخارجية.",
+    "backHome": "العودة إلى الرئيسية",
+    "headingLead": "سياسة",
+    "headingAccent": "الخصوصية",
+    "lastUpdated": "آخر تحديث: 16 سبتمبر 2026",
+    "intro1": "يحترم Old Towns Walks خصوصيتك. توضح هذه السياسة المعلومات التي قد تتم معالجتها عند استخدام oldtownswalks.com، ولماذا قد تتم معالجتها، وما الخدمات التابعة لجهات خارجية التي قد تتلقى البيانات، وما الخيارات المتاحة لك.",
+    "intro2": "تنطبق هذه السياسة على هذا الموقع. للمواقع الخارجية ومنصات الفيديو والمعلنين ومزودي الحجز وغيرها من خدمات الجهات الخارجية ممارسات وسياسات خصوصية خاصة بها.",
+    "s1Title": "المعلومات التي نعالجها",
+    "s1Text": "عند التواصل معنا، يمكنك تقديم اسمك وعنوان بريدك الإلكتروني ومحتوى الرسالة وتفاصيل أخرى طوعًا. وعند زيارة الموقع قد تتم أيضًا معالجة بيانات تقنية تلقائيًا، بما في ذلك عنوان IP ومعلومات المتصفح والجهاز ونظام التشغيل والصفحة المُحيلة والصفحات المطلوبة والطوابع الزمنية والموقع التقريبي المستنتج من الشبكة وسجلات الأمان أو الأداء.",
+    "s2Title": "التحليلات وسجلات الخادم",
+    "s2Text": "نستخدم Google Analytics 4 لفهم استخدام الموقع وقياس الزيارات والأداء. قد تعالج Google معلومات الجهاز والمتصفح والشبكة والمعرّفات والتفاعلات وفقًا لسياساتها وإعداداتنا. كما قد يعالج مزودو الاستضافة وتوزيع المحتوى والأمان بيانات الطلبات التقنية وسجلات الأمان لتشغيل الموقع وحمايته.",
+    "s3Title": "ملفات تعريف الارتباط والتقنيات المشابهة",
+    "s3Text": "قد يستخدم الموقع والخدمات المستخدمة فيه ملفات تعريف الارتباط أو التخزين المحلي أو وحدات البكسل أو تقنيات مشابهة للتشغيل الأساسي والأمان والتحليلات والتفضيلات والمحتوى المضمّن والإعلانات عند تفعيلها. يمكنك التحكم في ملفات تعريف الارتباط أو حذفها من خلال المتصفح، مع العلم أن حظر بعض التقنيات قد يؤثر في وظائف الموقع.",
+    "s4Title": "المحتوى المضمّن والجهات الخارجية",
+    "s4Text": "قد تحتوي الصفحات على فيديوهات مضمّنة أو محتوى آخر من منصات مثل YouTube. قد يتيح تحميل المحتوى المضمّن أو التفاعل معه للمزوّد تلقي معلومات تقنية ومعلومات الاستخدام واستخدام ملفات تعريف الارتباط أو معرّفات مشابهة وفقًا لسياساته الخاصة. يظل المحتوى الخارجي مستضافًا لدى الجهة الخارجية المعنية.",
+    "s5Title": "الإعلانات وخدمات Google",
+    "s5Text": "إذا تم تفعيل خدمات إعلانية مثل Google AdSense، فقد تستخدم Google ومزودو الإعلانات الآخرون ملفات تعريف الارتباط أو تقنيات مشابهة لعرض الإعلانات وقياسها وتحديد تكرارها وتخصيصها. قد تتيح ملفات تعريف ارتباط إعلانات Google لـ Google وشركائها عرض إعلانات استنادًا إلى زيارات هذا الموقع و/أو مواقع أخرى. يمكن إدارة تفضيلات إعلانات Google من خلال My Ad Center.",
+    "s6Title": "المشاركة والمعالجة الدولية والاحتفاظ",
+    "s6Text": "قد تتم معالجة المعلومات بواسطة مزودين يدعمون الاستضافة والأمان والتحليلات والوسائط المضمّنة والإعلانات والاتصالات أو وظائف أخرى للموقع، وقد يتم الإفصاح عنها عندما يقتضي القانون ذلك أو لحماية الحقوق والأمان. ولأن المزودين قد يعملون دوليًا، فقد تتم معالجة البيانات خارج بلدك. نحتفظ بالمعلومات فقط للمدة المعقولة اللازمة للغرض المعني أو للالتزامات القانونية.",
+    "s7Title": "خياراتك وحقوقك في الخصوصية",
+    "s7Text": "بحسب مكان إقامتك، قد تكون لديك حقوق في طلب الوصول أو التصحيح أو الحذف أو التقييد أو نقل البيانات أو الاعتراض على بعض أنواع المعالجة أو سحب الموافقة عندما تعتمد المعالجة عليها. قد تنطبق استثناءات قانونية. كما قد تساعد إعدادات المتصفح وأدوات الموافقة المتاحة وإعدادات إعلانات Google وإعدادات الجهات الخارجية في إدارة بعض الخيارات.",
+    "s8Title": "الأطفال والأمان وتغييرات السياسة",
+    "s8Text": "لا يستهدف Old Towns Walks الأطفال دون سن 13 عامًا ولا نطلب عن علم معلومات شخصية من أطفال دون سن 13 عامًا. نستخدم تدابير تقنية وتنظيمية معقولة لحماية الموقع، ولكن لا يمكن ضمان الأمان الكامل لأي طريقة نقل أو تخزين عبر الإنترنت. قد نقوم بتحديث هذه السياسة عند تغير الموقع أو الخدمات أو المتطلبات القانونية أو أدوات الجهات الخارجية.",
+    "resourcesTitle": "موارد الخصوصية للجهات الخارجية",
+    "resourcesIntro": "توفر هذه الروابط معلومات إضافية حول الخدمات التي قد تعالج البيانات عند استخدامك لهذا الموقع:",
+    "googlePrivacy": "سياسة خصوصية Google",
+    "googlePartners": "مواقع شركاء Google",
+    "googleAds": "Google My Ad Center",
+    "cloudflare": "سياسة خصوصية Cloudflare",
+    "contactTitle": "هل لديك سؤال حول الخصوصية؟",
+    "contactText": "تواصل معنا إذا كان لديك سؤال حول الخصوصية أو أردت تقديم طلب متعلق ببياناتك.",
+    "contactButton": "تواصل معنا",
+  },
+} as const;
+
+const requestedLang = Astro.params.lang || defaultLang;
+const currentLang = requestedLang in privacyContent ? requestedLang : defaultLang;
+const t = privacyContent[currentLang as keyof typeof privacyContent];
+
+const metaTitle = t.metaTitle;
+const metaDescription = t.metaDescription;
+const canonicalUrl = new URL(`/${currentLang}/privacy`, Astro.url.origin).href;
+
+const alternateLinks = Object.keys(languages).map((lang) => ({
+  lang,
+  href: new URL(`/${lang}/privacy`, Astro.url.origin).href
+}));
+
+const sections = [
+  { title: t.s1Title, text: t.s1Text },
+  { title: t.s2Title, text: t.s2Text },
+  { title: t.s3Title, text: t.s3Text },
+  { title: t.s4Title, text: t.s4Text },
+  { title: t.s5Title, text: t.s5Text },
+  { title: t.s6Title, text: t.s6Text },
+  { title: t.s7Title, text: t.s7Text },
+  { title: t.s8Title, text: t.s8Text }
+];
+
+const privacyResources = [
+  { label: t.googlePrivacy, href: 'https://policies.google.com/privacy' },
+  { label: t.googlePartners, href: 'https://policies.google.com/technologies/partner-sites' },
+  { label: t.googleAds, href: 'https://myadcenter.google.com/' },
+  { label: t.cloudflare, href: 'https://www.cloudflare.com/privacypolicy/' }
+];
+
+const privacySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  url: canonicalUrl,
+  name: metaTitle,
+  description: metaDescription,
+  inLanguage: currentLang,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Old Towns Walks',
+    url: Astro.url.origin
+  }
+};
+---
+
+<BaseLayout title={metaTitle} description={metaDescription} canonical={canonicalUrl}>
+  <Fragment slot="head">
+    {alternateLinks.map(({ lang, href }) => (
+      <link rel="alternate" hreflang={lang} href={href} />
+    ))}
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href={new URL('/en/privacy', Astro.url.origin).href}
+    />
+  </Fragment>
+
+  <div class="privacy-wrapper">
+    <a href={`/${currentLang}/`} class="back-link">← {t.backHome}</a>
+
+    <section class="privacy-header info-card" aria-labelledby="privacy-title">
+      <h1 id="privacy-title">{t.headingLead} <span class="highlight">{t.headingAccent}</span></h1>
+      <p class="subtitle">{t.lastUpdated}</p>
+    </section>
+
+    <section class="info-card">
+      <p>{t.intro1}</p>
+      <p>{t.intro2}</p>
+    </section>
+
+    {sections.map((section) => (
+      <section class="info-card">
+        <h2 class="card-title">{section.title}</h2>
+        <p>{section.text}</p>
+      </section>
+    ))}
+
+    <section class="info-card">
+      <h2 class="card-title">{t.resourcesTitle}</h2>
+      <p>{t.resourcesIntro}</p>
+      <div class="resource-list">
+        {privacyResources.map((resource) => (
+          <a href={resource.href} target="_blank" rel="noopener noreferrer" class="resource-link">
+            <span>{resource.label}</span><span aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="info-card contact-card">
+      <div>
+        <h2>{t.contactTitle}</h2>
+        <p>{t.contactText}</p>
+      </div>
+      <a href="/contact" class="btn-primary">{t.contactButton}</a>
+    </section>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(privacySchema)} />
+</BaseLayout>
+
+<style>
+  .privacy-wrapper {
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 20px;
+    color: #e5e7eb;
+    font-family: system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: #fbc02d;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .privacy-header {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    text-align: center;
+  }
+
+  .privacy-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin: 0 0 8px 0;
+  }
+
+  .highlight {
+    color: #fbc02d;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .info-card {
+    background-color: #181818;
+    border: 1px solid #272727;
+    border-radius: 12px;
+    padding: 28px;
+    margin-bottom: 24px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .info-card p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+    color: #d1d5db;
+    margin: 0 0 16px 0;
+  }
+
+  .info-card p:last-child {
+    margin-bottom: 0;
+  }
+
+  .card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 16px 0;
+  }
+
+  .resource-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .resource-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid #2d2d2d;
+    border-radius: 8px;
+    background-color: #0f0f0f;
+    color: #fbc02d;
+    text-decoration: none;
+  }
+
+  .contact-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .contact-card h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 4px 0;
+  }
+
+  .contact-card p {
+    font-size: 0.95rem;
+    color: #9ca3af;
+    margin: 0;
+  }
+
+  .btn-primary {
+    background-color: #fbc02d;
+    color: #0f0f0f;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 640px) {
+    .privacy-wrapper {
+      padding: 20px 16px;
+    }
+
+    .contact-card {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .btn-primary {
+      width: 100%;
+      text-align: center;
+      box-sizing: border-box;
+    }
+  }
+</style>

@@ -1,47 +1,39 @@
 ---
-const languages = {
-  en: 'English',
-  de: 'Deutsch',
-  es: 'Español',
-  fr: 'Français',
-  it: 'Italiano',
-  tr: 'Türkçe',
-  nl: 'Nederlands',
-  pl: 'Polski',
-  pt: 'Português',
-  sv: 'Svenska',
-  ru: 'Русский',
-  ja: '日本語',
-  ko: '한국어',
-  zh: '中文',
-  hi: 'हिन्दी',
-  id: 'Bahasa Indonesia',
-  vi: 'Tiếng Việt',
-  ar: 'العربية'
-};
+import { languages } from '../i18n/ui';
+
+const languageOrder = [
+  'en', 'de', 'es', 'fr', 'it', 'tr', 'nl', 'pl', 'pt',
+  'sv', 'ru', 'ja', 'ko', 'zh', 'hi', 'id', 'vi', 'ar'
+] as const;
 
 const currentPath = Astro.url.pathname;
 const pathSegments = currentPath.split('/').filter(Boolean);
 const langKeys = Object.keys(languages);
 
-const currentLang = langKeys.includes(pathSegments[0]) ? pathSegments[0] : 'en';
+const currentLang = langKeys.includes(pathSegments[0])
+  ? pathSegments[0]
+  : 'en';
 
-const cleanPath = langKeys.includes(pathSegments[0]) 
+const cleanPath = langKeys.includes(pathSegments[0])
   ? '/' + pathSegments.slice(1).join('/')
   : currentPath;
 ---
 
 <div class="lang-picker-container">
-  <select id="lang-select-element" class="lang-select">
-    {Object.entries(languages).map(([lang, label]) => {
-      // İngilizce dahil tüm dilleri kendi klasör koduna (/en/, /tr/, /de/) yönlendiriyoruz
-      const targetLang = lang;
-      const newPath = (cleanPath === '/' || cleanPath === '') 
-        ? `/${targetLang}/` 
-        : `/${targetLang}${cleanPath}`;
+  <select class="lang-select" data-language-select aria-label="Language">
+    {languageOrder.map((lang) => {
+      const label = languages[lang];
+      const newPath =
+        cleanPath === '/' || cleanPath === ''
+          ? `/${lang}/`
+          : `/${lang}${cleanPath}`;
 
       return (
-        <option value={newPath} data-lang={lang} selected={currentLang === lang}>
+        <option
+          value={newPath}
+          data-lang={lang}
+          selected={currentLang === lang}
+        >
           {label}
         </option>
       );
@@ -50,23 +42,24 @@ const cleanPath = langKeys.includes(pathSegments[0])
 </div>
 
 <script>
-  const selectElement = document.getElementById('lang-select-element') as HTMLSelectElement;
-  if (selectElement) {
-    selectElement.addEventListener('change', (e) => {
-      const target = e.target as HTMLSelectElement;
-      const selectedOption = target.options[target.selectedIndex];
-      const selectedLang = selectedOption.getAttribute('data-lang');
-      
-      if (selectedLang) {
-        // Seçilen dili hafızaya kaydet
-        localStorage.setItem('preferredLang', selectedLang);
-      }
-      
-      if (target.value) {
-        location.href = target.value;
-      }
+  document
+    .querySelectorAll('[data-language-select]')
+    .forEach((element) => {
+      if (!(element instanceof HTMLSelectElement)) return;
+
+      element.addEventListener('change', () => {
+        const selectedOption = element.options[element.selectedIndex];
+        const selectedLang = selectedOption?.getAttribute('data-lang');
+
+        if (selectedLang) {
+          localStorage.setItem('preferredLang', selectedLang);
+        }
+
+        if (element.value) {
+          window.location.href = element.value;
+        }
+      });
     });
-  }
 </script>
 
 <style>
@@ -87,12 +80,20 @@ const cleanPath = langKeys.includes(pathSegments[0])
     transition: border-color 0.2s ease;
   }
 
-  .lang-select:hover {
+  .lang-select:hover,
+  .lang-select:focus {
     border-color: #fbc02d;
   }
 
   .lang-select option {
     background-color: #181818;
     color: #ffffff;
+  }
+
+  @media (max-width: 700px) {
+    .lang-select {
+      max-width: 150px;
+      padding: 6px 8px;
+    }
   }
 </style>

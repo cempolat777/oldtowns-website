@@ -1,117 +1,142 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+
+const metaTitle = 'Privacy Policy | Old Towns Walks';
+const metaDescription = 'Learn how Old Towns Walks handles website data, analytics, cookies, embedded content, advertising technologies, privacy choices, and third-party services.';
+const canonicalUrl = new URL('/privacy', Astro.url.origin).href;
+
+const sections = [
+  {
+    title: 'Information We Process',
+    text: 'When you contact us, you may voluntarily provide your name, email address, message content, and other details. When you visit the site, technical data may also be processed automatically, including IP address, browser and device information, operating system, referring page, requested pages, timestamps, approximate network-derived location, and security or performance logs.'
+  },
+  {
+    title: 'Analytics and Server Logs',
+    text: 'We use Google Analytics 4 to understand website usage and measure traffic and performance. Google may process device, browser, network, identifier, and interaction information according to its policies and our configuration. Hosting, content-delivery, and security providers may also process technical request data and security logs to operate and protect the site.'
+  },
+  {
+    title: 'Cookies and Similar Technologies',
+    text: 'The site and services used on it may use cookies, local storage, pixels, or similar technologies for essential operation, security, analytics, preferences, embedded content, and advertising where enabled. You can control or delete cookies through your browser, although blocking some technologies may affect website features.'
+  },
+  {
+    title: 'Embedded Content and Third Parties',
+    text: 'Pages may contain embedded videos or other content from platforms such as YouTube. Loading or interacting with embedded content may allow the provider to receive technical and usage information and to use cookies or similar identifiers under its own policies. External content remains hosted by the relevant third party.'
+  },
+  {
+    title: 'Advertising and Google Services',
+    text: 'If advertising services such as Google AdSense are enabled, Google and other advertising vendors may use cookies or similar technologies to serve, measure, limit, and personalize ads. Google advertising cookies can allow Google and its partners to serve ads based on visits to this website and/or other websites. Google advertising preferences can be managed through My Ad Center.'
+  },
+  {
+    title: 'Sharing, International Processing, and Retention',
+    text: 'Information may be processed by providers supporting hosting, security, analytics, embedded media, advertising, communications, or other website functions, and may be disclosed when required by law or to protect rights and security. Because providers may operate internationally, data may be processed outside your country. We retain information only as long as reasonably necessary for the relevant purpose or legal obligations.'
+  },
+  {
+    title: 'Your Privacy Choices and Rights',
+    text: 'Depending on where you live, you may have rights to request access, correction, deletion, restriction, portability, objection to certain processing, or withdrawal of consent where processing relies on consent. Legal exceptions may apply. Browser controls, available consent controls, Google advertising settings, and third-party settings may also help manage certain choices.'
+  },
+  {
+    title: 'Children, Security, and Policy Changes',
+    text: 'Old Towns Walks is not directed to children under 13 and we do not knowingly request personal information from children under 13. We use reasonable technical and organizational measures to protect the site, but no internet transmission or storage method can be guaranteed completely secure. We may update this policy when the site, services, legal requirements, or third-party tools change.'
+  }
+];
+
+const privacyResources = [
+  { label: 'Google Privacy Policy', href: 'https://policies.google.com/privacy' },
+  { label: 'Google Partner Sites', href: 'https://policies.google.com/technologies/partner-sites' },
+  { label: 'Google My Ad Center', href: 'https://myadcenter.google.com/' },
+  { label: 'Cloudflare Privacy Policy', href: 'https://www.cloudflare.com/privacypolicy/' }
+];
+
+const privacySchema = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  url: canonicalUrl,
+  name: metaTitle,
+  description: metaDescription,
+  inLanguage: 'en',
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Old Towns Walks',
+    url: Astro.url.origin
+  }
+};
 ---
 
-<BaseLayout title="Privacy Policy - Old Towns Walks" description="Privacy Policy for Old Towns Walks. Learn how we handle data and protect your privacy.">
+<BaseLayout title={metaTitle} description={metaDescription} canonical={canonicalUrl}>
   <div class="privacy-wrapper">
-    
-    <!-- Başlık Bölümü -->
-    <header class="privacy-header">
+    <a href="/en/" class="back-link">← Back to Home</a>
+
+    <header class="privacy-header info-card">
       <h1>Privacy <span class="highlight">Policy</span></h1>
-      <p class="subtitle">Last updated: August 17, 2026</p>
+      <p class="subtitle">Last updated: September 16, 2026</p>
     </header>
 
-    <!-- Giriş Kartı -->
     <section class="info-card">
-      <p>
-        At <strong>Old Towns Walks</strong>, accessible from <code>oldtownswalks.com</code>, one of our main priorities is the privacy of our visitors. This Privacy Policy document contains types of information that is collected and recorded by Old Towns Walks and how we use it.
-      </p>
-      <p>
-        If you have additional questions or require more information about our Privacy Policy, do not hesitate to contact us.
-      </p>
+      <p>Old Towns Walks respects your privacy. This policy explains what information may be processed when you use oldtownswalks.com, why it may be processed, which third-party services may receive data, and what choices are available to you.</p>
+      <p>This policy applies to this website. External websites, video platforms, advertisers, booking providers, and other third-party services have their own privacy practices and policies.</p>
     </section>
 
-    <!-- Log Dosyaları -->
+    {sections.map((section) => (
+      <section class="info-card">
+        <h2 class="card-title">{section.title}</h2>
+        <p>{section.text}</p>
+      </section>
+    ))}
+
     <section class="info-card">
-      <h2 class="card-title">Log Files</h2>
-      <p>
-        Old Towns Walks follows a standard procedure of using log files. These files log visitors when they visit websites. All hosting companies do this as part of hosting services' analytics.
-      </p>
-      <p>
-        The information collected by log files includes internet protocol (IP) addresses, browser type, Internet Service Provider (ISP), date and time stamp, referring/exit pages, and possibly the number of clicks. These are not linked to any information that is personally identifiable.
-      </p>
+      <h2 class="card-title">Third-Party Privacy Resources</h2>
+      <p>These links provide additional information about services that may process data when you use this website:</p>
+      <div class="resource-list">
+        {privacyResources.map((resource) => (
+          <a href={resource.href} target="_blank" rel="noopener noreferrer" class="resource-link">
+            <span>{resource.label}</span><span aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </div>
     </section>
 
-    <!-- Çerezler (Cookies) -->
-    <section class="info-card">
-      <h2 class="card-title">Cookies and Web Beacons</h2>
-      <p>
-        Like any other website, Old Towns Walks uses 'cookies'. These cookies are used to store information including visitors' preferences, and the pages on the website that the visitor accessed or visited.
-      </p>
-      <p>
-        The information is used to optimize the users' experience by customizing our web page content based on visitors' browser type and/or other information.
-      </p>
-    </section>
-
-    <!-- Google DoubleClick DART Cookie / Reklamlar -->
-    <section class="info-card">
-      <h2 class="card-title">Google DoubleClick DART Cookie</h2>
-      <p>
-        Google is one of a third-party vendor on our site. It also uses cookies, known as DART cookies, to serve ads to our site visitors based upon their visit to <code>oldtownswalks.com</code> and other sites on the internet.
-      </p>
-      <p>
-        However, visitors may choose to decline the use of DART cookies by visiting the Google ad and content network Privacy Policy at the following URL: <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener noreferrer" class="link">Google Ads Privacy Policy</a>.
-      </p>
-    </section>
-
-    <!-- Üçüncü Taraf Gizlilik Politikaları -->
-    <section class="info-card">
-      <h2 class="card-title">Third Party Privacy Policies</h2>
-      <p>
-        Old Towns Walks's Privacy Policy does not apply to other advertisers or websites. Thus, we are advising you to consult the respective Privacy Policies of these third-party ad servers for more detailed information.
-      </p>
-      <p>
-        You can choose to disable cookies through your individual browser options. To know more detailed information about cookie management with specific web browsers, it can be found at the browsers' respective websites.
-      </p>
-    </section>
-
-    <!-- Çocuk Gizliliği -->
-    <section class="info-card">
-      <h2 class="card-title">Children's Information</h2>
-      <p>
-        Another part of our priority is adding protection for children while using the internet. We encourage parents and guardians to observe, participate in, and/or monitor and guide their online activity.
-      </p>
-      <p>
-        Old Towns Walks does not knowingly collect any Personal Identifiable Information from children under the age of 13.
-      </p>
-    </section>
-
-    <!-- İletişim Kartı -->
     <section class="info-card contact-card">
       <div>
-        <h2>Questions regarding Privacy?</h2>
-        <p>Reach out to us via our contact page for any questions.</p>
+        <h2>Privacy Questions?</h2>
+        <p>Contact us if you have a privacy question or want to make a privacy-related request.</p>
       </div>
       <a href="/contact" class="btn-primary">Contact Us</a>
     </section>
-
   </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(privacySchema)} />
 </BaseLayout>
 
 <style>
   .privacy-wrapper {
     max-width: 900px;
+    width: 100%;
     margin: 0 auto;
-    padding: 40px 24px;
+    padding: 40px 20px;
     color: #e5e7eb;
     font-family: system-ui, -apple-system, sans-serif;
+    box-sizing: border-box;
   }
 
-  .privacy-header {
-    text-align: center;
-    margin-bottom: 32px;
+  .back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: #fbc02d;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
   }
+
+  .privacy-header { text-align: center; }
 
   .privacy-header h1 {
     font-size: 2.25rem;
     font-weight: 800;
     color: #ffffff;
-    margin-bottom: 8px;
+    margin: 0 0 8px 0;
   }
 
-  .highlight {
-    color: #fbc02d;
-  }
+  .highlight { color: #fbc02d; }
 
   .subtitle {
     font-size: 1.05rem;
@@ -126,45 +151,39 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-radius: 12px;
     padding: 28px;
     margin-bottom: 24px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .info-card p {
     font-size: 1.05rem;
     line-height: 1.7;
     color: #d1d5db;
-    margin-bottom: 16px;
+    margin: 0 0 16px 0;
   }
 
-  .info-card p:last-child {
-    margin-bottom: 0;
-  }
-
-  .info-card p strong {
-    color: #ffffff;
-  }
-
-  .info-card code {
-    background-color: #0f0f0f;
-    color: #fbc02d;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.95rem;
-  }
+  .info-card p:last-child { margin-bottom: 0; }
 
   .card-title {
     font-size: 1.35rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 16px;
+    margin: 0 0 16px 0;
   }
 
-  .link {
+  .resource-list { display: grid; gap: 10px; margin-top: 18px; }
+
+  .resource-link {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid #2d2d2d;
+    border-radius: 8px;
+    background-color: #0f0f0f;
     color: #fbc02d;
-    text-decoration: underline;
-  }
-
-  .link:hover {
-    color: #fdd835;
+    text-decoration: none;
   }
 
   .contact-card {
@@ -178,14 +197,10 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     font-size: 1.25rem;
     font-weight: 700;
     color: #ffffff;
-    margin-bottom: 4px;
+    margin: 0 0 4px 0;
   }
 
-  .contact-card p {
-    font-size: 0.95rem;
-    color: #9ca3af;
-    margin: 0;
-  }
+  .contact-card p { font-size: 0.95rem; color: #9ca3af; margin: 0; }
 
   .btn-primary {
     background-color: #fbc02d;
@@ -195,26 +210,11 @@ import BaseLayout from '../layouts/BaseLayout.astro';
     border-radius: 8px;
     text-decoration: none;
     white-space: nowrap;
-    transition: background-color 0.2s ease;
-  }
-
-  .btn-primary:hover {
-    background-color: #fdd835;
   }
 
   @media (max-width: 640px) {
-    .privacy-wrapper {
-      padding: 24px 16px;
-    }
-    
-    .contact-card {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-
-    .btn-primary {
-      width: 100%;
-      text-align: center;
-    }
+    .privacy-wrapper { padding: 20px 16px; }
+    .contact-card { flex-direction: column; align-items: flex-start; }
+    .btn-primary { width: 100%; text-align: center; box-sizing: border-box; }
   }
 </style>

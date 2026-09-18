@@ -6,6 +6,8 @@ import { languages, defaultLang } from '../../../i18n/ui';
 
 import { env } from 'cloudflare:workers';
 
+import activeVideos from '../../../data/videos.json';
+
 import {
 
   getVideoCardTitle,
@@ -115,58 +117,53 @@ if (!id) {
 
 const db = (env as any).oldtowns_db;
 
-if (!db) {
-
-  throw new Error('D1 binding oldtowns_db is not available.');
-
-}
-
-const videoRow = await db
-
-  .prepare(`
-    SELECT raw_json, active
-    FROM videos
-    WHERE id = ?1
-    LIMIT 1
-  `)
-
-  .bind(id)
-
-  .first() as VideoRow | null;
-
-if (!videoRow?.raw_json) {
-
-  return new Response(null, {
-
-    status: 404,
-
-    statusText: 'Not Found'
-
-  });
-
-}
-
-const isVideoAvailable = Number(videoRow.active) === 1;
+const activeVideo = (activeVideos as Video[]).find(
+  (item) => String(item?.id || '') === id
+);
 
 let video: Video;
+let isVideoAvailable = false;
 
-try {
+if (activeVideo) {
+  video = activeVideo;
+  isVideoAvailable = true;
+} else {
+  if (!db) {
+    return new Response(null, {
+      status: 404,
+      statusText: 'Not Found'
+    });
+  }
 
-  video = JSON.parse(videoRow.raw_json) as Video;
+  const videoRow = await db
+    .prepare(`
+      SELECT raw_json, active
+      FROM videos
+      WHERE id = ?1
+      LIMIT 1
+    `)
+    .bind(id)
+    .first() as VideoRow | null;
 
-} catch {
+  if (!videoRow?.raw_json) {
+    return new Response(null, {
+      status: 404,
+      statusText: 'Not Found'
+    });
+  }
 
-  throw new Error(`Invalid raw_json for video ${id}.`);
+  isVideoAvailable = Number(videoRow.active) === 1;
 
+  try {
+    video = JSON.parse(videoRow.raw_json) as Video;
+  } catch {
+    throw new Error(`Invalid raw_json for video ${id}.`);
+  }
 }
 
 const hasTrustedHotelAnchor =
   video.geo?.verified === true &&
   video.geo?.integrityVerified === true;
-
-const nearbyHotelResult = hasTrustedHotelAnchor
-  ? await getNearbyHotelsForVideo(db, video.id, 30)
-  : { items: [], total: 0 };
 
 const embeddedNearbyHotels = hasTrustedHotelAnchor
   ? (video.nearbyHotels || [])
@@ -209,6 +206,19 @@ const embeddedNearbyHotels = hasTrustedHotelAnchor
         bookingUrl: hotel.bookingUrl
       }))
   : [];
+
+let nearbyHotelResult: { items: any[]; total: number } = {
+  items: [],
+  total: 0
+};
+
+if (hasTrustedHotelAnchor && embeddedNearbyHotels.length === 0 && db) {
+  try {
+    nearbyHotelResult = await getNearbyHotelsForVideo(db, video.id, 30);
+  } catch {
+    nearbyHotelResult = { items: [], total: 0 };
+  }
+}
 
 const nearbyHotels = nearbyHotelResult.items.length > 0
   ? nearbyHotelResult.items
@@ -318,64 +328,18 @@ const countryUrl = video.country
   : null;
 
 
-const relatedRows = await db
+const relatedVideos: Video[] = [];
 
-  .prepare(`
-    SELECT raw_json
-    FROM videos
-    WHERE id != ?1
-      AND active = 1
-    ORDER BY published_at DESC
-    LIMIT 300
-  `)
+for (const item of activeVideos as Video[]) {
+  if (relatedVideos.length >= 30) break;
+  if (item.id === video.id) continue;
 
-  .bind(video.id)
+  const itemCategory = item.category || getResolvedVideoCategory(item);
 
-  .all() as { results?: VideoRow[] };
-
-const relatedVideos =
-
-  (relatedRows.results || [])
-
-    .map((row: VideoRow) => {
-
-      if (!row.raw_json) {
-
-        return null;
-
-      }
-
-      try {
-
-        return JSON.parse(row.raw_json) as Video;
-
-      } catch {
-
-        return null;
-
-      }
-
-    })
-
-    .filter((item: Video | null): item is Video => {
-
-      if (item === null) {
-
-        return false;
-
-      }
-
-      return (
-
-        item.id !== video.id &&
-
-        getResolvedVideoCategory(item) === resolvedCategory
-
-      );
-
-    })
-
-    .slice(0, 30);
+  if (itemCategory === resolvedCategory) {
+    relatedVideos.push(item);
+  }
+}
 
 const labels: Record<string, Record<string, string>> = {
 

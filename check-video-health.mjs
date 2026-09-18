@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadEnvFile } from 'node:process';
+import { spawnSync } from 'node:child_process';
 
 try {
   loadEnvFile();
@@ -12,6 +13,8 @@ const VIDEOS_PATH = './src/data/videos.json';
 const BLACKLIST_PATH = './src/data/video-blacklist.json';
 const REPORT_PATH = './video-health-report.json';
 const BACKUP_DIR = './src/data/health-backups';
+const D1_DATABASE = 'oldtowns-db';
+const D1_SQL_PATH = './video-health-d1.generated.sql';
 
 const BATCH_SIZE = 50;
 
@@ -273,6 +276,78 @@ function saveVideos(videos) {
   );
 }
 
+function sqlString(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+function writeD1HealthSql(healthyIds, unhealthyIds) {
+  const statements = [];
+
+  if (healthyIds.size > 0) {
+    const ids = [...healthyIds]
+      .map(sqlString)
+      .join(', ');
+
+    statements.push(
+      `UPDATE videos SET active = 1, updated_at = CURRENT_TIMESTAMP WHERE id IN (${ids});`
+    );
+  }
+
+  if (unhealthyIds.size > 0) {
+    const ids = [...unhealthyIds]
+      .map(sqlString)
+      .join(', ');
+
+    statements.push(
+      `UPDATE videos SET active = 0, updated_at = CURRENT_TIMESTAMP WHERE id IN (${ids});`
+    );
+  }
+
+  fs.writeFileSync(
+    D1_SQL_PATH,
+    `${statements.join('\n')}\n`,
+    'utf8'
+  );
+}
+
+function syncHealthToD1(healthyIds, unhealthyIds) {
+  writeD1HealthSql(
+    healthyIds,
+    unhealthyIds
+  );
+
+  const npxCommand =
+    process.platform === 'win32'
+      ? 'npx.cmd'
+      : 'npx';
+
+  const result = spawnSync(
+    npxCommand,
+    [
+      'wrangler',
+      'd1',
+      'execute',
+      D1_DATABASE,
+      '--remote',
+      `--file=${D1_SQL_PATH}`
+    ],
+    {
+      stdio: 'inherit',
+      env: process.env
+    }
+  );
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    throw new Error(
+      `D1 health sync failed with exit code ${result.status}. videos.json was not changed.`
+    );
+  }
+}
+
 async function main() {
   if (!API_KEY) {
     throw new Error(
@@ -353,6 +428,9 @@ async function main() {
   const unhealthyVideos = [];
 
   const unhealthyIds =
+    new Set();
+
+  const healthyIds =
     new Set();
 
   const reasonCounts = {
@@ -481,6 +559,7 @@ async function main() {
     }
 
     healthy++;
+    healthyIds.add(id);
   }
 
   let backupPath = null;
@@ -488,8 +567,30 @@ async function main() {
   let remaining = videos.length;
 
   /*
-    Only modify videos.json when at least one video
-    has been positively identified as unhealthy.
+    D1 is updated before videos.json is changed.
+    If the D1 sync fails, the script stops and videos.json
+    remains untouched.
+  */
+  if (
+    healthyIds.size > 0 ||
+    unhealthyIds.size > 0
+  ) {
+    console.log('');
+    console.log('Syncing video health status to D1...');
+
+    syncHealthToD1(
+      healthyIds,
+      unhealthyIds
+    );
+
+    console.log('D1 health status sync complete.');
+  }
+
+  /*
+    Unhealthy videos are removed from the active archive JSON
+    so they disappear from homepage/category output and static
+    sitemap generation, while their D1 rows remain preserved
+    with active = 0 for archive-safe walk pages.
   */
   if (unhealthyIds.size > 0) {
     backupPath = createBackup();
@@ -518,11 +619,11 @@ async function main() {
     saveVideos(cleanedVideos);
 
     console.log(
-      `Removed unhealthy videos: ${removed}`
+      `Removed unhealthy videos from active JSON: ${removed}`
     );
 
     console.log(
-      `Remaining videos: ${remaining}`
+      `Remaining active videos: ${remaining}`
     );
   } else {
     console.log('');
@@ -638,13 +739,10 @@ async function main() {
 
 main().catch(error => {
   console.error(
-    'Fatal error:',
-    error.message || error
+    error instanceof Error
+      ? error.stack || error.message
+      : error
   );
 
-  console.error(
-    'Health cleanup stopped. No further changes were made.'
-  );
-
-  process.exit(1);
+  process.exitCode = 1;
 });

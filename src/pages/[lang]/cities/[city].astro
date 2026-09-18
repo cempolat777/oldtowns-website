@@ -5,6 +5,7 @@ import BaseLayout from '../../../layouts/BaseLayout.astro';
 import { languages, defaultLang } from '../../../i18n/ui';
 
 import { env } from 'cloudflare:workers';
+import videosData from '../../../data/videos.json';
 
 import {
 
@@ -77,56 +78,55 @@ if (!city) {
   });
 }
 
-const db = (env as any).oldtowns_db;
+const activeCityVideos = (videosData as Video[]).filter(
+  (video) =>
+    Boolean(video.city) &&
+    createSlug(video.city || '') === city
+);
 
-if (!db) {
-  throw new Error('D1 binding oldtowns_db is not available.');
+let archivedCityVideos: Video[] = [];
+
+// D1 is archive fallback only. Active city traffic never reads D1.
+if (activeCityVideos.length === 0) {
+  const db = (env as any).oldtowns_db;
+
+  if (!db) {
+    throw new Error('D1 binding oldtowns_db is not available.');
+  }
+
+  const allRows = await db
+    .prepare(`
+      SELECT raw_json, active
+      FROM videos
+      WHERE active = 0
+        AND raw_json IS NOT NULL
+    `)
+    .all() as { results?: VideoRow[] };
+
+  archivedCityVideos = (allRows.results || [])
+    .map((row) => {
+      if (!row.raw_json) return null;
+
+      try {
+        return JSON.parse(row.raw_json) as Video;
+      } catch {
+        return null;
+      }
+    })
+    .filter(
+      (video): video is Video =>
+        video !== null &&
+        Boolean(video.city) &&
+        createSlug(video.city || '') === city
+    );
 }
 
-const allRows = await db
-  .prepare(`
-    SELECT raw_json, active
-    FROM videos
-    WHERE raw_json IS NOT NULL
-  `)
-  .all() as { results?: VideoRow[] };
-
-const matchingVideos = (allRows.results || [])
-  .map((row) => {
-    if (!row.raw_json) return null;
-
-    try {
-      const video = JSON.parse(row.raw_json) as Video;
-
-      return {
-        video,
-        active: Number(row.active) === 1
-      };
-    } catch {
-      return null;
-    }
-  })
-  .filter(
-    (item): item is { video: Video; active: boolean } =>
-      item !== null &&
-      Boolean(item.video.city) &&
-      createSlug(item.video.city || '') === city
-  );
-
-if (!matchingVideos.length) {
+if (activeCityVideos.length === 0 && archivedCityVideos.length === 0) {
   return new Response(null, {
     status: 404,
     statusText: 'Not Found'
   });
 }
-
-const activeCityVideos = matchingVideos
-  .filter((item) => item.active)
-  .map((item) => item.video);
-
-const archivedCityVideos = matchingVideos
-  .filter((item) => !item.active)
-  .map((item) => item.video);
 
 const cityVideos =
   activeCityVideos.length > 0
@@ -499,6 +499,46 @@ const labels: Record<string, Record<string, string>> = {
 
   },
 
+  worldMap: {
+
+    en: 'World Map',
+
+    tr: 'Dünya Haritası',
+
+    de: 'Weltkarte',
+
+    es: 'Mapa Mundial',
+
+    it: 'Mappa del Mondo',
+
+    fr: 'Carte du Monde',
+
+    ja: '世界地図',
+
+    pt: 'Mapa Mundial',
+
+    ru: 'Карта мира',
+
+    zh: '世界地图',
+
+    ko: '세계 지도',
+
+    ar: 'خريطة العالم',
+
+    hi: 'विश्व मानचित्र',
+
+    nl: 'Wereldkaart',
+
+    pl: 'Mapa Świata',
+
+    sv: 'Världskarta',
+
+    id: 'Peta Dunia',
+
+    vi: 'Bản Đồ Thế Giới'
+
+  },
+
   backHome: {
 
     en: 'Home',
@@ -799,6 +839,18 @@ const breadcrumbItems = [
 
     item: new URL(`/${currentLang}/`, Astro.url.origin).href
 
+  },
+
+  {
+
+    '@type': 'ListItem',
+
+    position: 2,
+
+    name: label('worldMap'),
+
+    item: new URL(`/${currentLang}/map`, Astro.url.origin).href
+
   }
 
 ];
@@ -809,7 +861,7 @@ if (countryName && countryUrl) {
 
     '@type': 'ListItem',
 
-    position: 2,
+    position: 3,
 
     name: countryName,
 
@@ -821,7 +873,7 @@ if (countryName && countryUrl) {
 
     '@type': 'ListItem',
 
-    position: 3,
+    position: 4,
 
     name: cityName,
 
@@ -835,7 +887,7 @@ if (countryName && countryUrl) {
 
     '@type': 'ListItem',
 
-    position: 2,
+    position: 3,
 
     name: cityName,
 
@@ -934,6 +986,14 @@ const pageSchema = {
         <a href={`/${currentLang}/`}>
 
           {label('backHome')}
+
+        </a>
+
+        <span>/</span>
+
+        <a href={`/${currentLang}/map`}>
+
+          {label('worldMap')}
 
         </a>
 

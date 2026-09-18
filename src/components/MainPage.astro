@@ -2,20 +2,24 @@
 import LanguagePicker from './LanguagePicker.astro';
 import { ui } from '../i18n/ui';
 import { getPageSeo, getVideoCardTitle, getVideoSchema } from '../lib/videoSeo';
-
 // Dışarıdan gelecek verileri (props) tanımlıyoruz
 interface Props {
   videos: Array<any>;
   lang?: string;
+  currentLang?: string;
 }
 
-const { videos = [], lang = 'en' } = Astro.props;
+const {
+  videos = [],
+  lang: langProp,
+  currentLang
+} = Astro.props;
 
+const lang = langProp || currentLang || 'en';
 // Dil çevirisi için ui.ts dosyasından ilgili dili çekiyoruz
 const translations = ui as Record<string, Record<string, string>>;
 const t = translations[lang] || translations.en || translations.tr;
 const pageSeo = getPageSeo(lang);
-
 const emptyStateText = t['state.videosComingSoon'] || 'Videos coming soon';
 const shareLabels: Record<string, string> = {
   en: 'Share', tr: 'Paylaş', de: 'Teilen', es: 'Compartir', it: 'Condividi',
@@ -50,135 +54,128 @@ const categories = [
   { id: 'Nature Trails', label: t['cat.natureTrails'] || 'Nature Trails' },
   { id: 'Documentaries', label: t['cat.documentaries'] || 'Documentaries' }
 ];
-
 const POPULAR_CITIES_INITIAL = [
   'Tokyo', 'London', 'Paris', 'New York', 'Istanbul', 'Rome', 'Bangkok',
   'Barcelona', 'Amsterdam', 'Berlin', 'Vienna', 'Prague', 'Madrid',
   'Lisbon', 'Dubai', 'Singapore', 'Seoul', 'Kyoto', 'Osaka', 'Venice',
   'Florence'
 ];
-
-function shuffleVideos(items: Array<any>) {
+// Deterministic (seeded) PRNG: aynı seed her zaman aynı sayı dizisini üretir.
+// Böylece sıralama rastgele GÖRÜNÜR ama tekrar üretilebilir/stabildir.
+function createSeededRandom(seed: number) {
+  let s = seed >>> 0;
+  return function () {
+    s |= 0;
+    s = (s + 0x6d2b79f5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function hashStringToSeed(str: string) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i += 1) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash;
+}
+// Seed günün tarihine (UTC, YYYY-MM-DD) bağlı: aynı gün içindeki HER istek
+// aynı sırayı üretir (flicker yok), ertesi gün sıra otomatik olarak değişir.
+const dailySeed = hashStringToSeed(new Date().toISOString().slice(0, 10));
+const seededRandom = createSeededRandom(dailySeed);
+function shuffleInitialVideos(items: Array<any>) {
   const result = [...items];
-
   for (let i = result.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = Math.floor(seededRandom() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
-
   return result;
 }
-
 function buildInitialMixedOrder(items: Array<any>) {
   const popular: Array<any> = [];
   const other: Array<any> = [];
-
   for (const video of items) {
     const city = String(video?.city || '').trim().toLowerCase();
     const isPopular = POPULAR_CITIES_INITIAL.some(
       (popularCity) => popularCity.toLowerCase() === city
     );
-
     (isPopular ? popular : other).push(video);
   }
-
-  const popularPool = shuffleVideos(popular);
-  const otherPool = shuffleVideos(other);
+  const popularPool = shuffleInitialVideos(popular);
+  const otherPool = shuffleInitialVideos(other);
   const result: Array<any> = [];
   const recentCities: string[] = [];
-
   function takeBest(pool: Array<any>) {
     if (!pool.length) return null;
-
     let index = pool.findIndex((video) => {
       const city = String(video?.city || '').trim().toLowerCase();
       return !city || !recentCities.includes(city);
     });
-
     if (index < 0) index = 0;
     return pool.splice(index, 1)[0];
   }
-
   while (popularPool.length || otherPool.length) {
     const preferPopular =
       popularPool.length > 0 &&
-      (otherPool.length === 0 || Math.random() < 0.6);
-
+      (otherPool.length === 0 || seededRandom() < 0.6);
     let video = preferPopular
       ? takeBest(popularPool)
       : takeBest(otherPool);
-
     if (!video) {
       video = takeBest(popularPool) || takeBest(otherPool);
     }
-
     if (!video) break;
-
     result.push(video);
-
     const city = String(video?.city || '').trim().toLowerCase();
-
     if (city) {
       recentCities.push(city);
-
       if (recentCities.length > 3) {
         recentCities.shift();
       }
     }
   }
-
   return result;
 }
-
 const initialVideos = buildInitialMixedOrder(videos);
-
 const videoSchema = {
   "@context": "https://schema.org",
   "@graph": initialVideos.map((video) => getVideoSchema(video, lang))
 };
 ---
-
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
     <title>{pageSeo.title}</title>
-
     <meta
       name="description"
       content={pageSeo.description}
     />
-
     <!-- Video preview bağlantısını önceden hazırla -->
     <link rel="preconnect" href="https://www.youtube-nocookie.com" />
     <link rel="preconnect" href="https://www.youtube.com" />
     <link rel="preconnect" href="https://i.ytimg.com" />
     <link rel="dns-prefetch" href="//www.youtube-nocookie.com" />
     <link rel="dns-prefetch" href="//googlevideo.com" />
-
     <!-- Google Fonts & Material Icons -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
-
     <link
       href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;800&display=swap"
       rel="stylesheet"
     />
-
     <link
       href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
       rel="stylesheet"
     />
-
     <style is:inline>
       * {
         box-sizing: border-box;
         margin: 0;
         padding: 0;
       }
-
       html,
       body {
         height: 100%;
@@ -187,23 +184,18 @@ const videoSchema = {
         font-family: 'Roboto', sans-serif;
         overflow: hidden;
       }
-
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
-
       ::-webkit-scrollbar-track {
         background: #0f0f0f;
       }
-
       ::-webkit-scrollbar-thumb {
         background: #373737;
         border-radius: 4px;
       }
-
       /* Navbar Layout */
-
       .navbar {
         height: 56px;
         background-color: #0f0f0f;
@@ -218,19 +210,16 @@ const videoSchema = {
         right: 0;
         z-index: 100;
       }
-
       .nav-left {
         display: flex;
         align-items: center;
         gap: 16px;
       }
-
       .nav-right {
         display: flex;
         align-items: center;
         margin-left: auto;
       }
-
       .site-share-button {
         min-height: 36px;
         display: inline-flex;
@@ -247,16 +236,13 @@ const videoSchema = {
         font-weight: 600;
         cursor: pointer;
       }
-
       .site-share-button:hover {
         background: #303030;
         border-color: #f5b400;
       }
-
       .site-share-button .material-symbols-outlined {
         font-size: 19px;
       }
-
       .icon-btn {
         background: transparent;
         border: none;
@@ -268,13 +254,10 @@ const videoSchema = {
         align-items: center;
         justify-content: center;
       }
-
       .icon-btn:hover {
         background-color: #272727;
       }
-
       /* Brand Logo */
-
       .brand-logo {
         display: flex;
         align-items: center;
@@ -285,7 +268,14 @@ const videoSchema = {
         border-radius: 3px;
         overflow: hidden;
       }
-
+      .brand-icon {
+        width: 28px;
+        height: 28px;
+        object-fit: contain;
+        border-radius: 5px;
+        margin-right: 7px;
+        flex-shrink: 0;
+      }
       .logo-box-1 {
         background-color: #0f0f0f;
         color: #f5b400;
@@ -293,16 +283,13 @@ const videoSchema = {
         border: 1px solid rgba(245, 180, 0, 0.35);
         border-right: none;
       }
-
       .logo-box-2 {
         background-color: #f5b400;
         color: #0f0f0f;
         padding: 4px 8px;
         border: 1px solid #f5b400;
       }
-
       /* Search Bar */
-
       .nav-center {
         position: absolute;
         left: 50%;
@@ -312,12 +299,10 @@ const videoSchema = {
         width: 45%;
         max-width: 650px;
       }
-
       .search-box {
         display: flex;
         width: 100%;
       }
-
       .search-input {
         width: 100%;
         background-color: #121212;
@@ -328,11 +313,9 @@ const videoSchema = {
         font-size: 14px;
         outline: none;
       }
-
       .search-input:focus {
         border-color: #aaaaaa;
       }
-
       .search-btn {
         background-color: #222222;
         border: 1px solid #303030;
@@ -344,21 +327,16 @@ const videoSchema = {
         display: flex;
         align-items: center;
       }
-
       .search-btn:hover {
         background-color: #272727;
       }
-
       /* App Body Structure */
-
       .app-body {
         display: flex;
         margin-top: 56px;
         height: calc(100vh - 56px);
       }
-
       /* FIXED SIDEBAR */
-
       .sidebar {
         width: 240px;
         background-color: #0f0f0f;
@@ -371,7 +349,6 @@ const videoSchema = {
         height: 100%;
         overflow-y: auto;
       }
-
       .nav-link {
         display: flex;
         align-items: center;
@@ -382,28 +359,23 @@ const videoSchema = {
         text-decoration: none;
         font-size: 14px;
       }
-
       .nav-link:hover {
         background-color: #272727;
         color: #ffffff;
       }
-
       .nav-link.active {
         background-color: #272727;
         color: #ffffff;
         font-weight: 500;
       }
-
       .nav-link.active .material-symbols-outlined {
         color: #ffffff;
       }
-
       .sidebar-divider {
         border: none;
         border-top: 1px solid #222222;
         margin: 8px 0;
       }
-
       .sidebar-lang {
         display: flex;
         align-items: center;
@@ -413,11 +385,9 @@ const videoSchema = {
         color: #aaaaaa;
         font-size: 14px;
       }
-
       .sidebar-lang :global(.lang-picker-container) {
         display: inline-block;
       }
-
       .sidebar-lang :global(.lang-select) {
         background-color: transparent !important;
         color: #aaaaaa !important;
@@ -426,11 +396,9 @@ const videoSchema = {
         font-size: 14px !important;
         font-weight: 400 !important;
       }
-
       .sidebar-lang :global(.lang-select:hover) {
         color: #ffffff !important;
       }
-
       .sidebar-ad-container {
         position: sticky;
         top: 10px;
@@ -441,12 +409,10 @@ const videoSchema = {
         min-height: 250px;
         width: 100%;
       }
-
       /* AdSense henüz içerik yerleştirmediyse sol reklam alanını tamamen gizle. */
       .sidebar-ad-container:empty {
         display: none;
       }
-
       .ad-banner-top {
         width: 100%;
         min-height: 90px;
@@ -454,21 +420,17 @@ const videoSchema = {
         border-radius: 8px;
         margin-bottom: 24px;
       }
-
       /* AdSense henüz içerik yerleştirmediyse üst reklam alanını tamamen gizle. */
       .ad-banner-top:empty {
         display: none;
       }
-
       .ad-card-slot {
         border: 1px dashed rgba(255, 255, 255, 0.15);
         border-radius: 12px;
         min-height: 220px;
         width: 100%;
       }
-
       /* MAIN CONTENT CONTAINER */
-
       .content-area {
         flex: 1;
         overflow-y: auto;
@@ -476,7 +438,6 @@ const videoSchema = {
         display: flex;
         flex-direction: column;
       }
-
       .sticky-header-wrapper {
         position: sticky;
         top: 0;
@@ -484,7 +445,6 @@ const videoSchema = {
         z-index: 10;
         padding: 24px 24px 0 24px;
       }
-
       .chips-bar {
         display: flex;
         flex-wrap: nowrap;
@@ -495,11 +455,9 @@ const videoSchema = {
         -webkit-overflow-scrolling: touch;
         overscroll-behavior-x: contain;
       }
-
       .chips-bar::-webkit-scrollbar {
         display: none;
       }
-
       .chip {
         background-color: #272727;
         color: #ffffff;
@@ -512,37 +470,30 @@ const videoSchema = {
         cursor: pointer;
         flex: 0 0 auto;
       }
-
       .chip:hover {
         background-color: #3f3f3f;
       }
-
       .chip.active {
         background-color: #ffffff;
         color: #000000;
       }
-
       .scrollable-grid-container {
         padding: 0 24px 24px 24px;
       }
-
       .video-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
         gap: 24px 20px;
       }
-
       /* Fragment yerine kullanılan wrapper */
       .video-card-wrapper {
         display: contents;
       }
-
       .video-card {
         display: flex;
         flex-direction: column;
         gap: 12px;
       }
-
       .thumbnail-wrapper {
         display: block;
         position: relative;
@@ -554,7 +505,6 @@ const videoSchema = {
         border: 1px solid #222222;
         cursor: pointer;
       }
-
       .video-poster {
         position: absolute;
         top: 0;
@@ -564,16 +514,13 @@ const videoSchema = {
         object-fit: cover;
         transition: transform 0.3s ease;
       }
-
       .thumbnail-wrapper:hover .video-poster {
         transform: scale(1.03);
       }
-
       .thumbnail-wrapper:focus-visible {
         outline: 3px solid #f5b400;
         outline-offset: 3px;
       }
-
       .thumbnail-wrapper iframe {
         position: absolute;
         top: 0;
@@ -583,27 +530,22 @@ const videoSchema = {
         border: 0;
         pointer-events: none;
       }
-
       .thumbnail-wrapper .preview-frame {
         opacity: 0;
         transition: opacity 0.12s ease;
       }
-
       .thumbnail-wrapper .preview-frame.is-ready {
         opacity: 1;
       }
-
       .video-details {
         display: flex;
         gap: 12px;
       }
-
       .video-info {
         display: flex;
         flex-direction: column;
         width: 100%;
       }
-
       .video-title {
         font-size: 15px;
         font-weight: 500;
@@ -614,16 +556,13 @@ const videoSchema = {
         -webkit-box-orient: vertical;
         overflow: hidden;
       }
-
       .video-title-link {
         color: inherit;
         text-decoration: none;
       }
-
       .video-title-link:hover {
         text-decoration: underline;
       }
-
       .channel-name {
         font-size: 13px;
         color: #aaaaaa;
@@ -632,12 +571,10 @@ const videoSchema = {
         align-items: center;
         gap: 4px;
       }
-
       .verified-icon {
         font-size: 15px;
         color: #aaaaaa;
       }
-
       .video-stats {
         font-size: 13px;
         color: #aaaaaa;
@@ -646,7 +583,6 @@ const videoSchema = {
         gap: 4px;
         margin-top: 2px;
       }
-
       .badge-tag {
         margin-left: auto;
         background-color: #272727;
@@ -657,7 +593,6 @@ const videoSchema = {
         border-radius: 3px;
         border: 1px solid #303030;
       }
-
       .empty-state {
         width: 100%;
         padding: 56px 20px;
@@ -666,17 +601,14 @@ const videoSchema = {
         font-size: 15px;
         font-weight: 500;
       }
-
       .empty-state[hidden] {
         display: none;
       }
-
       @media (max-width: 1100px) {
         .video-grid {
           grid-template-columns: repeat(2, 1fr);
         }
       }
-
       /* Mobile and tablet header */
       .mobile-menu-button,
       .mobile-language-picker,
@@ -686,7 +618,6 @@ const videoSchema = {
       .mobile-back-to-top {
         display: none;
       }
-
       @media (max-width: 900px) {
         .navbar {
           height: 108px;
@@ -698,7 +629,6 @@ const videoSchema = {
           row-gap: 8px;
           align-items: center;
         }
-
         .nav-left {
           grid-column: 1 / -1;
           grid-row: 1;
@@ -707,18 +637,15 @@ const videoSchema = {
           justify-content: center;
           pointer-events: none;
         }
-
         .brand-logo {
           pointer-events: auto;
           font-size: 15px;
           letter-spacing: 0.4px;
         }
-
         .logo-box-1,
         .logo-box-2 {
           padding: 4px 7px;
         }
-
         .mobile-menu-button {
           display: inline-flex;
           grid-column: 1;
@@ -734,11 +661,9 @@ const videoSchema = {
           cursor: pointer;
           z-index: 2;
         }
-
         .mobile-menu-button .material-symbols-outlined {
           font-size: 22px;
         }
-
         .nav-center {
           position: static;
           transform: none;
@@ -749,24 +674,20 @@ const videoSchema = {
           min-width: 0;
           margin: 0;
         }
-
         .search-box {
           width: 100%;
           min-width: 0;
         }
-
         .search-input {
           min-width: 0;
           padding: 10px 14px;
           font-size: 14px;
         }
-
         .search-btn {
           flex: 0 0 46px;
           padding: 0;
           justify-content: center;
         }
-
         .nav-right {
           grid-column: 3;
           grid-row: 1;
@@ -777,12 +698,10 @@ const videoSchema = {
           gap: 6px;
           z-index: 2;
         }
-
         .mobile-language-picker {
           display: block;
           position: relative;
         }
-
         .mobile-language-button {
           width: 36px;
           height: 36px;
@@ -797,7 +716,6 @@ const videoSchema = {
           line-height: 1;
           cursor: pointer;
         }
-
         .mobile-language-menu {
           display: none;
           position: absolute;
@@ -813,11 +731,9 @@ const videoSchema = {
           box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
           z-index: 1700;
         }
-
         .mobile-language-menu.is-open {
           display: block;
         }
-
         .mobile-language-option {
           display: flex;
           align-items: center;
@@ -830,19 +746,16 @@ const videoSchema = {
           font-size: 14px;
           font-weight: 500;
         }
-
         .mobile-language-option:hover,
         .mobile-language-option.is-active {
           background: #272727;
         }
-
         .mobile-language-flag {
           width: 24px;
           text-align: center;
           font-size: 19px;
           line-height: 1;
         }
-
         .site-share-button {
           width: 36px;
           min-width: 36px;
@@ -851,31 +764,25 @@ const videoSchema = {
           padding: 0;
           border-radius: 9px;
         }
-
         .site-share-text {
           display: none;
         }
-
         .app-body {
           margin-top: 108px;
           height: calc(100vh - 108px);
         }
-
         .sidebar {
           display: none;
         }
-
         .mobile-menu-overlay {
           position: fixed;
           inset: 0;
           background: rgba(0, 0, 0, 0.58);
           z-index: 1400;
         }
-
         .mobile-menu-overlay.is-open {
           display: block;
         }
-
         .mobile-menu-panel {
           position: fixed;
           top: 0;
@@ -890,12 +797,10 @@ const videoSchema = {
           transform: translateX(-102%);
           transition: transform 160ms ease-out;
         }
-
         .mobile-menu-panel.is-open {
           display: block;
           transform: translateX(0);
         }
-
         .mobile-menu-head {
           display: flex;
           align-items: center;
@@ -904,7 +809,6 @@ const videoSchema = {
           padding: 0 4px 12px;
           border-bottom: 1px solid #252525;
         }
-
         .mobile-menu-close {
           width: 36px;
           height: 36px;
@@ -917,25 +821,20 @@ const videoSchema = {
           color: #ffffff;
           cursor: pointer;
         }
-
         .mobile-menu-panel .nav-link {
           padding: 12px;
         }
-
         .mobile-menu-panel .sidebar-lang {
           margin: 6px 0;
         }
-
         .content-area {
           padding-bottom: 80px;
           scrollbar-width: none;
         }
-
         .content-area::-webkit-scrollbar {
           width: 0;
           height: 0;
         }
-
         .mobile-scroll-track {
           display: block;
           position: fixed;
@@ -950,7 +849,6 @@ const videoSchema = {
           touch-action: pan-y;
           pointer-events: none;
         }
-
         .mobile-scroll-thumb {
           position: absolute;
           top: 0;
@@ -970,7 +868,6 @@ const videoSchema = {
           box-shadow: 0 0 0 1px rgba(245, 180, 0, 0.32);
           pointer-events: none;
         }
-
         .mobile-back-to-top {
           position: fixed;
           left: 50%;
@@ -988,70 +885,56 @@ const videoSchema = {
           cursor: pointer;
           z-index: 1200;
         }
-
         .mobile-back-to-top.is-visible {
           display: inline-flex;
         }
-
         .mobile-back-to-top .material-symbols-outlined {
           font-size: 22px;
           font-weight: 500;
         }
       }
-
       @media (max-width: 700px) {
         .video-grid {
           grid-template-columns: 1fr;
           gap: 16px;
         }
-
         .sticky-header-wrapper {
           padding: 12px 12px 0 12px;
         }
-
         .chips-bar {
           gap: 8px;
           padding-bottom: 12px;
           scroll-snap-type: x proximity;
         }
-
         .chip {
           scroll-snap-align: start;
         }
-
         .scrollable-grid-container {
           padding: 0 12px 12px 12px;
         }
-
         .video-card {
           width: 100%;
           min-width: 0;
         }
-
         .thumbnail-wrapper {
           width: 100%;
           border-radius: 10px;
         }
-
         .ad-banner-top {
           min-height: 50px;
         }
-
         .ad-card-slot {
           min-height: 160px;
           grid-column: 1 / -1;
         }
-
         .empty-state {
           padding: 42px 16px;
           font-size: 14px;
         }
       }
-
       .mobile-bottom-nav {
         display: none;
       }
-
       @media (max-width: 700px) {
         .mobile-bottom-nav {
           display: flex;
@@ -1066,7 +949,6 @@ const videoSchema = {
           align-items: center;
           z-index: 1000;
         }
-
         .mobile-nav-item {
           display: flex;
           flex-direction: column;
@@ -1077,18 +959,15 @@ const videoSchema = {
           font-size: 10px;
           gap: 2px;
         }
-
         .mobile-nav-item.active,
         .mobile-nav-item:hover {
           color: #ffffff;
         }
-
         .mobile-nav-item .material-symbols-outlined {
           font-size: 22px;
         }
       }
     </style>
-
     <!-- Google Analytics (GA4) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z4B6GBNNE8"></script>
     <script is:inline>
@@ -1098,11 +977,8 @@ const videoSchema = {
       gtag('config', 'G-Z4B6GBNNE8');
     </script>
   </head>
-
   <body>
-
     <!-- FIXED TOP NAVBAR -->
-
     <header class="navbar">
       <button
         type="button"
@@ -1113,33 +989,32 @@ const videoSchema = {
       >
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
       </button>
-
       <div class="nav-left">
-
         <a href="/" class="brand-logo">
+          <img
+            src="/brand-icon.png"
+            alt=""
+            class="brand-icon"
+            width="28"
+            height="28"
+          />
           <div class="logo-box-1">OLD</div>
           <div class="logo-box-2">TOWNS</div>
         </a>
-
       </div>
-
       <div class="nav-center">
         <div class="search-box">
-
           <input
             type="text"
             id="searchInput"
             placeholder={t['search.placeholder']}
             class="search-input"
           />
-
           <button class="search-btn" aria-label="Search">
             <span class="material-symbols-outlined">search</span>
           </button>
-
         </div>
       </div>
-
       <div class="nav-right">
         <div class="mobile-language-picker" data-mobile-language-picker>
           <button
@@ -1172,7 +1047,6 @@ const videoSchema = {
             <a href="/vi/" class="mobile-language-option" data-lang-code="vi"><span class="mobile-language-flag">🇻🇳</span><span>Tiếng Việt</span></a>
           </div>
         </div>
-
         <button
           type="button"
           class="site-share-button"
@@ -1184,14 +1058,18 @@ const videoSchema = {
         </button>
       </div>
     </header>
-
-
     <!-- MOBILE / TABLET MENU -->
     <div class="mobile-menu-overlay" data-mobile-menu-overlay></div>
-
     <aside class="mobile-menu-panel" data-mobile-menu-panel aria-hidden="true">
       <div class="mobile-menu-head">
         <a href={`/${lang}/`} class="brand-logo">
+          <img
+            src="/brand-icon.png"
+            alt=""
+            class="brand-icon"
+            width="28"
+            height="28"
+          />
           <div class="logo-box-1">OLD</div>
           <div class="logo-box-2">TOWNS</div>
         </a>
@@ -1199,7 +1077,6 @@ const videoSchema = {
           <span class="material-symbols-outlined" aria-hidden="true">close</span>
         </button>
       </div>
-
       <a href={`/${lang}/`} class="nav-link active">
         <span class="material-symbols-outlined">home</span>
         <span>{t['nav.home'] || 'Home'}</span>
@@ -1208,18 +1085,19 @@ const videoSchema = {
         <span class="material-symbols-outlined">public</span>
         <span>{t['nav.map'] || 'World Map'}</span>
       </a>
+      <a href={`/${lang}/airports`} class="nav-link">
+        <span class="material-symbols-outlined">flight</span>
+        <span>{t['nav.airports'] || 'Airport Map'}</span>
+      </a>
       <a href={`/${lang}/hotels`} class="nav-link">
         <span class="material-symbols-outlined">hotel</span>
         <span>{t['nav.hotels'] || 'Hotels'}</span>
       </a>
-
       <hr class="sidebar-divider" />
-
       <div class="sidebar-lang">
         <span class="material-symbols-outlined">language</span>
         <LanguagePicker />
       </div>
-
       <a href="/about" class="nav-link">
         <span class="material-symbols-outlined">info</span>
         <span>{t['nav.about'] || 'About'}</span>
@@ -1233,15 +1111,10 @@ const videoSchema = {
         <span>{t['nav.contact'] || 'Contact'}</span>
       </a>
     </aside>
-
     <!-- MAIN APP STRUCTURE -->
-
     <div class="app-body">
-
       <!-- FIXED SIDEBAR -->
-
       <aside class="sidebar">
-
         <a href={`/${lang}/`} class="nav-link active">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
@@ -1249,7 +1122,6 @@ const videoSchema = {
           </svg>
           <span>{t['nav.home'] || 'Home'}</span>
         </a>
-
         <a href={`/${lang}/map`} class="nav-link">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/>
@@ -1258,7 +1130,10 @@ const videoSchema = {
           </svg>
           <span>{t['nav.map'] || 'World Map'}</span>
         </a>
-
+        <a href={`/${lang}/airports`} class="nav-link">
+          <span class="material-symbols-outlined">flight</span>
+          <span>{t['nav.airports'] || 'Airport Map'}</span>
+        </a>
         <a href={`/${lang}/hotels`} class="nav-link">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2z"/>
@@ -1269,11 +1144,8 @@ const videoSchema = {
           </svg>
           <span>{t['nav.hotels'] || 'Hotels'}</span>
         </a>
-
         <hr class="sidebar-divider" />
-
         <div class="sidebar-lang">
-
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 12a9 9 0 0 1-9 9"/>
             <path d="M21 12a9 9 0 0 0-9-9"/>
@@ -1283,41 +1155,27 @@ const videoSchema = {
             <path d="M12 21c-1.657 0-3-4.03-3-9s1.343-9 3-9"/>
             <path d="M12 3a9 9 0 0 1 9 9"/>
           </svg>
-
           <LanguagePicker />
-
         </div>
-
         <a href="/about" class="nav-link">
           <span class="material-symbols-outlined">info</span>
           <span>{t['nav.about'] || 'About'}</span>
         </a>
-
         <a href="/privacy" class="nav-link">
           <span class="material-symbols-outlined">policy</span>
           <span>{t['nav.privacy'] || 'Privacy Policy'}</span>
         </a>
-
         <a href="/contact" class="nav-link">
           <span class="material-symbols-outlined">mail</span>
           <span>{t['nav.contact'] || 'Contact'}</span>
         </a>
-
         <!-- REKLAM 1: SOL SIDEBAR STICKY AD SLOT -->
-
         <div class="sidebar-ad-container"></div>
-
       </aside>
-
-
       <!-- MAIN SCROLLABLE CONTENT AREA -->
-
       <main class="content-area">
-
         <div class="sticky-header-wrapper">
-
           <div class="chips-bar">
-
             {categories.map((cat, index) => (
               <button
                 class={`chip ${index === 0 ? 'active' : ''}`}
@@ -1326,39 +1184,26 @@ const videoSchema = {
                 {cat.label}
               </button>
             ))}
-
           </div>
-
           <div class="ad-banner-top"></div>
-
         </div>
-
-
         <!-- VIDEO GRID CONTAINER -->
-
         <div class="scrollable-grid-container">
-
-          <div class="video-grid">
-
+          <div class="video-grid" style="opacity:0" data-js-shuffle-pending>
             {initialVideos.map((video, index) => (
-
               <>
-
                 <div class="video-card-wrapper">
-
                   <div
                     class="video-card"
                     data-category={video.category || 'Walking Tours'}
                     data-city={video.city || ''}
                   >
-
                   <a
                     href={`/${lang}/walks/${video.id}`}
                     class="thumbnail-wrapper"
                     data-video-id={video.id}
                     aria-label={getVideoCardTitle(video, lang)}
                   >
-
                     <img
                       src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
                       alt={getVideoCardTitle(video, lang)}
@@ -1366,291 +1211,200 @@ const videoSchema = {
                       loading={index < 6 ? 'eager' : 'lazy'}
                       fetchpriority={index < 6 ? 'high' : 'auto'}
                     />
-
                   </a>
-
-
                   <div class="video-details">
-
                     <div class="video-info">
-
                       <h3 class="video-title">
                         <a href={`/${lang}/walks/${video.id}`} class="video-title-link">
                           {getVideoCardTitle(video, lang)}
                         </a>
                       </h3>
-
                       <div class="channel-name">
                         <span>{video.channel}</span>
-
                         <span class="material-symbols-outlined verified-icon">
                           check_circle
                         </span>
                       </div>
-
                       <div class="video-stats">
                         <span class="badge-tag">
                           {video.badge}
                         </span>
                       </div>
-
                     </div>
-
                   </div>
-
                   </div>
-
                 </div>
-
                 {(index + 1) % 5 === 0 && (
                   <div class="ad-card-slot" aria-hidden="true"></div>
                 )}
-
               </>
-
             ))}
-
           </div>
-
+          <noscript>
+            <style>.video-grid[data-js-shuffle-pending] { opacity: 1 !important; }</style>
+          </noscript>
+          <script is:inline>
+            (function () {
+              var grid = document.querySelector('.video-grid[data-js-shuffle-pending]');
+              if (!grid) return;
+              var wrappers = Array.prototype.slice.call(grid.querySelectorAll('.video-card-wrapper'));
+              grid.querySelectorAll('.ad-card-slot').forEach(function (ad) { ad.remove(); });
+              for (var i = wrappers.length - 1; i > 0; i -= 1) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = wrappers[i];
+                wrappers[i] = wrappers[j];
+                wrappers[j] = tmp;
+              }
+              wrappers.forEach(function (wrapper) { grid.appendChild(wrapper); });
+              wrappers.forEach(function (wrapper, index) {
+                if ((index + 1) % 5 !== 0) return;
+                var adSlot = document.createElement('div');
+                adSlot.className = 'ad-card-slot';
+                adSlot.setAttribute('aria-hidden', 'true');
+                wrapper.insertAdjacentElement('afterend', adSlot);
+              });
+              grid.style.opacity = '1';
+              grid.removeAttribute('data-js-shuffle-pending');
+            })();
+          </script>
           <div class="empty-state" id="emptyState" hidden>
             {emptyStateText}
           </div>
-
         </div>
-
       </main>
-
     </div>
-
-
     <div class="mobile-scroll-track" data-mobile-scroll-track aria-hidden="true">
       <div class="mobile-scroll-thumb" data-mobile-scroll-thumb></div>
     </div>
-
     <button type="button" class="mobile-back-to-top" data-mobile-back-to-top aria-label="Back to top">
       <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
     </button>
-
     <!-- MOBILE NAVIGATION BAR -->
-
     <nav class="mobile-bottom-nav">
-
       <a href={`/${lang}/`} class="mobile-nav-item active">
         <span class="material-symbols-outlined">home</span>
         <span>{t['nav.home'] || 'Home'}</span>
       </a>
-
       <a href="#" class="mobile-nav-item">
         <span class="material-symbols-outlined">bolt</span>
         <span>Shorts</span>
       </a>
-
       <a href="#" class="mobile-nav-item">
         <span class="material-symbols-outlined">flight</span>
         <span>Drone</span>
       </a>
-
       <a href="#" class="mobile-nav-item">
         <span class="material-symbols-outlined">grid_view</span>
         <span>Categories</span>
       </a>
-
     </nav>
-
-
     <!-- Inline Script -->
-
     <script is:inline>
-
       function setupFilters() {
-
         const chips = document.querySelectorAll('.chip');
         const videoCards = document.querySelectorAll('.video-card');
         const videoGrid = document.querySelector('.video-grid');
         const emptyState = document.getElementById('emptyState');
         const searchInput = document.getElementById('searchInput');
-
         const initialSearch = new URLSearchParams(window.location.search).get('q');
-
         if (searchInput instanceof HTMLInputElement && initialSearch) {
           searchInput.value = initialSearch;
         }
-
         if (!chips.length && !videoCards.length) return;
-
         let currentCategory = 'All';
-
-
-        function shuffleVisibleCards(cards) {
-          if (!videoGrid || cards.length < 2) return;
-
-          const wrappers = cards
-            .map(card => card.closest('.video-card-wrapper'))
-            .filter(Boolean);
-
-          for (let i = wrappers.length - 1; i > 0; i -= 1) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [wrappers[i], wrappers[j]] = [wrappers[j], wrappers[i]];
-          }
-
-          wrappers.forEach(wrapper => {
-            videoGrid.appendChild(wrapper);
-          });
-        }
-
-
-        function filterVideos({ reshuffle = false } = {}) {
-
+        function filterVideos() {
           const searchTerm = searchInput
             ? searchInput.value.toLowerCase().trim()
             : '';
-
           videoCards.forEach(card => {
-
             const videoCategory =
               card.getAttribute('data-category') || '';
-
             const titleEl =
               card.querySelector('.video-title');
-
             const title =
               titleEl
                 ? titleEl.textContent.toLowerCase()
                 : '';
-
             const matchesCategory =
               currentCategory === 'All' ||
               videoCategory.toLowerCase().trim() ===
               currentCategory.toLowerCase().trim();
-
             const matchesSearch =
               title.includes(searchTerm);
-
             if (matchesCategory && matchesSearch) {
-
               card.style.setProperty(
                 'display',
                 'flex',
                 'important'
               );
-
             } else {
-
               card.style.setProperty(
                 'display',
                 'none',
                 'important'
               );
-
             }
-
           });
-
-
+          // Her 5 görünür videodan sonra 1 reklam alanı oluştur.
+          // Böylece Tümü veya herhangi bir kategori seçildiğinde
+          // reklamlar sadece o anda görünen videolara göre yeniden dizilir.
           if (videoGrid) {
-
             videoGrid
               .querySelectorAll('.ad-card-slot')
               .forEach(ad => ad.remove());
-
-            let visibleCards = Array.from(
-              videoGrid.querySelectorAll('.video-card')
-            ).filter(card => card.style.display !== 'none');
-
-            if (reshuffle) {
-              shuffleVisibleCards(visibleCards);
-
-              visibleCards = Array.from(
-                videoGrid.querySelectorAll('.video-card')
-              ).filter(card => card.style.display !== 'none');
-            }
-
+            const visibleCards = Array.from(videoGrid.querySelectorAll('.video-card')).filter(card =>
+              card.style.display !== 'none'
+            );
             if (emptyState) {
               emptyState.hidden = visibleCards.length !== 0;
             }
-
             visibleCards.forEach((card, index) => {
-
               if ((index + 1) % 5 !== 0) return;
-
               const wrapper = card.closest('.video-card-wrapper');
-
               if (!wrapper) return;
-
               const adSlot = document.createElement('div');
               adSlot.className = 'ad-card-slot';
               adSlot.setAttribute('aria-hidden', 'true');
-
               wrapper.insertAdjacentElement('afterend', adSlot);
-
             });
-
           }
-
         }
-
-
         chips.forEach(chip => {
-
           chip.addEventListener('click', (e) => {
-
             e.preventDefault();
-
             chips.forEach(c =>
               c.classList.remove('active')
             );
-
             chip.classList.add('active');
-
             currentCategory =
               chip.getAttribute('data-category-target') || 'All';
-
-            filterVideos({ reshuffle: true });
-
+            filterVideos();
           });
-
         });
-
-
         if (searchInput) {
-
           searchInput.addEventListener(
             'input',
             filterVideos
           );
-
         }
-
-
-        // The initial randomized grid and ad slots are already rendered by Astro.
+        // The initial grid and ad slots are already rendered by Astro.
         // Only apply client-side filtering on load when a URL search query exists.
         if (initialSearch) {
           filterVideos();
         }
-
-
         // Hover Video Preview
-
         const previewWrappers = Array.from(
           document.querySelectorAll('.thumbnail-wrapper')
         );
-
         previewWrappers.forEach(wrapper => {
-
           let previewActive = false;
           let previewFrame = null;
-
           const startPreview = () => {
-
             const videoId =
               wrapper.getAttribute('data-video-id');
-
             if (!videoId || previewActive) return;
-
             previewActive = true;
-
             const iframe = document.createElement('iframe');
-
             iframe.className = 'preview-frame';
             iframe.src =
               `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&mute=1&controls=0&playsinline=1&modestbranding=1&rel=0`;
@@ -1658,82 +1412,57 @@ const videoSchema = {
             iframe.tabIndex = -1;
             iframe.allow =
               'autoplay; encrypted-media; picture-in-picture';
-
             iframe.addEventListener(
               'load',
               () => iframe.classList.add('is-ready'),
               { once: true }
             );
-
             previewFrame = iframe;
             wrapper.appendChild(iframe);
-
           };
-
           const stopPreview = () => {
-
             if (!previewActive) return;
-
             previewActive = false;
-
             if (previewFrame) {
               previewFrame.remove();
               previewFrame = null;
             }
-
           };
-
           // Bilgisayar: mouse hover
           wrapper.addEventListener('mouseenter', startPreview);
           wrapper.addEventListener('mouseleave', stopPreview);
-
           // Smart TV / klavye: kumanda odağı karta geldiğinde aynı önizleme davranışı
           wrapper.addEventListener('focus', startPreview);
           wrapper.addEventListener('blur', stopPreview);
-
         });
-
       }
-
-
       if (document.readyState === 'loading') {
-
         document.addEventListener(
           'DOMContentLoaded',
           setupFilters
         );
-
       } else {
-
         setupFilters();
-
       }
-
     </script>
-
     <script
       is:inline
       define:vars={{ shareLabel, copiedLabel }}
     >
       const siteShareButton = document.querySelector('[data-site-share-button]');
-
       if (siteShareButton instanceof HTMLButtonElement) {
         const siteShareLabel = siteShareButton.querySelector('[data-site-share-label]');
-
         siteShareButton.addEventListener('click', async () => {
           const shareUrl = `${window.location.origin}${window.location.pathname}`;
           const useNativeShare =
             navigator.maxTouchPoints > 0 &&
             typeof navigator.share === 'function';
-
           try {
             if (useNativeShare) {
               await navigator.share({ title: document.title, url: shareUrl });
               return;
             }
-
             await navigator.clipboard.writeText(shareUrl);
-
             if (siteShareLabel) {
               siteShareLabel.textContent = copiedLabel;
               window.setTimeout(() => {
@@ -1748,8 +1477,6 @@ const videoSchema = {
         });
       }
     </script>
-
-
     <script is:inline>
       const mobileMenuOpen = document.querySelector('[data-mobile-menu-open]');
       const mobileMenuClose = document.querySelector('[data-mobile-menu-close]');
@@ -1763,7 +1490,6 @@ const videoSchema = {
       const mobileScrollTrack = document.querySelector('[data-mobile-scroll-track]');
       const mobileScrollThumb = document.querySelector('[data-mobile-scroll-thumb]');
       const contentArea = document.querySelector('.content-area');
-
       function setMobileMenu(open) {
         if (!mobileMenuPanel || !mobileMenuOverlay) return;
         mobileMenuPanel.classList.toggle('is-open', open);
@@ -1773,7 +1499,6 @@ const videoSchema = {
           mobileMenuOpen.setAttribute('aria-expanded', String(open));
         }
       }
-
       function setLanguageMenu(open) {
         if (!mobileLanguageMenu) return;
         mobileLanguageMenu.classList.toggle('is-open', open);
@@ -1781,19 +1506,15 @@ const videoSchema = {
           mobileLanguageButton.setAttribute('aria-expanded', String(open));
         }
       }
-
       if (mobileMenuOpen) {
         mobileMenuOpen.addEventListener('click', () => setMobileMenu(true));
       }
-
       if (mobileMenuClose) {
         mobileMenuClose.addEventListener('click', () => setMobileMenu(false));
       }
-
       if (mobileMenuOverlay) {
         mobileMenuOverlay.addEventListener('click', () => setMobileMenu(false));
       }
-
       if (mobileLanguageButton) {
         mobileLanguageButton.addEventListener('click', (event) => {
           event.stopPropagation();
@@ -1801,20 +1522,16 @@ const videoSchema = {
           setLanguageMenu(!open);
         });
       }
-
       const languageFlags = {
         en: '🇬🇧', tr: '🇹🇷', de: '🇩🇪', es: '🇪🇸', it: '🇮🇹', fr: '🇫🇷',
         ja: '🇯🇵', pt: '🇵🇹', ru: '🇷🇺', zh: '🇨🇳', ko: '🇰🇷', ar: '🇸🇦',
         hi: '🇮🇳', nl: '🇳🇱', pl: '🇵🇱', sv: '🇸🇪', id: '🇮🇩', vi: '🇻🇳'
       };
-
       const pathParts = window.location.pathname.split('/').filter(Boolean);
       const activeLanguage = pathParts[0] || 'en';
-
       if (currentLanguageFlag) {
         currentLanguageFlag.textContent = languageFlags[activeLanguage] || '🌐';
       }
-
       document.querySelectorAll('[data-lang-code]').forEach((link) => {
         const code = link.getAttribute('data-lang-code');
         link.classList.toggle('is-active', code === activeLanguage);
@@ -1825,23 +1542,19 @@ const videoSchema = {
           link.setAttribute('href', '/' + nextParts.join('/') + window.location.search + window.location.hash);
         }
       });
-
       document.addEventListener('click', (event) => {
         if (mobileLanguagePicker && !mobileLanguagePicker.contains(event.target)) {
           setLanguageMenu(false);
         }
       });
-
       document.addEventListener('keydown', (event) => {
         if (event.key === 'Escape') {
           setMobileMenu(false);
           setLanguageMenu(false);
         }
       });
-
       if (contentArea && mobileBackToTop instanceof HTMLButtonElement) {
         let lastScrollTop = contentArea.scrollTop;
-
         const updateBackToTop = () => {
           const currentScrollTop = contentArea.scrollTop;
           const scrollingUp = currentScrollTop < lastScrollTop;
@@ -1849,15 +1562,12 @@ const videoSchema = {
           mobileBackToTop.classList.toggle('is-visible', scrollingUp && farEnoughDown);
           lastScrollTop = currentScrollTop;
         };
-
         contentArea.addEventListener('scroll', updateBackToTop, { passive: true });
-
         mobileBackToTop.addEventListener('click', () => {
           contentArea.scrollTop = 0;
           mobileBackToTop.classList.remove('is-visible');
         });
       }
-
       if (contentArea && mobileScrollTrack instanceof HTMLElement && mobileScrollThumb instanceof HTMLElement) {
         const updateScrollThumb = () => {
           const maxScroll = Math.max(0, contentArea.scrollHeight - contentArea.clientHeight);
@@ -1865,7 +1575,6 @@ const videoSchema = {
           const ratio = maxScroll > 0 ? contentArea.scrollTop / maxScroll : 0;
           mobileScrollThumb.style.transform = `translateY(${Math.round(ratio * maxThumbTravel)}px)`;
         };
-
         const scrollFromPointer = (clientY) => {
           const rect = mobileScrollTrack.getBoundingClientRect();
           const maxThumbTravel = Math.max(0, rect.height - mobileScrollThumb.offsetHeight);
@@ -1874,49 +1583,36 @@ const videoSchema = {
           const maxScroll = Math.max(0, contentArea.scrollHeight - contentArea.clientHeight);
           contentArea.scrollTop = ratio * maxScroll;
         };
-
         let draggingThumb = false;
-
         mobileScrollThumb.addEventListener('pointerdown', (event) => {
           draggingThumb = true;
           mobileScrollThumb.setPointerCapture(event.pointerId);
           scrollFromPointer(event.clientY);
           event.preventDefault();
         });
-
         mobileScrollThumb.addEventListener('pointermove', (event) => {
           if (!draggingThumb) return;
           scrollFromPointer(event.clientY);
         });
-
         mobileScrollThumb.addEventListener('pointerup', (event) => {
           draggingThumb = false;
           if (mobileScrollThumb.hasPointerCapture(event.pointerId)) {
             mobileScrollThumb.releasePointerCapture(event.pointerId);
           }
         });
-
         mobileScrollTrack.addEventListener('pointerdown', (event) => {
           if (event.target === mobileScrollThumb) return;
           scrollFromPointer(event.clientY);
         });
-
         contentArea.addEventListener('scroll', updateScrollThumb, { passive: true });
         window.addEventListener('resize', updateScrollThumb);
         updateScrollThumb();
       }
     </script>
-
     <!-- Schema Structure -->
-
     <script
       type="application/ld+json"
       set:html={JSON.stringify(videoSchema)}
     />
-
   </body>
 </html>
-
-
-
-

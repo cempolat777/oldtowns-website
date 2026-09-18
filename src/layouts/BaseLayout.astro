@@ -1,28 +1,39 @@
 ---
 import LanguagePicker from '../components/LanguagePicker.astro';
-import { languages, defaultLang } from '../i18n/ui';
+import { languages, defaultLang, ui } from '../i18n/ui';
 
 interface Props {
   title?: string;
   description?: string;
+  canonical?: string;
 }
 
 const {
   title = "OLD TOWNS | Global Walking Tours & Cinematic Urban Exploration",
-  description = "Experience immersive 4K 60fps walking tours across historic cities, ancient streets, and modern metropolis routes around the world."
+  description = "Experience immersive 4K 60fps walking tours across historic cities, ancient streets, and modern metropolis routes around the world.",
+  canonical
 } = Astro.props;
 
 const pathnameLang = Astro.url.pathname.split('/').filter(Boolean)[0];
 const currentLang = Astro.currentLocale ||
   (pathnameLang && pathnameLang in languages ? pathnameLang : defaultLang);
+const canonicalUrl = canonical || new URL(Astro.url.pathname, Astro.url.origin).href;
+const textDirection = currentLang === 'ar' ? 'rtl' : 'ltr';
+const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui];
 ---
 
 <!DOCTYPE html>
-<html lang={currentLang}>
+<html lang={currentLang} dir={textDirection}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="/favicon-v3.png" />
+
+    <!-- Favicons -->
+    <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=3" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
+
     <meta name="generator" content={Astro.generator} />
 
     <title>{title}</title>
@@ -34,26 +45,27 @@ const currentLang = Astro.currentLocale ||
       content="walking tour, 4k walking tour, old towns, binaural audio, city walk, izmir walking tour, dusseldorf walk, travel 4k"
     />
     <meta name="author" content="Old Towns Walks" />
-    <link rel="canonical" href={Astro.url.href} />
+    <link rel="canonical" href={canonicalUrl} />
+    <slot name="head" />
 
     <!-- Social Media Share (Open Graph) -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content={Astro.url.href} />
+    <meta property="og:url" content={canonicalUrl} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta
       property="og:image"
-      content="https://oldtownswalks.com/favicon-v3.png"
+      content="https://oldtownswalks.com/android-chrome-512x512.png"
     />
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image" />
-    <meta property="twitter:url" content={Astro.url.href} />
+    <meta property="twitter:url" content={canonicalUrl} />
     <meta property="twitter:title" content={title} />
     <meta property="twitter:description" content={description} />
     <meta
       property="twitter:image"
-      content="https://oldtownswalks.com/favicon-v3.png"
+      content="https://oldtownswalks.com/android-chrome-512x512.png"
     />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -119,6 +131,15 @@ const currentLang = Astro.currentLocale ||
         font-weight: 800;
         letter-spacing: .5px;
         text-decoration: none;
+      }
+
+      .brand-icon {
+        width: 26px;
+        height: 26px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 7px;
+        flex-shrink: 0;
       }
 
       .logo-box-1 {
@@ -245,6 +266,13 @@ const currentLang = Astro.currentLocale ||
     <header>
       <div class="nav-container">
         <a href={`/${currentLang}/`} class="brand-logo" aria-label="Old Towns">
+          <img
+            src="/android-chrome-192x192.png"
+            alt=""
+            class="brand-icon"
+            width="26"
+            height="26"
+          />
           <span class="logo-box-1">OLD</span>
           <span class="logo-box-2">TOWNS</span>
         </a>
@@ -255,7 +283,7 @@ const currentLang = Astro.currentLocale ||
               class="search-input"
               type="search"
               name="q"
-              placeholder="Search cities, countries, or walking tours..."
+              placeholder={t['search.placeholder']}
               aria-label="Search videos"
             />
             <button class="search-button" type="submit" aria-label="Search">

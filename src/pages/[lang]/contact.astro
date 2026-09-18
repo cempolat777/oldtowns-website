@@ -1,0 +1,781 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { languages, defaultLang } from '../../i18n/ui';
+
+export function getStaticPaths() {
+  return Object.keys(languages).map((lang) => ({
+    params: { lang }
+  }));
+}
+
+const contactContent = {
+  en: {
+    "metaTitle": "Contact Us | Old Towns Walks",
+    "metaDescription": "Get in touch with Old Towns Walks for business inquiries, location suggestions, or feedback.",
+    "backHome": "Back to Home",
+    "headingLead": "Get in",
+    "headingAccent": "Touch",
+    "subtitle": "Have questions, business inquiries, or location suggestions for our next 4K walk? Drop us a line!",
+    "infoTitle": "Contact Information",
+    "infoDesc": "Feel free to reach out directly via email or connect with us on social media.",
+    "emailLabel": "Email Us",
+    "youtubeLabel": "YouTube Channel",
+    "youtubeText": "Old Towns Walks on YouTube",
+    "focusLabel": "Content Focus",
+    "focusText": "4K 60FPS POV Walks & Binaural 3D Audio",
+    "formTitle": "Send a Message",
+    "name": "Your Name",
+    "namePh": "John Doe",
+    "email": "Your Email",
+    "emailPh": "john@example.com",
+    "subject": "Subject",
+    "subjectPh": "Location Suggestion / Business Inquiry",
+    "message": "Message",
+    "messagePh": "Write your message here...",
+    "send": "Send Message",
+    "privacyNote": "By sending a message, you agree that the information you provide may be processed to respond to your inquiry.",
+    "privacyLink": "Privacy Policy",
+  },
+  de: {
+    "metaTitle": "Kontakt | Old Towns Walks",
+    "metaDescription": "Kontaktieren Sie Old Towns Walks für geschäftliche Anfragen, Ortsvorschläge oder Feedback.",
+    "backHome": "Zur Startseite",
+    "headingLead": "Kontakt",
+    "headingAccent": "aufnehmen",
+    "subtitle": "Fragen, geschäftliche Anfragen oder Vorschläge für unsere nächste 4K-Tour? Schreiben Sie uns.",
+    "infoTitle": "Kontaktinformationen",
+    "infoDesc": "Sie können uns direkt per E-Mail kontaktieren oder über soziale Medien erreichen.",
+    "emailLabel": "E-Mail",
+    "youtubeLabel": "YouTube-Kanal",
+    "youtubeText": "Old Towns Walks auf YouTube",
+    "focusLabel": "Inhaltsschwerpunkt",
+    "focusText": "4K 60FPS POV-Spaziergänge & binaurales 3D-Audio",
+    "formTitle": "Nachricht senden",
+    "name": "Ihr Name",
+    "namePh": "Max Mustermann",
+    "email": "Ihre E-Mail",
+    "emailPh": "name@example.com",
+    "subject": "Betreff",
+    "subjectPh": "Ortsvorschlag / Geschäftliche Anfrage",
+    "message": "Nachricht",
+    "messagePh": "Schreiben Sie Ihre Nachricht...",
+    "send": "Nachricht senden",
+    "privacyNote": "Mit dem Absenden erklären Sie sich damit einverstanden, dass Ihre Angaben zur Bearbeitung Ihrer Anfrage verarbeitet werden.",
+    "privacyLink": "Datenschutz",
+  },
+  es: {
+    "metaTitle": "Contacto | Old Towns Walks",
+    "metaDescription": "Ponte en contacto con Old Towns Walks para consultas comerciales, sugerencias de lugares o comentarios.",
+    "backHome": "Volver al inicio",
+    "headingLead": "Ponte en",
+    "headingAccent": "contacto",
+    "subtitle": "¿Tienes preguntas, consultas comerciales o sugerencias para nuestro próximo paseo en 4K? Escríbenos.",
+    "infoTitle": "Información de contacto",
+    "infoDesc": "Puedes escribirnos directamente por correo electrónico o conectar con nosotros en redes sociales.",
+    "emailLabel": "Correo electrónico",
+    "youtubeLabel": "Canal de YouTube",
+    "youtubeText": "Old Towns Walks en YouTube",
+    "focusLabel": "Enfoque del contenido",
+    "focusText": "Paseos POV 4K 60FPS y audio binaural 3D",
+    "formTitle": "Enviar un mensaje",
+    "name": "Tu nombre",
+    "namePh": "Juan Pérez",
+    "email": "Tu correo",
+    "emailPh": "nombre@example.com",
+    "subject": "Asunto",
+    "subjectPh": "Sugerencia de lugar / Consulta comercial",
+    "message": "Mensaje",
+    "messagePh": "Escribe tu mensaje aquí...",
+    "send": "Enviar mensaje",
+    "privacyNote": "Al enviar un mensaje, aceptas que la información proporcionada pueda tratarse para responder a tu consulta.",
+    "privacyLink": "Política de Privacidad",
+  },
+  fr: {
+    "metaTitle": "Contact | Old Towns Walks",
+    "metaDescription": "Contactez Old Towns Walks pour les demandes professionnelles, suggestions de lieux ou commentaires.",
+    "backHome": "Retour à l’accueil",
+    "headingLead": "Nous",
+    "headingAccent": "contacter",
+    "subtitle": "Une question, une demande professionnelle ou une suggestion pour notre prochaine balade 4K ? Écrivez-nous.",
+    "infoTitle": "Coordonnées",
+    "infoDesc": "Contactez-nous directement par e-mail ou via les réseaux sociaux.",
+    "emailLabel": "E-mail",
+    "youtubeLabel": "Chaîne YouTube",
+    "youtubeText": "Old Towns Walks sur YouTube",
+    "focusLabel": "Type de contenu",
+    "focusText": "Balades POV 4K 60FPS & audio binaural 3D",
+    "formTitle": "Envoyer un message",
+    "name": "Votre nom",
+    "namePh": "Jean Dupont",
+    "email": "Votre e-mail",
+    "emailPh": "nom@example.com",
+    "subject": "Objet",
+    "subjectPh": "Suggestion de lieu / Demande professionnelle",
+    "message": "Message",
+    "messagePh": "Écrivez votre message ici...",
+    "send": "Envoyer",
+    "privacyNote": "En envoyant un message, vous acceptez que les informations fournies soient traitées afin de répondre à votre demande.",
+    "privacyLink": "Politique de Confidentialité",
+  },
+  it: {
+    "metaTitle": "Contatti | Old Towns Walks",
+    "metaDescription": "Contatta Old Towns Walks per richieste commerciali, suggerimenti di luoghi o feedback.",
+    "backHome": "Torna alla Home",
+    "headingLead": "Mettiti in",
+    "headingAccent": "contatto",
+    "subtitle": "Hai domande, richieste commerciali o suggerimenti per la nostra prossima passeggiata in 4K? Scrivici.",
+    "infoTitle": "Informazioni di contatto",
+    "infoDesc": "Puoi contattarci direttamente via e-mail o sui social media.",
+    "emailLabel": "Email",
+    "youtubeLabel": "Canale YouTube",
+    "youtubeText": "Old Towns Walks su YouTube",
+    "focusLabel": "Focus dei contenuti",
+    "focusText": "Passeggiate POV 4K 60FPS & audio binaurale 3D",
+    "formTitle": "Invia un messaggio",
+    "name": "Il tuo nome",
+    "namePh": "Mario Rossi",
+    "email": "La tua email",
+    "emailPh": "nome@example.com",
+    "subject": "Oggetto",
+    "subjectPh": "Suggerimento località / Richiesta commerciale",
+    "message": "Messaggio",
+    "messagePh": "Scrivi qui il tuo messaggio...",
+    "send": "Invia messaggio",
+    "privacyNote": "Inviando un messaggio, accetti che le informazioni fornite possano essere trattate per rispondere alla tua richiesta.",
+    "privacyLink": "Informativa sulla Privacy",
+  },
+  tr: {
+    "metaTitle": "İletişim | Old Towns Walks",
+    "metaDescription": "İş birliği talepleri, konum önerileri veya geri bildirim için Old Towns Walks ile iletişime geçin.",
+    "backHome": "Ana Sayfaya Dön",
+    "headingLead": "Bize",
+    "headingAccent": "Ulaşın",
+    "subtitle": "Sorunuz, iş birliği talebiniz veya bir sonraki 4K yürüyüşümüz için konum öneriniz mi var? Bize yazın.",
+    "infoTitle": "İletişim Bilgileri",
+    "infoDesc": "Bize doğrudan e-posta ile ulaşabilir veya sosyal medya üzerinden bağlantı kurabilirsiniz.",
+    "emailLabel": "E-posta",
+    "youtubeLabel": "YouTube Kanalı",
+    "youtubeText": "YouTube'da Old Towns Walks",
+    "focusLabel": "İçerik Odağı",
+    "focusText": "4K 60FPS POV Yürüyüşler & Binaural 3D Ses",
+    "formTitle": "Mesaj Gönder",
+    "name": "Adınız",
+    "namePh": "Ad Soyad",
+    "email": "E-posta Adresiniz",
+    "emailPh": "ad@example.com",
+    "subject": "Konu",
+    "subjectPh": "Konum Önerisi / İş Birliği Talebi",
+    "message": "Mesaj",
+    "messagePh": "Mesajınızı buraya yazın...",
+    "send": "Mesaj Gönder",
+    "privacyNote": "Mesaj göndererek, verdiğiniz bilgilerin talebinize yanıt vermek amacıyla işlenebileceğini kabul edersiniz.",
+    "privacyLink": "Gizlilik Politikası",
+  },
+  nl: {
+    "metaTitle": "Contact | Old Towns Walks",
+    "metaDescription": "Neem contact op met Old Towns Walks voor zakelijke vragen, locatiesuggesties of feedback.",
+    "backHome": "Terug naar Home",
+    "headingLead": "Neem",
+    "headingAccent": "contact op",
+    "subtitle": "Vragen, zakelijke verzoeken of een suggestie voor onze volgende 4K-wandeling? Stuur ons een bericht.",
+    "infoTitle": "Contactgegevens",
+    "infoDesc": "Neem rechtstreeks contact op via e-mail of sociale media.",
+    "emailLabel": "E-mail",
+    "youtubeLabel": "YouTube-kanaal",
+    "youtubeText": "Old Towns Walks op YouTube",
+    "focusLabel": "Contentfocus",
+    "focusText": "4K 60FPS POV-wandelingen & binaurale 3D-audio",
+    "formTitle": "Stuur een bericht",
+    "name": "Je naam",
+    "namePh": "Jan Jansen",
+    "email": "Je e-mail",
+    "emailPh": "naam@example.com",
+    "subject": "Onderwerp",
+    "subjectPh": "Locatiesuggestie / Zakelijke vraag",
+    "message": "Bericht",
+    "messagePh": "Schrijf hier je bericht...",
+    "send": "Bericht verzenden",
+    "privacyNote": "Door een bericht te sturen, ga je ermee akkoord dat de verstrekte informatie kan worden verwerkt om je vraag te beantwoorden.",
+    "privacyLink": "Privacybeleid",
+  },
+  pl: {
+    "metaTitle": "Kontakt | Old Towns Walks",
+    "metaDescription": "Skontaktuj się z Old Towns Walks w sprawie współpracy, propozycji lokalizacji lub opinii.",
+    "backHome": "Wróć do strony głównej",
+    "headingLead": "Skontaktuj się",
+    "headingAccent": "z nami",
+    "subtitle": "Masz pytanie, propozycję współpracy lub pomysł na kolejną trasę 4K? Napisz do nas.",
+    "infoTitle": "Dane kontaktowe",
+    "infoDesc": "Skontaktuj się bezpośrednio przez e-mail lub media społecznościowe.",
+    "emailLabel": "E-mail",
+    "youtubeLabel": "Kanał YouTube",
+    "youtubeText": "Old Towns Walks na YouTube",
+    "focusLabel": "Tematyka treści",
+    "focusText": "Spacery POV 4K 60FPS & binauralne audio 3D",
+    "formTitle": "Wyślij wiadomość",
+    "name": "Twoje imię",
+    "namePh": "Jan Kowalski",
+    "email": "Twój e-mail",
+    "emailPh": "nazwa@example.com",
+    "subject": "Temat",
+    "subjectPh": "Propozycja miejsca / Zapytanie biznesowe",
+    "message": "Wiadomość",
+    "messagePh": "Napisz wiadomość...",
+    "send": "Wyślij wiadomość",
+    "privacyNote": "Wysyłając wiadomość, zgadzasz się na przetwarzanie podanych informacji w celu udzielenia odpowiedzi.",
+    "privacyLink": "Polityka Prywatności",
+  },
+  pt: {
+    "metaTitle": "Contato | Old Towns Walks",
+    "metaDescription": "Entre em contato com o Old Towns Walks para assuntos comerciais, sugestões de locais ou feedback.",
+    "backHome": "Voltar ao início",
+    "headingLead": "Entre em",
+    "headingAccent": "contato",
+    "subtitle": "Tem perguntas, assuntos comerciais ou sugestões para nossa próxima caminhada em 4K? Escreva para nós.",
+    "infoTitle": "Informações de contato",
+    "infoDesc": "Entre em contato diretamente por e-mail ou pelas redes sociais.",
+    "emailLabel": "E-mail",
+    "youtubeLabel": "Canal do YouTube",
+    "youtubeText": "Old Towns Walks no YouTube",
+    "focusLabel": "Foco do conteúdo",
+    "focusText": "Caminhadas POV 4K 60FPS & áudio binaural 3D",
+    "formTitle": "Enviar uma mensagem",
+    "name": "Seu nome",
+    "namePh": "João Silva",
+    "email": "Seu e-mail",
+    "emailPh": "nome@example.com",
+    "subject": "Assunto",
+    "subjectPh": "Sugestão de local / Consulta comercial",
+    "message": "Mensagem",
+    "messagePh": "Escreva sua mensagem aqui...",
+    "send": "Enviar mensagem",
+    "privacyNote": "Ao enviar uma mensagem, você concorda que as informações fornecidas possam ser processadas para responder à sua solicitação.",
+    "privacyLink": "Política de Privacidade",
+  },
+  sv: {
+    "metaTitle": "Kontakt | Old Towns Walks",
+    "metaDescription": "Kontakta Old Towns Walks för affärsförfrågningar, platsförslag eller feedback.",
+    "backHome": "Tillbaka till startsidan",
+    "headingLead": "Kontakta",
+    "headingAccent": "oss",
+    "subtitle": "Har du frågor, affärsförfrågningar eller förslag inför vår nästa 4K-promenad? Skriv till oss.",
+    "infoTitle": "Kontaktinformation",
+    "infoDesc": "Kontakta oss direkt via e-post eller sociala medier.",
+    "emailLabel": "E-post",
+    "youtubeLabel": "YouTube-kanal",
+    "youtubeText": "Old Towns Walks på YouTube",
+    "focusLabel": "Innehållsfokus",
+    "focusText": "4K 60FPS POV-promenader & binauralt 3D-ljud",
+    "formTitle": "Skicka ett meddelande",
+    "name": "Ditt namn",
+    "namePh": "Anna Andersson",
+    "email": "Din e-post",
+    "emailPh": "namn@example.com",
+    "subject": "Ämne",
+    "subjectPh": "Platsförslag / Affärsförfrågan",
+    "message": "Meddelande",
+    "messagePh": "Skriv ditt meddelande här...",
+    "send": "Skicka meddelande",
+    "privacyNote": "Genom att skicka ett meddelande godkänner du att uppgifterna kan behandlas för att besvara din förfrågan.",
+    "privacyLink": "Integritetspolicy",
+  },
+  ru: {
+    "metaTitle": "Контакты | Old Towns Walks",
+    "metaDescription": "Свяжитесь с Old Towns Walks по вопросам сотрудничества, предложений локаций или обратной связи.",
+    "backHome": "На главную",
+    "headingLead": "Связаться",
+    "headingAccent": "с нами",
+    "subtitle": "Есть вопросы, деловое предложение или идея для нашей следующей прогулки в 4K? Напишите нам.",
+    "infoTitle": "Контактная информация",
+    "infoDesc": "Свяжитесь с нами напрямую по электронной почте или через социальные сети.",
+    "emailLabel": "Электронная почта",
+    "youtubeLabel": "YouTube-канал",
+    "youtubeText": "Old Towns Walks на YouTube",
+    "focusLabel": "Тематика контента",
+    "focusText": "POV-прогулки 4K 60FPS & бинауральный 3D-звук",
+    "formTitle": "Отправить сообщение",
+    "name": "Ваше имя",
+    "namePh": "Иван Иванов",
+    "email": "Ваш e-mail",
+    "emailPh": "name@example.com",
+    "subject": "Тема",
+    "subjectPh": "Предложение локации / Деловой запрос",
+    "message": "Сообщение",
+    "messagePh": "Напишите ваше сообщение...",
+    "send": "Отправить",
+    "privacyNote": "Отправляя сообщение, вы соглашаетесь на обработку предоставленных данных для ответа на ваш запрос.",
+    "privacyLink": "Политика Конфиденциальности",
+  },
+  ja: {
+    "metaTitle": "お問い合わせ | Old Towns Walks",
+    "metaDescription": "ビジネスのお問い合わせ、撮影場所の提案、フィードバックは Old Towns Walks までご連絡ください。",
+    "backHome": "ホームに戻る",
+    "headingLead": "お問い",
+    "headingAccent": "合わせ",
+    "subtitle": "ご質問、ビジネスのお問い合わせ、次回の4K散歩の撮影場所のご提案がありますか？お気軽にご連絡ください。",
+    "infoTitle": "連絡先情報",
+    "infoDesc": "メールまたはソーシャルメディアから直接ご連絡いただけます。",
+    "emailLabel": "メール",
+    "youtubeLabel": "YouTubeチャンネル",
+    "youtubeText": "YouTube の Old Towns Walks",
+    "focusLabel": "コンテンツ",
+    "focusText": "4K 60FPS POV散歩 & バイノーラル3Dオーディオ",
+    "formTitle": "メッセージを送る",
+    "name": "お名前",
+    "namePh": "山田 太郎",
+    "email": "メールアドレス",
+    "emailPh": "name@example.com",
+    "subject": "件名",
+    "subjectPh": "撮影場所の提案 / ビジネスのお問い合わせ",
+    "message": "メッセージ",
+    "messagePh": "メッセージを入力してください...",
+    "send": "送信",
+    "privacyNote": "メッセージを送信することで、お問い合わせへの回答のために提供情報が処理されることに同意したものとみなされます。",
+    "privacyLink": "プライバシーポリシー",
+  },
+  ko: {
+    "metaTitle": "문의하기 | Old Towns Walks",
+    "metaDescription": "비즈니스 문의, 촬영 장소 제안 또는 피드백은 Old Towns Walks로 연락해 주세요.",
+    "backHome": "홈으로 돌아가기",
+    "headingLead": "문의",
+    "headingAccent": "하기",
+    "subtitle": "질문, 비즈니스 문의 또는 다음 4K 산책 촬영 장소 제안이 있으신가요? 메시지를 보내주세요.",
+    "infoTitle": "연락처 정보",
+    "infoDesc": "이메일이나 소셜 미디어를 통해 직접 연락하실 수 있습니다.",
+    "emailLabel": "이메일",
+    "youtubeLabel": "YouTube 채널",
+    "youtubeText": "YouTube의 Old Towns Walks",
+    "focusLabel": "콘텐츠 분야",
+    "focusText": "4K 60FPS POV 산책 & 바이노럴 3D 오디오",
+    "formTitle": "메시지 보내기",
+    "name": "이름",
+    "namePh": "홍길동",
+    "email": "이메일",
+    "emailPh": "name@example.com",
+    "subject": "제목",
+    "subjectPh": "장소 제안 / 비즈니스 문의",
+    "message": "메시지",
+    "messagePh": "메시지를 입력하세요...",
+    "send": "메시지 보내기",
+    "privacyNote": "메시지를 보내면 문의에 답변하기 위해 제공한 정보가 처리될 수 있음에 동의하는 것입니다.",
+    "privacyLink": "개인정보 처리방침",
+  },
+  zh: {
+    "metaTitle": "联系我们 | Old Towns Walks",
+    "metaDescription": "如有商务咨询、地点建议或反馈，请联系 Old Towns Walks。",
+    "backHome": "返回首页",
+    "headingLead": "联系",
+    "headingAccent": "我们",
+    "subtitle": "有问题、商务咨询或下一次4K步行拍摄地点建议吗？欢迎给我们留言。",
+    "infoTitle": "联系信息",
+    "infoDesc": "你可以通过电子邮件或社交媒体直接联系我们。",
+    "emailLabel": "电子邮件",
+    "youtubeLabel": "YouTube频道",
+    "youtubeText": "YouTube 上的 Old Towns Walks",
+    "focusLabel": "内容方向",
+    "focusText": "4K 60FPS POV步行 & 双耳3D音频",
+    "formTitle": "发送消息",
+    "name": "姓名",
+    "namePh": "姓名",
+    "email": "电子邮件",
+    "emailPh": "name@example.com",
+    "subject": "主题",
+    "subjectPh": "地点建议 / 商务咨询",
+    "message": "消息",
+    "messagePh": "在这里输入消息...",
+    "send": "发送消息",
+    "privacyNote": "发送消息即表示你同意我们可为回复你的咨询而处理你提供的信息。",
+    "privacyLink": "隐私政策",
+  },
+  hi: {
+    "metaTitle": "संपर्क करें | Old Towns Walks",
+    "metaDescription": "व्यावसायिक पूछताछ, स्थान सुझाव या प्रतिक्रिया के लिए Old Towns Walks से संपर्क करें।",
+    "backHome": "होम पर वापस जाएँ",
+    "headingLead": "हमसे",
+    "headingAccent": "संपर्क करें",
+    "subtitle": "क्या आपके पास प्रश्न, व्यावसायिक पूछताछ या हमारी अगली 4K वॉक के लिए स्थान सुझाव है? हमें लिखें।",
+    "infoTitle": "संपर्क जानकारी",
+    "infoDesc": "ईमेल या सोशल मीडिया के माध्यम से सीधे संपर्क करें।",
+    "emailLabel": "ईमेल",
+    "youtubeLabel": "YouTube चैनल",
+    "youtubeText": "YouTube पर Old Towns Walks",
+    "focusLabel": "कंटेंट फोकस",
+    "focusText": "4K 60FPS POV वॉक & बाइनॉरल 3D ऑडियो",
+    "formTitle": "संदेश भेजें",
+    "name": "आपका नाम",
+    "namePh": "आपका नाम",
+    "email": "आपका ईमेल",
+    "emailPh": "name@example.com",
+    "subject": "विषय",
+    "subjectPh": "स्थान सुझाव / व्यावसायिक पूछताछ",
+    "message": "संदेश",
+    "messagePh": "अपना संदेश यहाँ लिखें...",
+    "send": "संदेश भेजें",
+    "privacyNote": "संदेश भेजकर आप सहमत होते हैं कि आपकी दी गई जानकारी का उपयोग आपकी पूछताछ का उत्तर देने के लिए किया जा सकता है।",
+    "privacyLink": "गोपनीयता नीति",
+  },
+  id: {
+    "metaTitle": "Kontak | Old Towns Walks",
+    "metaDescription": "Hubungi Old Towns Walks untuk pertanyaan bisnis, saran lokasi, atau masukan.",
+    "backHome": "Kembali ke Beranda",
+    "headingLead": "Hubungi",
+    "headingAccent": "Kami",
+    "subtitle": "Punya pertanyaan, urusan bisnis, atau saran lokasi untuk perjalanan 4K berikutnya? Kirim pesan kepada kami.",
+    "infoTitle": "Informasi Kontak",
+    "infoDesc": "Hubungi kami langsung melalui email atau media sosial.",
+    "emailLabel": "Email",
+    "youtubeLabel": "Kanal YouTube",
+    "youtubeText": "Old Towns Walks di YouTube",
+    "focusLabel": "Fokus Konten",
+    "focusText": "Jalan kaki POV 4K 60FPS & audio binaural 3D",
+    "formTitle": "Kirim Pesan",
+    "name": "Nama Anda",
+    "namePh": "Nama Lengkap",
+    "email": "Email Anda",
+    "emailPh": "name@example.com",
+    "subject": "Subjek",
+    "subjectPh": "Saran Lokasi / Pertanyaan Bisnis",
+    "message": "Pesan",
+    "messagePh": "Tulis pesan Anda di sini...",
+    "send": "Kirim Pesan",
+    "privacyNote": "Dengan mengirim pesan, Anda menyetujui bahwa informasi yang diberikan dapat diproses untuk menjawab pertanyaan Anda.",
+    "privacyLink": "Kebijakan Privasi",
+  },
+  vi: {
+    "metaTitle": "Liên hệ | Old Towns Walks",
+    "metaDescription": "Liên hệ Old Towns Walks về yêu cầu kinh doanh, đề xuất địa điểm hoặc phản hồi.",
+    "backHome": "Quay lại Trang Chủ",
+    "headingLead": "Liên hệ",
+    "headingAccent": "chúng tôi",
+    "subtitle": "Bạn có câu hỏi, yêu cầu kinh doanh hoặc đề xuất địa điểm cho chuyến đi bộ 4K tiếp theo? Hãy gửi tin nhắn.",
+    "infoTitle": "Thông tin liên hệ",
+    "infoDesc": "Liên hệ trực tiếp qua email hoặc mạng xã hội.",
+    "emailLabel": "Email",
+    "youtubeLabel": "Kênh YouTube",
+    "youtubeText": "Old Towns Walks trên YouTube",
+    "focusLabel": "Nội dung chính",
+    "focusText": "Đi bộ POV 4K 60FPS & âm thanh binaural 3D",
+    "formTitle": "Gửi tin nhắn",
+    "name": "Tên của bạn",
+    "namePh": "Họ và tên",
+    "email": "Email của bạn",
+    "emailPh": "name@example.com",
+    "subject": "Chủ đề",
+    "subjectPh": "Đề xuất địa điểm / Yêu cầu kinh doanh",
+    "message": "Tin nhắn",
+    "messagePh": "Viết tin nhắn tại đây...",
+    "send": "Gửi tin nhắn",
+    "privacyNote": "Khi gửi tin nhắn, bạn đồng ý rằng thông tin đã cung cấp có thể được xử lý để trả lời yêu cầu của bạn.",
+    "privacyLink": "Chính Sách Bảo Mật",
+  },
+  ar: {
+    "metaTitle": "اتصل بنا | Old Towns Walks",
+    "metaDescription": "تواصل مع Old Towns Walks للاستفسارات التجارية أو اقتراح المواقع أو الملاحظات.",
+    "backHome": "العودة إلى الرئيسية",
+    "headingLead": "تواصل",
+    "headingAccent": "معنا",
+    "subtitle": "لديك سؤال أو استفسار تجاري أو اقتراح لموقع جولتنا القادمة بدقة 4K؟ أرسل لنا رسالة.",
+    "infoTitle": "معلومات الاتصال",
+    "infoDesc": "يمكنك التواصل معنا مباشرة عبر البريد الإلكتروني أو وسائل التواصل الاجتماعي.",
+    "emailLabel": "البريد الإلكتروني",
+    "youtubeLabel": "قناة YouTube",
+    "youtubeText": "Old Towns Walks على YouTube",
+    "focusLabel": "تركيز المحتوى",
+    "focusText": "جولات POV بدقة 4K 60FPS وصوت ثلاثي الأبعاد ثنائي الأذن",
+    "formTitle": "إرسال رسالة",
+    "name": "اسمك",
+    "namePh": "الاسم الكامل",
+    "email": "بريدك الإلكتروني",
+    "emailPh": "name@example.com",
+    "subject": "الموضوع",
+    "subjectPh": "اقتراح موقع / استفسار تجاري",
+    "message": "الرسالة",
+    "messagePh": "اكتب رسالتك هنا...",
+    "send": "إرسال الرسالة",
+    "privacyNote": "بإرسال رسالة، فإنك توافق على إمكانية معالجة المعلومات التي تقدمها للرد على استفسارك.",
+    "privacyLink": "سياسة الخصوصية",
+  },
+} as const;
+
+const requestedLang = Astro.params.lang || defaultLang;
+const currentLang = requestedLang in contactContent ? requestedLang : defaultLang;
+const t = contactContent[currentLang as keyof typeof contactContent];
+
+const canonicalUrl = new URL(`/${currentLang}/contact`, Astro.url.origin).href;
+const alternateLinks = Object.keys(languages).map((lang) => ({
+  lang,
+  href: new URL(`/${lang}/contact`, Astro.url.origin).href
+}));
+
+const contactSchema = {
+  '@context': 'https://schema.org',
+  '@type': 'ContactPage',
+  url: canonicalUrl,
+  name: t.metaTitle,
+  description: t.metaDescription,
+  inLanguage: currentLang,
+  isPartOf: {
+    '@type': 'WebSite',
+    name: 'Old Towns Walks',
+    url: Astro.url.origin
+  }
+};
+---
+
+<BaseLayout title={t.metaTitle} description={t.metaDescription} canonical={canonicalUrl}>
+  <Fragment slot="head">
+    {alternateLinks.map(({ lang, href }) => (
+      <link rel="alternate" hreflang={lang} href={href} />
+    ))}
+    <link rel="alternate" hreflang="x-default" href={new URL('/en/contact', Astro.url.origin).href} />
+  </Fragment>
+
+  <div class="contact-wrapper">
+    <a href={`/${currentLang}/`} class="back-link">← {t.backHome}</a>
+
+    <section class="contact-header">
+      <h1>{t.headingLead} <span class="highlight">{t.headingAccent}</span></h1>
+      <p class="subtitle">{t.subtitle}</p>
+    </section>
+
+    <div class="contact-grid">
+      <section class="info-card">
+        <h2 class="card-title">{t.infoTitle}</h2>
+        <p class="card-desc">{t.infoDesc}</p>
+
+        <div class="contact-details">
+          <div class="contact-item">
+            <span class="label">{t.emailLabel}</span>
+            <a href="mailto:contact@oldtownswalks.com" class="value link">contact@oldtownswalks.com</a>
+          </div>
+
+          <div class="contact-item">
+            <span class="label">{t.youtubeLabel}</span>
+            <a href="https://www.youtube.com/@OldTowns" target="_blank" rel="noopener noreferrer" class="value link">{t.youtubeText}</a>
+          </div>
+
+          <div class="contact-item">
+            <span class="label">{t.focusLabel}</span>
+            <span class="value">{t.focusText}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="info-card">
+        <h2 class="card-title">{t.formTitle}</h2>
+        <form class="contact-form" action="#" method="POST">
+          <div class="form-group">
+            <label for="name">{t.name}</label>
+            <input type="text" id="name" name="name" placeholder={t.namePh} required />
+          </div>
+
+          <div class="form-group">
+            <label for="email">{t.email}</label>
+            <input type="email" id="email" name="email" placeholder={t.emailPh} required />
+          </div>
+
+          <div class="form-group">
+            <label for="subject">{t.subject}</label>
+            <input type="text" id="subject" name="subject" placeholder={t.subjectPh} required />
+          </div>
+
+          <div class="form-group">
+            <label for="message">{t.message}</label>
+            <textarea id="message" name="message" rows="5" placeholder={t.messagePh} required></textarea>
+          </div>
+
+          <p class="privacy-note">
+            {t.privacyNote}
+            <a href={`/${currentLang}/privacy`}>{t.privacyLink}</a>
+          </p>
+
+          <button type="submit" class="btn-primary">{t.send}</button>
+        </form>
+      </section>
+    </div>
+  </div>
+
+  <script type="application/ld+json" set:html={JSON.stringify(contactSchema)} />
+</BaseLayout>
+
+<style>
+  .contact-wrapper {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 24px;
+    color: #e5e7eb;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .back-link {
+    display: inline-block;
+    margin-bottom: 18px;
+    color: #fbc02d;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .contact-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .contact-header h1 {
+    font-size: 2.25rem;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .highlight {
+    color: #fbc02d;
+  }
+
+  .subtitle {
+    font-size: 1.05rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  .info-card {
+    background-color: #181818;
+    border: 1px solid #272727;
+    border-radius: 12px;
+    padding: 28px;
+    height: fit-content;
+  }
+
+  .card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .card-desc {
+    font-size: 0.95rem;
+    color: #9ca3af;
+    line-height: 1.5;
+    margin-bottom: 24px;
+  }
+
+  .contact-details {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .contact-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .contact-item .label {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .contact-item .value {
+    font-size: 1rem;
+    color: #ffffff;
+    font-weight: 500;
+  }
+
+  .link {
+    color: #fbc02d;
+    text-decoration: none;
+  }
+
+  .link:hover {
+    text-decoration: underline;
+  }
+
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .form-group label {
+    font-size: 0.85rem;
+    color: #d1d5db;
+    font-weight: 500;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    background-color: #0f0f0f;
+    border: 1px solid #272727;
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: #ffffff;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #fbc02d;
+  }
+
+  .privacy-note {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  .privacy-note a {
+    color: #fbc02d;
+    text-decoration: none;
+  }
+
+  .privacy-note a:hover {
+    text-decoration: underline;
+  }
+
+  .btn-primary {
+    background-color: #fbc02d;
+    color: #0f0f0f;
+    font-weight: 600;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease;
+    margin-top: 8px;
+  }
+
+  .btn-primary:hover {
+    background-color: #fdd835;
+  }
+
+  @media (max-width: 768px) {
+    .contact-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .contact-wrapper {
+      padding: 24px 16px;
+    }
+  }
+</style>
