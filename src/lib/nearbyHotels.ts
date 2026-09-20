@@ -61,6 +61,192 @@ type CountRow = {
   total: number;
 };
 
+type TrustedVideoGeo = {
+  latitude?: number;
+  longitude?: number;
+  verified?: boolean;
+  integrityVerified?: boolean;
+  precision?: string;
+};
+
+type VideoAnchorRow = {
+  raw_json: string | null;
+  active: number | null;
+};
+
+const MAX_HOTEL_DISTANCE_METERS = 3_000;
+const EARTH_RADIUS_METERS = 6_371_000;
+
+function isTrustedRouteAnchor(value: TrustedVideoGeo | undefined): value is TrustedVideoGeo & {
+  latitude: number;
+  longitude: number;
+} {
+  if (!value || value.verified !== true || value.integrityVerified !== true) {
+    return false;
+  }
+
+  // A city centroid is not evidence of a hotel being near the filmed route.
+  const precision = String(value.precision || '').toLowerCase();
+  if (!['route-point', 'landmark', 'airport'].includes(precision)) {
+    return false;
+  }
+
+  return typeof value.latitude === 'number' &&
+    Number.isFinite(value.latitude) &&
+    value.latitude >= -90 && value.latitude <= 90 &&
+    typeof value.longitude === 'number' &&
+    Number.isFinite(value.longitude) &&
+    value.longitude >= -180 && value.longitude <= 180;
+}
+
+function distanceInMeters(
+  latitudeA: number,
+  longitudeA: number,
+  latitudeB: number,
+  longitudeB: number
+) {
+  const radians = Math.PI / 180;
+  const deltaLatitude = (latitudeB - latitudeA) * radians;
+  const deltaLongitude = (longitudeB - longitudeA) * radians;
+  const haversine =
+    Math.sin(deltaLatitude / 2) ** 2 +
+    Math.cos(latitudeA * radians) * Math.cos(latitudeB * radians) *
+    Math.sin(deltaLongitude / 2) ** 2;
+
+  return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(Math.min(1, haversine)));
+}
+
+async function findExistingHotelsNearRoute(
+  db: D1DatabaseLike,
+  videoId: string,
+  limit: number,
+  suppliedGeo?: TrustedVideoGeo
+): Promise<NearbyHotelResult> {
+  let geo = suppliedGeo;
+
+  if (!isTrustedRouteAnchor(geo)) {
+    const videoRow = await db
+      .prepare('SELECT raw_json, active FROM videos WHERE id = ?1 LIMIT 1')
+      .bind(videoId)
+      .first<VideoAnchorRow>();
+
+    if (Number(videoRow?.active) !== 1 || !videoRow?.raw_json) {
+      return { items: [], total: 0 };
+    }
+
+    try {
+      geo = (JSON.parse(videoRow.raw_json) as { geo?: TrustedVideoGeo }).geo;
+    } catch {
+      return { items: [], total: 0 };
+    }
+  }
+
+  if (!isTrustedRouteAnchor(geo)) {
+    return { items: [], total: 0 };
+  }
+
+  const latitudeSpan = MAX_HOTEL_DISTANCE_METERS / 110_574;
+  const longitudeSpan = Math.min(
+    180,
+    MAX_HOTEL_DISTANCE_METERS / (111_320 * Math.max(0.001, Math.cos(geo.latitude * Math.PI / 180)))
+  );
+
+  // Read only hotels that have at least one previously verified association.
+  // This does not create new hotel records or mark a new video as verified.
+  const result = await db
+    .prepare(`
+      SELECT
+        h.id AS hotel_id,
+        h.canonical_name,
+        h.city,
+        h.country,
+        h.address,
+        h.latitude,
+        h.longitude,
+        0 AS distance_meters,
+        0 AS hotel_rank,
+        hs.provider,
+        hs.provider_hotel_id,
+        hs.star_rating,
+        hs.guest_rating,
+        hs.review_count,
+        hs.thumbnail_url,
+        hs.booking_url,
+        hs.content_expires_at,
+        hs.updated_at AS source_updated_at
+      FROM hotels AS h
+      LEFT JOIN hotel_sources AS hs
+        ON hs.hotel_id = h.id AND hs.active = 1
+      WHERE h.active = 1
+        AND h.latitude BETWEEN ?1 AND ?2
+        AND h.longitude BETWEEN ?3 AND ?4
+        AND EXISTS (
+          SELECT 1 FROM video_hotels AS vh
+          WHERE vh.hotel_id = h.id AND vh.active = 1 AND vh.verified = 1
+        )
+    `)
+    .bind(
+      geo.latitude - latitudeSpan,
+      geo.latitude + latitudeSpan,
+      geo.longitude - longitudeSpan,
+      geo.longitude + longitudeSpan
+    )
+    .all<HotelRow>();
+
+  const grouped = new Map<string, { rows: HotelRow[]; distance: number }>();
+
+  for (const row of result.results || []) {
+    const latitude = Number(row.latitude);
+    const longitude = Number(row.longitude);
+    if (!row.hotel_id || !String(row.canonical_name || '').trim() ||
+        !Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+      continue;
+    }
+
+    const distance = distanceInMeters(geo.latitude, geo.longitude, latitude, longitude);
+    if (distance > MAX_HOTEL_DISTANCE_METERS) {
+      continue;
+    }
+
+    const found = grouped.get(row.hotel_id);
+    if (found) {
+      found.rows.push(row);
+    } else {
+      grouped.set(row.hotel_id, { rows: [row], distance });
+    }
+  }
+
+  const now = Date.now();
+  const matches = Array.from(grouped.values())
+    .sort((left, right) => left.distance - right.distance);
+
+  const items: NearbyHotel[] = matches.slice(0, limit).map((match, index) => {
+    const hotel = match.rows[0];
+    const source = chooseSource(match.rows, now);
+
+    return {
+      id: hotel.hotel_id,
+      name: hotel.canonical_name,
+      city: optionalText(hotel.city),
+      country: optionalText(hotel.country),
+      address: optionalText(hotel.address),
+      latitude: Number(hotel.latitude),
+      longitude: Number(hotel.longitude),
+      distanceMeters: Math.round(match.distance),
+      rank: index + 1,
+      provider: optionalText(source.provider),
+      providerHotelId: optionalText(source.provider_hotel_id),
+      starRating: optionalNumber(source.star_rating),
+      guestRating: optionalNumber(source.guest_rating),
+      reviewCount: optionalNumber(source.review_count),
+      thumbnailUrl: isFreshSource(source, now) ? optionalText(source.thumbnail_url) : undefined,
+      bookingUrl: isFreshSource(source, now) ? optionalText(source.booking_url) : undefined
+    };
+  });
+
+  return { items, total: matches.length };
+}
+
 const providerPriority = [
   'booking',
   'expedia',
@@ -124,7 +310,8 @@ function isMissingHotelSchema(error: unknown) {
 export async function getNearbyHotelsForVideo(
   db: D1DatabaseLike,
   videoId: string,
-  limit: number = 30
+  limit: number = 30,
+  videoGeo?: TrustedVideoGeo
 ): Promise<NearbyHotelResult> {
   const safeVideoId = String(videoId || '').trim();
   const safeLimit = Math.max(1, Math.min(30, Math.floor(limit)));
@@ -184,6 +371,10 @@ export async function getNearbyHotelsForVideo(
       `)
       .bind(safeVideoId, safeLimit * 8)
       .all<HotelRow>();
+
+    if (!rows.results?.length) {
+      return await findExistingHotelsNearRoute(db, safeVideoId, safeLimit, videoGeo);
+    }
 
     const grouped = new Map<string, HotelRow[]>();
 
@@ -248,23 +439,18 @@ const localNamePreferredLanguages = new Set([
 
 function hasNonLatinLetters(value: string) {
   return [...value].some(
-    (character) =>
-      /\p{L}/u.test(character) &&
-      !/\p{Script=Latin}/u.test(character)
+    (character) => /\p{L}/u.test(character) && !/\p{Script=Latin}/u.test(character)
   );
 }
 
 function romanizeHotelName(value: string) {
   const original = String(value || '').trim();
-
   if (!original || !hasNonLatinLetters(original)) {
     return original;
   }
 
   try {
-    return transliterate(original)
-      .replace(/\s+/g, ' ')
-      .trim() || original;
+    return transliterate(original).replace(/\s+/g, ' ').trim() || original;
   } catch {
     return original;
   }
@@ -287,8 +473,7 @@ export function resolveHotelDisplayName(
     return latin;
   }
 
-  const fallback = primary || local;
-  return romanizeHotelName(fallback);
+  return romanizeHotelName(primary || local);
 }
 
 export function formatHotelDistance(

@@ -59,6 +59,7 @@ interface Video {
     longitude: number;
     verified?: boolean;
     integrityVerified?: boolean;
+    precision?: string;
   };
 
   nearbyHotels?: Array<{
@@ -214,7 +215,7 @@ let nearbyHotelResult: { items: any[]; total: number } = {
 
 if (isVideoAvailable && embeddedNearbyHotels.length === 0 && db) {
   try {
-    const matchedHotels = await getNearbyHotelsForVideo(db, video.id, 30);
+    const matchedHotels = await getNearbyHotelsForVideo(db, video.id, 30, video.geo);
     const nearbyMatches = matchedHotels.items.filter((hotel) =>
       Number.isFinite(hotel.distanceMeters) &&
       hotel.distanceMeters >= 0 &&
