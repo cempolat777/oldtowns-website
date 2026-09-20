@@ -1,53 +1,14 @@
 ﻿---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { defaultLang, languages, ui } from '../../i18n/ui';
-import { formatHotelDistance } from '../../lib/nearbyHotels';
 import { env } from 'cloudflare:workers';
+import { getVideoCardTitle } from '../../lib/videoSeo';
+import { getNearbyHotelsForVideo } from '../../lib/nearbyHotels';
 
 export const prerender = false;
 
-type HotelDirectoryRow = {
-  hotel_id: string;
-  canonical_name: string;
-  city: string | null;
-  country: string | null;
-  address: string | null;
-  distance_meters: number;
-  video_id: string;
-  video_raw_json: string | null;
-  provider: string | null;
-  star_rating: number | null;
-  guest_rating: number | null;
-  review_count: number | null;
-  thumbnail_url: string | null;
-  booking_url: string | null;
-};
-
-type WalkData = {
-  title?: string;
-  thumbnail?: string;
-  city?: string;
-  country?: string;
-};
-
-type HotelCard = {
-  id: string;
-  name: string;
-  city: string;
-  country: string;
-  address: string;
-  distanceMeters: number;
-  videoId: string;
-  walkTitle: string;
-  walkThumbnail?: string;
-  provider?: string;
-  starRating?: number;
-  guestRating?: number;
-  reviewCount?: number;
-  thumbnailUrl?: string;
-  bookingUrl?: string;
-};
-
+const PAGE_SIZE = 24;
+const MAX_SEARCH_LENGTH = 80;
 const { lang } = Astro.params;
 const currentLang = lang && lang in languages ? lang : defaultLang;
 const translations = ui as Record<string, Record<string, string>>;
@@ -58,214 +19,262 @@ if (!db) {
   throw new Error('D1 binding oldtowns_db is not available.');
 }
 
-function optionalText(value: string | null | undefined) {
-  const cleaned = String(value || '').trim();
-  return cleaned || undefined;
-}
+type VideoRow = {
+  id: string;
+  title: string | null;
+  raw_json: string | null;
+  category: string | null;
+  city: string | null;
+  country: string | null;
+  thumbnail: string | null;
+  channel: string | null;
+  channel_title: string | null;
+  badge: string | null;
+  published_at: string | null;
+  has_verified_link: number;
+};
 
-function optionalNumber(value: number | null) {
-  return typeof value === 'number' && Number.isFinite(value)
-    ? value
-    : undefined;
-}
+type VideoData = {
+  id: string;
+  title: string;
+  category?: string;
+  city?: string;
+  country?: string;
+  thumbnail?: string;
+  channel?: string;
+  channelTitle?: string;
+  badge?: string;
+  publishedAt?: string;
+  geo?: {
+    latitude?: number;
+    longitude?: number;
+    verified?: boolean;
+    integrityVerified?: boolean;
+    precision?: string;
+  };
+};
 
-function isMissingHotelSchema(error: unknown) {
-  const message = error instanceof Error
-    ? error.message
-    : String(error || '');
+type WalkCard = {
+  id: string;
+  title: string;
+  city: string;
+  country: string;
+  category: string;
+  channel: string;
+  thumbnail: string;
+  badge: string;
+  publishedAt: string;
+};
 
-  return /no such table:\s*(hotels|hotel_sources|video_hotels|videos)/i
-    .test(message);
-}
+const listHeading: Record<string, string> = {
+  en: 'Walking videos near hotels', tr: 'Otellere yakın yürüyüş videoları',
+  de: 'Spaziervideos in Hotelnähe', es: 'Videos de paseos cerca de hoteles',
+  it: 'Video di passeggiate vicino agli hotel', fr: 'Vidéos de promenades près des hôtels',
+  ja: 'ホテル周辺の散策動画', pt: 'Vídeos de caminhadas perto de hotéis',
+  ru: 'Видео прогулок рядом с отелями', zh: '酒店附近的步行视频',
+  ko: '호텔 근처 도보 영상', ar: 'فيديوهات المشي بالقرب من الفنادق',
+  hi: 'होटलों के पास पैदल यात्रा के वीडियो', nl: 'Wandelvideo’s bij hotels',
+  pl: 'Filmy ze spacerów w pobliżu hoteli', sv: 'Promenadvideor nära hotell',
+  id: 'Video jalan kaki di dekat hotel', vi: 'Video đi bộ gần khách sạn'
+};
 
-function parseWalk(rawJson: string | null): WalkData {
-  if (!rawJson) {
-    return {};
+const searchPrompt: Record<string, string> = {
+  en: 'Search city, country or walking route...',
+  tr: 'Şehir, ülke veya yürüyüş rotası ara...',
+  de: 'Stadt, Land oder Wanderroute suchen...',
+  es: 'Buscar ciudad, país o ruta a pie...',
+  it: 'Cerca città, paese o percorso a piedi...',
+  fr: 'Rechercher une ville, un pays ou un itinéraire...',
+  ja: '都市、国、散策ルートを検索...',
+  pt: 'Buscar cidade, país ou percurso a pé...',
+  ru: 'Поиск города, страны или маршрута...',
+  zh: '搜索城市、国家或步行路线...',
+  ko: '도시, 국가 또는 도보 경로 검색...',
+  ar: 'ابحث عن مدينة أو بلد أو مسار مشي...',
+  hi: 'शहर, देश या पैदल मार्ग खोजें...',
+  nl: 'Zoek stad, land of wandelroute...',
+  pl: 'Szukaj miasta, kraju lub trasy spaceru...',
+  sv: 'Sök stad, land eller promenadrutt...',
+  id: 'Cari kota, negara, atau rute jalan kaki...',
+  vi: 'Tìm thành phố, quốc gia hoặc tuyến đi bộ...'
+};
+
+const loadMoreText: Record<string, string> = {
+  en: 'Load more videos', tr: 'Daha fazla video yükle',
+  de: 'Weitere Videos laden', es: 'Cargar más vídeos',
+  it: 'Carica altri video', fr: 'Charger plus de vidéos',
+  ja: '動画をさらに表示', pt: 'Carregar mais vídeos',
+  ru: 'Загрузить ещё видео', zh: '加载更多视频',
+  ko: '동영상 더 보기', ar: 'تحميل المزيد من الفيديوهات',
+  hi: 'और वीडियो लोड करें', nl: 'Meer video’s laden',
+  pl: 'Załaduj więcej filmów', sv: 'Ladda fler videor',
+  id: 'Muat lebih banyak video', vi: 'Tải thêm video'
+};
+
+function parseVideo(row: VideoRow): VideoData | null {
+  if (!row.id) return null;
+  let data: Partial<VideoData> = {};
+  if (row.raw_json) {
+    try {
+      data = JSON.parse(row.raw_json) as Partial<VideoData>;
+    } catch {
+      return null;
+    }
   }
-
-  try {
-    return JSON.parse(rawJson) as WalkData;
-  } catch {
-    return {};
-  }
+  const title = String(data.title || row.title || '').trim();
+  if (!title) return null;
+  return {
+    id: row.id,
+    title,
+    city: String(data.city || row.city || '').trim(),
+    country: String(data.country || row.country || '').trim(),
+    category: String(data.category || row.category || '').trim(),
+    thumbnail: String(data.thumbnail || row.thumbnail || '').trim(),
+    channel: String(data.channel || row.channel || '').trim(),
+    channelTitle: String(data.channelTitle || row.channel_title || '').trim(),
+    badge: String(data.badge || row.badge || '').trim(),
+    publishedAt: String(data.publishedAt || row.published_at || '').trim(),
+    geo: data.geo
+  };
 }
 
-let hotelRows: HotelDirectoryRow[] = [];
+function cardFromVideo(video: VideoData): WalkCard {
+  return {
+    id: video.id,
+    title: getVideoCardTitle(video as Parameters<typeof getVideoCardTitle>[0], currentLang),
+    city: video.city || '',
+    country: video.country || '',
+    category: video.category || '',
+    channel: video.channelTitle || video.channel || '',
+    thumbnail: video.thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`,
+    badge: video.badge || '',
+    publishedAt: video.publishedAt || ''
+  };
+}
 
-try {
-  const result = await db.prepare(`
-    WITH ranked_walks AS (
-      SELECT
-        vh.hotel_id,
-        vh.video_id,
-        vh.distance_meters,
-        ROW_NUMBER() OVER (
-          PARTITION BY vh.hotel_id
-          ORDER BY
-            vh.distance_meters ASC,
-            vh.rank ASC,
-            vh.video_id ASC
-        ) AS row_number
-      FROM video_hotels AS vh
-      INNER JOIN videos AS v
-        ON v.id = vh.video_id
-        AND v.active = 1
-      WHERE vh.active = 1
-        AND vh.verified = 1
-    ),
-    ranked_sources AS (
-      SELECT
-        hs.hotel_id,
-        hs.provider,
-        hs.star_rating,
-        hs.guest_rating,
-        hs.review_count,
-        hs.thumbnail_url,
-        hs.booking_url,
-        ROW_NUMBER() OVER (
-          PARTITION BY hs.hotel_id
-          ORDER BY
-            CASE LOWER(COALESCE(hs.provider, ''))
-              WHEN 'booking' THEN 0
-              WHEN 'expedia' THEN 1
-              WHEN 'agoda' THEN 2
-              WHEN 'trip' THEN 3
-              WHEN 'google' THEN 4
-              WHEN 'openstreetmap' THEN 5
-              ELSE 6
-            END ASC,
-            CASE
-              WHEN LENGTH(TRIM(COALESCE(hs.booking_url, ''))) > 0 THEN 0
-              ELSE 1
-            END ASC,
-            CASE
-              WHEN LENGTH(TRIM(COALESCE(hs.thumbnail_url, ''))) > 0 THEN 0
-              ELSE 1
-            END ASC,
-            hs.updated_at DESC
-        ) AS row_number
-      FROM hotel_sources AS hs
-      WHERE hs.active = 1
-        AND (
-          hs.content_expires_at IS NULL
-          OR hs.content_expires_at > CURRENT_TIMESTAMP
-        )
-    )
-    SELECT
-      h.id AS hotel_id,
-      h.canonical_name,
-      h.city,
-      h.country,
-      h.address,
-      rw.distance_meters,
-      rw.video_id,
-      v.raw_json AS video_raw_json,
-      rs.provider,
-      rs.star_rating,
-      rs.guest_rating,
-      rs.review_count,
-      rs.thumbnail_url,
-      rs.booking_url
+// The fallback matches trusted route/landmark/airport anchors against hotels
+// already independently verified for at least one video. A city centroid alone
+// does not make a walk eligible.
+const trustedAnchor = `
+  json_valid(v.raw_json) = 1
+  AND json_extract(v.raw_json, '$.geo.verified') = 1
+  AND json_extract(v.raw_json, '$.geo.integrityVerified') = 1
+  AND LOWER(json_extract(v.raw_json, '$.geo.precision')) IN ('route-point', 'landmark', 'airport')
+  AND json_type(v.raw_json, '$.geo.latitude') IN ('real', 'integer')
+  AND json_type(v.raw_json, '$.geo.longitude') IN ('real', 'integer')
+  AND json_extract(v.raw_json, '$.geo.latitude') BETWEEN -90 AND 90
+  AND json_extract(v.raw_json, '$.geo.longitude') BETWEEN -180 AND 180
+`;
+
+// This bounding box intentionally includes a small margin. Candidates from
+// this fallback are checked with the exact distance calculation in the shared
+// nearbyHotels helper before they are shown.
+const geoHotelExists = `
+  EXISTS (
+    SELECT 1
     FROM hotels AS h
-    INNER JOIN ranked_walks AS rw
-      ON rw.hotel_id = h.id
-      AND rw.row_number = 1
-    INNER JOIN videos AS v
-      ON v.id = rw.video_id
-      AND v.active = 1
-    LEFT JOIN ranked_sources AS rs
-      ON rs.hotel_id = h.id
-      AND rs.row_number = 1
     WHERE h.active = 1
-    ORDER BY
-      CASE WHEN rs.booking_url IS NOT NULL THEN 0 ELSE 1 END ASC,
-      CASE WHEN rs.thumbnail_url IS NOT NULL THEN 0 ELSE 1 END ASC,
-      CASE WHEN rs.guest_rating IS NOT NULL THEN 0 ELSE 1 END ASC,
-      h.country ASC,
-      h.city ASC,
-      h.canonical_name ASC
-    LIMIT 120
-  `).all() as { results?: HotelDirectoryRow[] };
+      AND EXISTS (
+        SELECT 1 FROM video_hotels AS vh
+        WHERE vh.hotel_id = h.id AND vh.active = 1 AND vh.verified = 1
+      )
+      AND ABS(h.latitude - json_extract(v.raw_json, '$.geo.latitude')) < 0.028
+      AND ABS(h.longitude - json_extract(v.raw_json, '$.geo.longitude'))
+        < CASE
+            WHEN ABS(json_extract(v.raw_json, '$.geo.latitude')) < 30 THEN 0.034
+            WHEN ABS(json_extract(v.raw_json, '$.geo.latitude')) < 45 THEN 0.042
+            WHEN ABS(json_extract(v.raw_json, '$.geo.latitude')) < 60 THEN 0.060
+            WHEN ABS(json_extract(v.raw_json, '$.geo.latitude')) < 75 THEN 0.115
+            ELSE 0.75
+          END
+  )
+`;
 
-  hotelRows = result.results || [];
+const verifiedLinkExists = `
+  EXISTS (
+    SELECT 1 FROM video_hotels AS vh
+    JOIN hotels AS h ON h.id = vh.hotel_id AND h.active = 1
+    WHERE vh.video_id = v.id AND vh.active = 1 AND vh.verified = 1
+      AND vh.distance_meters BETWEEN 0 AND 3000
+  )
+`;
+
+async function fetchWalks(query: string, afterDate: string, afterId: string) {
+  // Bind fixed slots even when search or cursor is absent; ?4 is the batch size.
+  const sql = `
+    SELECT v.id, v.title, v.raw_json, v.category, v.city, v.country,
+           v.thumbnail, v.channel, v.channel_title, v.badge, v.published_at,
+           CASE WHEN ${verifiedLinkExists} THEN 1 ELSE 0 END AS has_verified_link
+    FROM videos AS v
+    WHERE v.active = 1 AND v.raw_json IS NOT NULL
+      AND (${verifiedLinkExists} OR (${trustedAnchor} AND ${geoHotelExists}))
+      AND (?1 = '' OR INSTR(LOWER(COALESCE(v.title, '')), ?1) > 0
+        OR INSTR(LOWER(COALESCE(v.city, '')), ?1) > 0
+        OR INSTR(LOWER(COALESCE(v.country, '')), ?1) > 0
+        OR INSTR(LOWER(COALESCE(v.description, '')), ?1) > 0)
+      AND (?3 = '' OR COALESCE(v.published_at, '') < ?2
+        OR (COALESCE(v.published_at, '') = ?2 AND v.id < ?3))
+    ORDER BY COALESCE(v.published_at, '') DESC, v.id DESC
+    LIMIT ?4
+  `;
+  const searchText = query;
+  const result = await db.prepare(sql)
+    .bind(searchText, afterDate, afterId, PAGE_SIZE + 1)
+    .all() as { results?: VideoRow[] };
+  const rows = result.results || [];
+  const selected = rows.slice(0, PAGE_SIZE);
+  const items: WalkCard[] = [];
+  for (const row of selected) {
+    const video = parseVideo(row);
+    if (!video) continue;
+    if (Number(row.has_verified_link) !== 1) {
+      // The candidate is a new video with no precomputed video_hotels link.
+      const matched = await getNearbyHotelsForVideo(db, video.id, 1, video.geo);
+      if (!matched.items.some((hotel) => hotel.distanceMeters >= 0 && hotel.distanceMeters <= 3000)) {
+        continue;
+      }
+    }
+    items.push(cardFromVideo(video));
+  }
+  const lastRow = selected[selected.length - 1];
+  return {
+    items,
+    hasMore: rows.length > PAGE_SIZE,
+    nextDate: lastRow?.published_at || '',
+    nextId: lastRow?.id || ''
+  };
+}
+
+const url = Astro.url;
+const query = (url.searchParams.get('q') || '').trim().toLocaleLowerCase().slice(0, MAX_SEARCH_LENGTH);
+const afterDate = (url.searchParams.get('afterDate') || '').slice(0, 40);
+const afterId = (url.searchParams.get('afterId') || '').slice(0, 80);
+let result: Awaited<ReturnType<typeof fetchWalks>>;
+try {
+  result = await fetchWalks(query, afterDate, afterId);
 } catch (error) {
-  if (!isMissingHotelSchema(error)) {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/no such table:\s*(hotels|hotel_sources|video_hotels|videos)/i.test(message)) {
+    result = { items: [], hasMore: false, nextDate: '', nextId: '' };
+  } else {
     throw error;
   }
 }
 
-const hotels: HotelCard[] = hotelRows.map((row) => {
-  const walk = parseWalk(row.video_raw_json);
-
-  return {
-    id: row.hotel_id,
-    name: row.canonical_name,
-    city: optionalText(row.city) || optionalText(walk.city) || '',
-    country: optionalText(row.country) || optionalText(walk.country) || '',
-    address: optionalText(row.address) || '',
-    distanceMeters: Number(row.distance_meters) || 0,
-    videoId: row.video_id,
-    walkTitle: optionalText(walk.title || null) || t['hotels.watchWalk'],
-    walkThumbnail: optionalText(walk.thumbnail || null),
-    provider: optionalText(row.provider),
-    starRating: optionalNumber(row.star_rating),
-    guestRating: optionalNumber(row.guest_rating),
-    reviewCount: optionalNumber(row.review_count),
-    thumbnailUrl: optionalText(row.thumbnail_url),
-    bookingUrl: optionalText(row.booking_url)
-  };
-});
-
-type Destination = {
-  key: string;
-  city: string;
-  country: string;
-  count: number;
-  thumbnail?: string;
-};
-
-const destinationMap = new Map<string, Destination>();
-
-for (const hotel of hotels) {
-  const city = hotel.city.trim();
-  const country = hotel.country.trim();
-
-  if (!city && !country) {
-    continue;
-  }
-
-  const key = `${city}|${country}`.toLocaleLowerCase(currentLang);
-  const existing = destinationMap.get(key);
-
-  if (existing) {
-    existing.count += 1;
-    existing.thumbnail ||= hotel.walkThumbnail;
-  } else {
-    destinationMap.set(key, {
-      key,
-      city,
-      country,
-      count: 1,
-      thumbnail: hotel.walkThumbnail
-    });
-  }
+if (url.searchParams.get('feed') === '1') {
+  return new Response(JSON.stringify(result), {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'public, max-age=60, s-maxage=60',
+      'X-Robots-Tag': 'noindex, follow'
+    }
+  });
 }
-
-const destinations = Array.from(destinationMap.values())
-  .sort(
-    (left, right) =>
-      right.count - left.count ||
-      left.city.localeCompare(right.city, currentLang)
-  )
-  .slice(0, 8);
 
 const title = `${t['nav.hotels']} | Old Towns Walks`;
 const description = t['hotels.subtitle'];
-const shouldIndex = hotels.length > 0;
-Astro.response.headers.set(
-  'X-Robots-Tag',
-  shouldIndex ? 'index, follow' : 'noindex, follow'
-);
+// An empty first page is not enough to prove the entire directory is empty.
+Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore ? 'index, follow' : 'noindex, follow');
 ---
 
 <BaseLayout title={title} description={description}>
@@ -281,7 +290,6 @@ Astro.response.headers.set(
           </svg>
           <span>{t['nav.home']}</span>
         </a>
-
         <a href={`/${currentLang}/map`} class="sidebar-link">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="9" />
@@ -289,7 +297,6 @@ Astro.response.headers.set(
           </svg>
           <span>{t['nav.map']}</span>
         </a>
-
         <a
           href={`/${currentLang}/hotels`}
           class="sidebar-link active"
@@ -302,9 +309,7 @@ Astro.response.headers.set(
           <span>{t['nav.hotels']}</span>
         </a>
       </nav>
-
       <div class="sidebar-divider"></div>
-
       <nav class="hotel-sidebar-nav secondary">
         <a href={`/${currentLang}/about`} class="sidebar-link">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -313,7 +318,6 @@ Astro.response.headers.set(
           </svg>
           <span>{t['nav.about']}</span>
         </a>
-
         <a href={`/${currentLang}/privacy`} class="sidebar-link">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3 5.5 5.7v5.6c0 4.2 2.6 7.8 6.5 9.7 3.9-1.9 6.5-5.5 6.5-9.7V5.7z" />
@@ -321,7 +325,6 @@ Astro.response.headers.set(
           </svg>
           <span>{t['nav.privacy']}</span>
         </a>
-
         <a href={`/${currentLang}/contact`} class="sidebar-link">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <rect x="3" y="5" width="18" height="14" rx="1.5" />
@@ -331,7 +334,6 @@ Astro.response.headers.set(
         </a>
       </nav>
     </aside>
-
     <div class="hotel-content" role="main">
       <section class="hotel-hero">
         <div class="hero-glow"></div>
@@ -339,22 +341,20 @@ Astro.response.headers.set(
           <span class="hero-kicker">OLD TOWNS STAYS</span>
           <h1>{t['hotels.title']}</h1>
           <p>{t['hotels.subtitle']}</p>
-
           <label class="hotel-search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
               <path d="m16 16 4 4" />
             </svg>
-            <span class="sr-only">{t['hotels.searchPlaceholder']}</span>
+            <span class="sr-only">{searchPrompt[currentLang] || searchPrompt.en}</span>
             <input
               type="search"
-              placeholder={t['hotels.searchPlaceholder']}
+              placeholder={searchPrompt[currentLang] || searchPrompt.en}
               autocomplete="off"
               data-hotel-search
             />
           </label>
         </div>
-
         <div class="hero-mark" aria-hidden="true">
           <svg viewBox="0 0 120 120">
             <path d="M28 102V24c0-5 4-9 9-9h46c5 0 9 4 9 9v78" />
@@ -362,263 +362,181 @@ Astro.response.headers.set(
           </svg>
         </div>
       </section>
-
-      {destinations.length > 0 && (
-        <section class="directory-section destinations-section">
-          <div class="section-heading">
-            <div>
-              <span class="section-kicker">OLD TOWNS</span>
-              <h2>{t['hotels.popularDestinations']}</h2>
-            </div>
-          </div>
-
-          <div class="destination-grid">
-            {destinations.map((destination) => (
-              <button
-                type="button"
-                class="destination-card"
-                data-destination={destination.city || destination.country}
-              >
-                {destination.thumbnail ? (
-                  <img
-                    src={destination.thumbnail}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                  />
-                ) : (
-                  <span class="destination-placeholder" aria-hidden="true"></span>
-                )}
-                <span class="destination-shade"></span>
-                <span class="destination-copy">
-                  <strong>{destination.city || destination.country}</strong>
-                  {destination.city && destination.country && (
-                    <small>{destination.country}</small>
-                  )}
-                </span>
-                <span class="destination-count">{destination.count}</span>
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <section class="directory-section hotel-results-section">
+      <section class="directory-section walk-results-section">
         <div class="section-heading">
           <div>
             <span class="section-kicker">OLD TOWNS STAYS</span>
-            <h2>{t['hotels.allHotels']}</h2>
+            <h2>{listHeading[currentLang] || listHeading.en}</h2>
           </div>
-          {hotels.length > 0 && (
-            <span class="result-total" data-result-total>{hotels.length}</span>
-          )}
+          <span class="result-total" data-result-total>{result.items.length}</span>
         </div>
-
-        {hotels.length > 0 ? (
-          <>
-            <div class="hotel-grid" data-hotel-grid>
-              {hotels.map((hotel) => {
-                const location = [hotel.city, hotel.country]
-                  .filter(Boolean)
-                  .join(', ');
-                const searchText = [
-                  hotel.name,
-                  hotel.city,
-                  hotel.country,
-                  hotel.address,
-                  hotel.walkTitle
-                ].join(' ').toLocaleLowerCase(currentLang);
-                const roundedStars = hotel.starRating
-                  ? Math.max(1, Math.min(5, Math.round(hotel.starRating)))
-                  : 0;
-
-                return (
-                  <article class="hotel-card" data-hotel-card data-search={searchText}>
-                    <div class="hotel-media">
-                      {hotel.thumbnailUrl ? (
-                        <img
-                          src={hotel.thumbnailUrl}
-                          alt={hotel.name}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      ) : (
-                        <div class="hotel-image-placeholder" aria-hidden="true">
-                          <svg viewBox="0 0 90 90">
-                            <path d="M22 76V18c0-4 3-7 7-7h32c4 0 7 3 7 7v58" />
-                            <path d="M14 76h62M34 29h8M50 29h8M34 42h8M50 42h8M34 55h8M50 55h8M39 76V64h12v12" />
-                          </svg>
-                        </div>
-                      )}
-
-                      {hotel.guestRating !== undefined && (
-                        <span class="guest-rating">
-                          {new Intl.NumberFormat(currentLang, {
-                            minimumFractionDigits: 1,
-                            maximumFractionDigits: 1
-                          }).format(hotel.guestRating)}
-                        </span>
-                      )}
-                    </div>
-
-                    <div class="hotel-card-body">
-                      <div class="hotel-location-row">
-                        <span>{location || hotel.address}</span>
-                        {hotel.provider && <small>{hotel.provider}</small>}
-                      </div>
-
-                      <h3>{hotel.name}</h3>
-
-                      {(roundedStars > 0 || hotel.reviewCount !== undefined) && (
-                        <div class="hotel-reputation">
-                          {roundedStars > 0 && (
-                            <span class="hotel-stars" aria-label={`${roundedStars} stars`}>
-                              {'â˜…'.repeat(roundedStars)}
-                            </span>
-                          )}
-                          {hotel.reviewCount !== undefined && (
-                            <span>{new Intl.NumberFormat(currentLang).format(hotel.reviewCount)}</span>
-                          )}
-                        </div>
-                      )}
-
-                      <div class="route-distance">
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <path d="M8 19c-2.7-2.8-4-5.2-4-7.4A4 4 0 0 1 8 7.5a4 4 0 0 1 4 4.1c0 2.2-1.3 4.6-4 7.4Z" />
-                          <circle cx="8" cy="11.5" r="1.3" />
-                          <path d="M12.5 5.5h5.8M15.6 3l2.7 2.5-2.7 2.5M13.5 15h6M16.5 12.5 20 15l-3.5 2.5" />
-                        </svg>
-                        <div>
-                          <strong>{formatHotelDistance(hotel.distanceMeters, currentLang)}</strong>
-                          <span>{t['hotels.fromRoute']}</span>
-                        </div>
-                      </div>
-
-                      <a
-                        href={`/${currentLang}/walks/${hotel.videoId}`}
-                        class="walk-link"
-                        title={hotel.walkTitle}
-                      >
-                        <svg viewBox="0 0 24 24" aria-hidden="true">
-                          <rect x="3" y="5" width="18" height="14" rx="2" />
-                          <path d="m10 9 5 3-5 3z" />
-                        </svg>
-                        <span>
-                          <small>{t['hotels.nearWalk']}</small>
-                          <strong>{hotel.walkTitle}</strong>
-                        </span>
-                      </a>
-
-                      <div class="hotel-actions">
-                        <a
-                          href={`/${currentLang}/walks/${hotel.videoId}`}
-                          class="secondary-action"
-                        >
-                          {t['hotels.watchWalk']}
-                        </a>
-
-                        {hotel.bookingUrl && (
-                          <a
-                            href={hotel.bookingUrl}
-                            class="primary-action"
-                            target="_blank"
-                            rel="nofollow sponsored noopener"
-                          >
-                            {t['hotels.viewHotel']}
-                            <svg viewBox="0 0 24 24" aria-hidden="true">
-                              <path d="M5 12h13M14 7l5 5-5 5" />
-                            </svg>
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-
-            <div class="empty-search-state" data-empty-search hidden>
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="11" cy="11" r="7" />
-                <path d="m16 16 4 4M8.5 11h5" />
-              </svg>
-              <p>{t['hotels.noResults']}</p>
-            </div>
-
-            <p class="affiliate-disclosure">{t['hotels.disclosure']}</p>
-          </>
-        ) : (
-          <div class="preparing-state">
-            <div class="preparing-icon">
-              <svg viewBox="0 0 90 90" aria-hidden="true">
-                <path d="M22 76V18c0-4 3-7 7-7h32c4 0 7 3 7 7v58" />
-                <path d="M14 76h62M34 29h8M50 29h8M34 42h8M50 42h8M34 55h8M50 55h8M39 76V64h12v12" />
-              </svg>
-            </div>
-            <h2>{t['nav.hotels']}</h2>
-            <p>{t['hotels.preparing']}</p>
-          </div>
-        )}
+        <div class="walk-grid" data-walk-grid data-has-more={result.hasMore ? "true" : "false"} data-after-date={result.nextDate} data-after-id={result.nextId}>
+          {result.items.map((walk) => (
+            <article class="video-card" data-walk-card>
+              <a class="thumbnail-wrapper" href={`/${currentLang}/walks/${walk.id}`} aria-label={walk.title}>
+                <img src={walk.thumbnail} alt={walk.title} loading="lazy" decoding="async" />
+              </a>
+              <div class="video-details">
+                <h3 class="video-title"><a href={`/${currentLang}/walks/${walk.id}`}>{walk.title}</a></h3>
+                <p class="video-channel">{walk.channel}</p>
+                <p class="video-location">{[walk.city, walk.country].filter(Boolean).join(', ')}</p>
+                <div class="video-footer">
+                  {walk.badge && <span class="badge-tag">{walk.badge}</span>}
+                  <span class="hotel-label">{t['nav.hotels']}</span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div class="empty-search-state" data-empty-search hidden={result.items.length > 0 || result.hasMore}>
+          <p>{query ? t['hotels.noResults'] : t['hotels.preparing']}</p>
+        </div>
+        <div class="loading-state" data-loading-state hidden aria-live="polite"></div>
+        <div class="walk-sentinel" data-walk-sentinel aria-hidden="true"></div>
+        <button type="button" class="load-more" data-load-more hidden={!result.hasMore}>
+          {loadMoreText[currentLang] || loadMoreText.en}
+        </button>
       </section>
     </div>
   </div>
-
   <script>
-    const searchInput = document.querySelector('[data-hotel-search]');
-    const hotelCards = Array.from(document.querySelectorAll('[data-hotel-card]'));
-    const emptyState = document.querySelector('[data-empty-search]');
-    const resultTotal = document.querySelector('[data-result-total]');
-    const destinationButtons = document.querySelectorAll('[data-destination]');
+    type WalkCardResponse = {
+      id: string;
+      title: string;
+      thumbnail: string;
+      city: string;
+      country: string;
+      channel: string;
+      badge: string;
+    };
 
-    function applyHotelFilter(value: string) {
-      const query = String(value || '').trim().toLocaleLowerCase();
-      let visibleCount = 0;
+    type WalkFeedResponse = {
+      items: WalkCardResponse[];
+      hasMore: boolean;
+      nextDate: string;
+      nextId: string;
+    };
 
-      for (const card of hotelCards) {
-        const searchText = card.getAttribute('data-search') || '';
-        const isVisible = !query || searchText.includes(query);
-        card.toggleAttribute('hidden', !isVisible);
+    const input = document.querySelector<HTMLInputElement>('[data-hotel-search]');
+    const grid = document.querySelector<HTMLDivElement>('[data-walk-grid]');
+    const counter = document.querySelector<HTMLElement>('[data-result-total]');
+    const empty = document.querySelector<HTMLElement>('[data-empty-search]');
+    const sentinel = document.querySelector<HTMLElement>('[data-walk-sentinel]');
+    const loading = document.querySelector<HTMLElement>('[data-loading-state]');
+    const moreButton = document.querySelector<HTMLButtonElement>('[data-load-more]');
+    let hasMore = grid?.getAttribute('data-has-more') === 'true';
+    let afterDate = grid?.getAttribute('data-after-date') || '';
+    let afterId = grid?.getAttribute('data-after-id') || '';
+    let busy = false;
+    let sequence = 0;
+    let debounce: number | undefined;
+    let loaded = grid?.querySelectorAll('[data-walk-card]').length || 0;
 
-        if (isVisible) {
-          visibleCount += 1;
+    const escapeHtml = (value: string): string =>
+      String(value || '').replace(/[&<>"']/g, (character) => {
+        const escaped: Record<string, string> = {
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        };
+        return escaped[character] || character;
+      });
+
+    function makeCard(item: WalkCardResponse): string {
+      const language = encodeURIComponent(window.location.pathname.split('/')[1] || 'en');
+      const href = `/${language}/walks/${encodeURIComponent(item.id)}`;
+      const locationText = [item.city, item.country].filter(Boolean).join(', ');
+      const hotelLabel = document.querySelector('.hotel-sidebar [aria-current="page"] span')?.textContent || 'Hotels';
+      let thumbnail = '';
+      try {
+        const url = new URL(item.thumbnail, window.location.origin);
+        if (url.protocol === 'https:' || (url.protocol === 'http:' && url.origin === window.location.origin)) {
+          thumbnail = url.href;
         }
+      } catch {
+        thumbnail = '';
       }
+      const imageSrc = escapeHtml(thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(item.id)}/hqdefault.jpg`);
+      return `<article class="video-card" data-walk-card>
+        <a class="thumbnail-wrapper" href="${escapeHtml(href)}" aria-label="${escapeHtml(item.title)}">
+          <img src="${imageSrc}" alt="${escapeHtml(item.title)}" loading="lazy" decoding="async" />
+        </a>
+        <div class="video-details">
+          <h3 class="video-title"><a href="${escapeHtml(href)}">${escapeHtml(item.title)}</a></h3>
+          ${item.channel ? `<p class="video-channel">${escapeHtml(item.channel)}</p>` : ''}
+          ${locationText ? `<p class="video-location">${escapeHtml(locationText)}</p>` : ''}
+          <div class="video-footer">
+            ${item.badge ? `<span class="badge-tag">${escapeHtml(item.badge)}</span>` : ''}
+            <span class="hotel-label">${escapeHtml(hotelLabel)}</span>
+          </div>
+        </div>
+      </article>`;
+    }
 
-      if (emptyState) {
-        emptyState.toggleAttribute('hidden', visibleCount !== 0);
+    async function loadWalks(reset = false): Promise<void> {
+      if (!grid || !input || (busy && !reset) || (!hasMore && !reset)) return;
+      if (reset) {
+        sequence += 1;
+        hasMore = true;
+        afterDate = '';
+        afterId = '';
+        loaded = 0;
+        grid.replaceChildren();
+        counter && (counter.textContent = '0');
+        if (empty) empty.hidden = true;
       }
-
-      if (resultTotal) {
-        resultTotal.textContent = String(visibleCount);
+      const requestSequence = sequence;
+      busy = true;
+      if (loading) loading.hidden = false;
+      if (moreButton) moreButton.hidden = true;
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('feed', '1');
+        url.searchParams.set('q', input.value.trim());
+        url.searchParams.set('afterDate', afterDate);
+        url.searchParams.set('afterId', afterId);
+        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = (await response.json()) as WalkFeedResponse;
+        if (requestSequence !== sequence) return;
+        for (const item of payload.items || []) {
+          grid.insertAdjacentHTML('beforeend', makeCard(item));
+        }
+        loaded += payload.items?.length || 0;
+        hasMore = Boolean(payload.hasMore);
+        afterDate = String(payload.nextDate || '');
+        afterId = String(payload.nextId || '');
+        if (counter) counter.textContent = String(loaded);
+        if (empty) empty.hidden = loaded > 0 || hasMore;
+        if (moreButton) moreButton.hidden = !hasMore;
+      } catch (error) {
+        if (requestSequence === sequence && moreButton) moreButton.hidden = false;
+        console.error('Could not load walking videos:', error);
+      } finally {
+        if (requestSequence === sequence) {
+          busy = false;
+          if (loading) loading.hidden = true;
+        }
       }
     }
 
-    if (searchInput instanceof HTMLInputElement) {
-      searchInput.addEventListener('input', () => {
-        applyHotelFilter(searchInput.value);
-      });
-    }
-
-    for (const button of destinationButtons) {
-      button.addEventListener('click', () => {
-        if (!(searchInput instanceof HTMLInputElement)) {
-          return;
+    input?.addEventListener('input', () => {
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => void loadWalks(true), 260);
+    });
+    moreButton?.addEventListener('click', () => void loadWalks());
+    if ('IntersectionObserver' in window && sentinel) {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && hasMore && !busy) {
+          void loadWalks();
         }
-
-        searchInput.value = button.getAttribute('data-destination') || '';
-        applyHotelFilter(searchInput.value);
-        searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        searchInput.focus({ preventScroll: true });
-      });
+      }, { rootMargin: '350px' });
+      observer.observe(sentinel);
     }
   </script>
 </BaseLayout>
-
-<style>
-  :global(body) {
+<style is:global>
+  body {
     background: #0d0f12;
   }
-
   .hotel-directory {
     min-height: calc(100vh - 56px);
     display: grid;
@@ -626,11 +544,9 @@ Astro.response.headers.set(
     background: #0d0f12;
     color: #f8fafc;
   }
-
   .hotel-directory.rtl {
     direction: rtl;
   }
-
   .hotel-sidebar {
     position: sticky;
     top: 56px;
@@ -640,16 +556,13 @@ Astro.response.headers.set(
     background: #0d0d0e;
     border-inline-end: 1px solid #25272a;
   }
-
   .hotel-sidebar-nav {
     display: grid;
     gap: 5px;
   }
-
   .hotel-sidebar-nav.secondary {
     margin-top: 18px;
   }
-
   .sidebar-link {
     min-height: 44px;
     display: flex;
@@ -662,17 +575,14 @@ Astro.response.headers.set(
     font-weight: 600;
     transition: color 160ms ease, background 160ms ease;
   }
-
   .sidebar-link:hover {
     color: #ffffff;
     background: #1a1b1d;
   }
-
   .sidebar-link.active {
     color: #ffffff;
     background: #292a2d;
   }
-
   .sidebar-link svg {
     width: 21px;
     height: 21px;
@@ -683,17 +593,14 @@ Astro.response.headers.set(
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-
   .sidebar-link:first-child svg path:first-child {
     fill: none;
   }
-
   .sidebar-divider {
     height: 1px;
     margin: 20px 0 0;
     background: #25272a;
   }
-
   .hotel-content {
     width: 100%;
     max-width: 1680px;
@@ -701,7 +608,6 @@ Astro.response.headers.set(
     padding: 28px 28px 56px;
     overflow: hidden;
   }
-
   .hotel-hero {
     min-height: 330px;
     position: relative;
@@ -715,7 +621,6 @@ Astro.response.headers.set(
       radial-gradient(circle at 82% 18%, rgba(245, 183, 0, .18), transparent 33%),
       linear-gradient(130deg, #17191d 0%, #111318 58%, #18150b 100%);
   }
-
   .hero-glow {
     position: absolute;
     inset: 0;
@@ -726,13 +631,11 @@ Astro.response.headers.set(
     mask-image: linear-gradient(to left, #000, transparent 82%);
     pointer-events: none;
   }
-
   .hero-copy {
     width: min(760px, 72%);
     position: relative;
     z-index: 2;
   }
-
   .hero-kicker,
   .section-kicker {
     display: block;
@@ -742,14 +645,12 @@ Astro.response.headers.set(
     font-weight: 800;
     letter-spacing: 1.7px;
   }
-
   .hotel-hero h1 {
     max-width: 760px;
     font-size: clamp(34px, 4.1vw, 64px);
     line-height: 1.02;
     letter-spacing: -2.5px;
   }
-
   .hotel-hero p {
     max-width: 690px;
     margin-top: 18px;
@@ -757,7 +658,6 @@ Astro.response.headers.set(
     font-size: 17px;
     line-height: 1.65;
   }
-
   .hotel-search {
     width: min(680px, 100%);
     height: 54px;
@@ -771,12 +671,10 @@ Astro.response.headers.set(
     background: rgba(8, 10, 13, .78);
     box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
   }
-
   .hotel-search:focus-within {
     border-color: rgba(245, 183, 0, .8);
     box-shadow: 0 0 0 3px rgba(245, 183, 0, .12);
   }
-
   .hotel-search svg {
     width: 22px;
     height: 22px;
@@ -786,7 +684,6 @@ Astro.response.headers.set(
     stroke-width: 2;
     stroke-linecap: round;
   }
-
   .hotel-search input {
     width: 100%;
     border: 0;
@@ -796,12 +693,10 @@ Astro.response.headers.set(
     font: inherit;
     font-size: 15px;
   }
-
   .hotel-search input::placeholder {
     color: #818a98;
     opacity: 1;
   }
-
   .hero-mark {
     width: 280px;
     height: 280px;
@@ -815,7 +710,6 @@ Astro.response.headers.set(
     background: rgba(245, 183, 0, .04);
     color: rgba(245, 183, 0, .2);
   }
-
   .hero-mark::before,
   .hero-mark::after {
     content: '';
@@ -823,15 +717,12 @@ Astro.response.headers.set(
     border: 1px solid rgba(245, 183, 0, .1);
     border-radius: 50%;
   }
-
   .hero-mark::before {
     inset: 24px;
   }
-
   .hero-mark::after {
     inset: 52px;
   }
-
   .hero-mark svg {
     width: 130px;
     height: 130px;
@@ -841,11 +732,9 @@ Astro.response.headers.set(
     stroke-linecap: round;
     stroke-linejoin: round;
   }
-
   .directory-section {
     margin-top: 38px;
   }
-
   .section-heading {
     display: flex;
     align-items: end;
@@ -853,97 +742,10 @@ Astro.response.headers.set(
     gap: 18px;
     margin-bottom: 17px;
   }
-
   .section-heading h2 {
     font-size: clamp(23px, 2vw, 31px);
     line-height: 1.15;
     letter-spacing: -.65px;
-  }
-
-  .destination-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .destination-card {
-    min-height: 178px;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid #30343a;
-    border-radius: 15px;
-    color: #ffffff;
-    background: #15171a;
-    cursor: pointer;
-    text-align: start;
-  }
-
-  .destination-card img,
-  .destination-placeholder,
-  .destination-shade {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  .destination-card img {
-    object-fit: cover;
-    transition: transform 260ms ease;
-  }
-
-  .destination-card:hover img {
-    transform: scale(1.035);
-  }
-
-  .destination-placeholder {
-    background:
-      radial-gradient(circle at 80% 20%, rgba(245, 183, 0, .28), transparent 35%),
-      linear-gradient(135deg, #2a2e34, #141619);
-  }
-
-  .destination-shade {
-    background: linear-gradient(to top, rgba(5, 6, 8, .96), rgba(5, 6, 8, .08) 72%);
-  }
-
-  .destination-copy {
-    position: absolute;
-    inset-inline-start: 18px;
-    inset-inline-end: 55px;
-    bottom: 17px;
-    z-index: 2;
-    display: grid;
-    gap: 4px;
-  }
-
-  .destination-copy strong {
-    overflow: hidden;
-    font-size: 19px;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .destination-copy small {
-    color: #cbd5e1;
-    font-size: 12px;
-  }
-
-  .destination-count {
-    position: absolute;
-    z-index: 2;
-    inset-inline-end: 14px;
-    bottom: 15px;
-    min-width: 29px;
-    height: 29px;
-    display: grid;
-    place-items: center;
-    padding: 0 7px;
-    border: 1px solid rgba(255, 255, 255, .16);
-    border-radius: 8px;
-    color: #151006;
-    background: #f5b700;
-    font-size: 12px;
-    font-weight: 800;
   }
 
   .result-total {
@@ -959,342 +761,98 @@ Astro.response.headers.set(
     font-size: 13px;
     font-weight: 800;
   }
-
-  .hotel-grid {
+  .walk-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
+    gap: 24px 18px;
   }
-
-  .hotel-card {
-    min-width: 0;
-    overflow: hidden;
-    border: 1px solid #2c3036;
-    border-radius: 16px;
-    background: #15181d;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, .18);
-    transition: transform 180ms ease, border-color 180ms ease;
-  }
-
-  .hotel-card:hover {
-    transform: translateY(-3px);
-    border-color: rgba(245, 183, 0, .55);
-  }
-
-  .hotel-card[hidden] {
-    display: none;
-  }
-
-  .hotel-media {
+  .video-card { min-width: 0; }
+  .thumbnail-wrapper {
+    display: block;
+    width: 100%;
     aspect-ratio: 16 / 9;
-    position: relative;
     overflow: hidden;
-    background: #0d0f12;
+    border: 1px solid #282b30;
+    border-radius: 12px;
+    background: #1f1f1f;
   }
-
-  .hotel-media > img {
+  .thumbnail-wrapper img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 250ms ease;
   }
-
-  .hotel-image-placeholder {
-    width: 100%;
-    height: 100%;
-    display: grid;
-    place-items: center;
-    color: rgba(245, 183, 0, .38);
-    background:
-      radial-gradient(circle at 70% 15%, rgba(245, 183, 0, .13), transparent 35%),
-      linear-gradient(135deg, #23262b, #111317);
+  .thumbnail-wrapper:hover img { transform: scale(1.03); }
+  .thumbnail-wrapper:focus-visible, .video-title a:focus-visible {
+    outline: 3px solid #f5b700;
+    outline-offset: 3px;
   }
-
-  .hotel-image-placeholder svg {
-    width: 94px;
-    height: 94px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .guest-rating {
-    position: absolute;
-    top: 13px;
-    inset-inline-end: 13px;
-    min-width: 42px;
-    height: 38px;
-    display: grid;
-    place-items: center;
-    padding: 0 9px;
-    border-radius: 10px 10px 10px 2px;
-    color: #171006;
-    background: #f5b700;
-    box-shadow: 0 6px 18px rgba(0, 0, 0, .28);
-    font-size: 14px;
-    font-weight: 800;
-  }
-
-  .hotel-card-body {
-    padding: 17px;
-  }
-
-  .hotel-location-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    color: #aeb7c4;
-    font-size: 12px;
+  .video-details { padding: 11px 2px 0; }
+  .video-title {
+    font-size: 15px;
     font-weight: 600;
-  }
-
-  .hotel-location-row > span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .hotel-location-row small {
-    flex: 0 0 auto;
-    color: #f5b700;
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-  }
-
-  .hotel-card h3 {
-    min-height: 48px;
-    margin-top: 9px;
+    line-height: 1.45;
     display: -webkit-box;
     overflow: hidden;
-    color: #ffffff;
-    font-size: 18px;
-    line-height: 1.34;
-    letter-spacing: -.25px;
-    -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
   }
-
-  .hotel-reputation {
-    min-height: 21px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 8px;
-    color: #8f99a8;
+  .video-title a { color: #f1f1f1; text-decoration: none; }
+  .video-title a:hover { color: #f5b700; }
+  .video-channel, .video-location {
+    margin-top: 5px;
+    color: #aaaaaa;
     font-size: 12px;
-  }
-
-  .hotel-stars {
-    color: #f5b700;
-    font-size: 14px;
-    letter-spacing: 1px;
-  }
-
-  .route-distance {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    margin-top: 14px;
-    padding: 12px;
-    border: 1px solid #2a2e34;
-    border-radius: 11px;
-    background: #101318;
-  }
-
-  .route-distance svg {
-    width: 25px;
-    height: 25px;
-    flex: 0 0 auto;
-    fill: none;
-    stroke: #f5b700;
-    stroke-width: 1.7;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .route-distance > div {
-    min-width: 0;
-    display: grid;
-    gap: 2px;
-  }
-
-  .route-distance strong {
-    color: #ffffff;
-    font-size: 14px;
-  }
-
-  .route-distance span {
-    color: #8791a0;
-    font-size: 11px;
-  }
-
-  .walk-link {
-    display: flex;
-    align-items: center;
-    gap: 11px;
-    margin-top: 11px;
-    padding: 2px;
-    color: #dbe3ed;
-  }
-
-  .walk-link:hover strong {
-    color: #f5b700;
-  }
-
-  .walk-link > svg {
-    width: 28px;
-    height: 28px;
-    flex: 0 0 auto;
-    fill: none;
-    stroke: #9aa4b2;
-    stroke-width: 1.7;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .walk-link > span {
-    min-width: 0;
-    display: grid;
-    gap: 2px;
-  }
-
-  .walk-link small {
-    color: #7f8997;
-    font-size: 10px;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-
-  .walk-link strong {
     overflow: hidden;
-    font-size: 12px;
-    line-height: 1.4;
-    text-overflow: ellipsis;
     white-space: nowrap;
-    transition: color 160ms ease;
+    text-overflow: ellipsis;
   }
-
-  .hotel-actions {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 9px;
-    margin-top: 16px;
-  }
-
-  .hotel-actions:has(.secondary-action:only-child) {
-    grid-template-columns: 1fr;
-  }
-
-  .secondary-action,
-  .primary-action {
-    min-height: 43px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 7px;
-    padding: 9px 12px;
-    border-radius: 9px;
-    font-size: 12px;
-    font-weight: 800;
-    text-align: center;
-  }
-
-  .secondary-action {
+  .video-footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .badge-tag, .hotel-label {
+    padding: 3px 7px;
     border: 1px solid #343840;
-    color: #eef2f7;
-    background: #1a1d22;
-  }
-
-  .secondary-action:hover {
-    border-color: #565d68;
-    background: #22262c;
-  }
-
-  .primary-action {
-    color: #171006;
-    background: #f5b700;
-  }
-
-  .primary-action:hover {
-    background: #ffd13d;
-  }
-
-  .primary-action svg {
-    width: 17px;
-    height: 17px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-  }
-
-  .affiliate-disclosure {
-    margin-top: 18px;
-    color: #707986;
+    border-radius: 4px;
+    color: #cbd5e1;
+    background: #23262b;
     font-size: 11px;
-    text-align: center;
+    font-weight: 700;
   }
-
-  .preparing-state,
+  .hotel-label { color: #f5b700; }
   .empty-search-state {
-    min-height: 300px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 20px;
-    border: 1px dashed #353941;
-    border-radius: 16px;
-    color: #aeb7c4;
-    background: #121419;
-    text-align: center;
-  }
-
-  .preparing-state h2 {
-    margin-top: 17px;
-    color: #ffffff;
-    font-size: 25px;
-  }
-
-  .preparing-state p,
-  .empty-search-state p {
-    margin-top: 7px;
-    font-size: 14px;
-  }
-
-  .preparing-icon {
-    width: 86px;
-    height: 86px;
+    min-height: 180px;
     display: grid;
     place-items: center;
+    padding: 40px 20px;
+    color: #aeb7c4;
+    font-size: 14px;
+    text-align: center;
+  }
+  [hidden] { display: none !important; }
+  .loading-state { height: 24px; margin-top: 16px; text-align: center; }
+  .loading-state:not([hidden])::after {
+    content: '';
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    border: 2px solid #575d68;
+    border-top-color: #f5b700;
     border-radius: 50%;
-    color: #f5b700;
-    background: rgba(245, 183, 0, .08);
+    animation: hotel-directory-spin 650ms linear infinite;
   }
-
-  .preparing-icon svg,
-  .empty-search-state svg {
-    width: 52px;
-    height: 52px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 3;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+  @keyframes hotel-directory-spin { to { transform: rotate(360deg); } }
+  .walk-sentinel { height: 2px; }
+  .load-more {
+    display: block;
+    margin: 16px auto 0;
+    padding: 10px 18px;
+    border: 1px solid #343840;
+    border-radius: 9px;
+    color: #f1f1f1;
+    background: #1a1d22;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
   }
-
-  .empty-search-state[hidden] {
-    display: none;
-  }
-
-  .empty-search-state svg {
-    color: #f5b700;
-  }
-
   .sr-only {
     position: absolute;
     width: 1px;
@@ -1303,71 +861,19 @@ Astro.response.headers.set(
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
   }
-
-  @media (max-width: 1280px) {
-    .hotel-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-
-    .destination-grid {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-    }
-  }
-
+  @media (max-width: 1280px) { .walk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 900px) {
-    .hotel-directory {
-      display: block;
-    }
-
-    .hotel-sidebar {
-      display: none;
-    }
-
-    .hotel-content {
-      padding: 18px 16px 44px;
-    }
-
-    .hotel-hero {
-      min-height: 310px;
-      padding: 38px 26px;
-    }
-
-    .hero-copy {
-      width: 100%;
-    }
-
-    .hero-mark {
-      opacity: .22;
-    }
+    .hotel-directory { display: block; }
+    .hotel-sidebar { display: none; }
+    .hotel-content { padding: 18px 16px 44px; }
+    .hotel-hero { min-height: 310px; padding: 38px 26px; }
+    .hero-copy { width: 100%; }
+    .hero-mark { opacity: .22; }
   }
-
   @media (max-width: 650px) {
-    .hotel-hero {
-      min-height: 320px;
-      border-radius: 16px;
-    }
-
-    .hotel-hero h1 {
-      font-size: 36px;
-      letter-spacing: -1.6px;
-    }
-
-    .hotel-hero p {
-      font-size: 15px;
-    }
-
-    .destination-grid,
-    .hotel-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .destination-card {
-      min-height: 165px;
-    }
-
-    .hotel-actions {
-      grid-template-columns: 1fr;
-    }
+    .hotel-hero { min-height: 320px; border-radius: 16px; }
+    .hotel-hero h1 { font-size: 36px; letter-spacing: -1.6px; }
+    .hotel-hero p { font-size: 15px; }
+    .walk-grid { grid-template-columns: 1fr; }
   }
 </style>
-
