@@ -1,5 +1,7 @@
-﻿---
+---
 import LanguagePicker from './LanguagePicker.astro';
+import MobileNavigation from './MobileNavigation.astro';
+import MobileInstallPrompt from './MobileInstallPrompt.astro';
 import { ui } from '../i18n/ui';
 import { getPageSeo, getVideoCardTitle, getVideoSchema } from '../lib/videoSeo';
 // Dışarıdan gelecek verileri (props) tanımlıyoruz
@@ -146,6 +148,9 @@ const videoSchema = {
 <!DOCTYPE html>
 <html lang={lang}>
   <head>
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0f0f0f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{pageSeo.title}</title>
@@ -430,6 +435,9 @@ const videoSchema = {
         min-height: 220px;
         width: 100%;
       }
+      .ad-card-slot:empty {
+        display: none;
+      }
       /* MAIN CONTENT CONTAINER */
       .content-area {
         flex: 1;
@@ -641,6 +649,13 @@ const videoSchema = {
           pointer-events: auto;
           font-size: 15px;
           letter-spacing: 0.4px;
+          white-space: nowrap;
+        }
+        .brand-icon {
+          width: 32px;
+          height: 32px;
+          max-width: 32px;
+          margin-right: 5px;
         }
         .logo-box-1,
         .logo-box-2 {
@@ -828,8 +843,10 @@ const videoSchema = {
           margin: 6px 0;
         }
         .content-area {
-          padding-bottom: 80px;
+          min-width: 0;
+          padding-bottom: 0;
           scrollbar-width: none;
+          scroll-padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
         }
         .content-area::-webkit-scrollbar {
           width: 0;
@@ -839,39 +856,29 @@ const videoSchema = {
           display: block;
           position: fixed;
           top: 124px;
-          right: 3px;
-          bottom: 72px;
-          width: 12px;
+          right: 1px;
+          bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+          width: 3px;
           border-radius: 999px;
-          background: #1d1d1d;
-          border: 1px solid #343434;
+          background: transparent;
+          border: 0;
           z-index: 1150;
-          touch-action: pan-y;
           pointer-events: none;
         }
         .mobile-scroll-thumb {
           position: absolute;
           top: 0;
-          left: 2px;
-          width: 6px;
-          min-height: 76px;
+          left: 0;
+          width: 3px;
+          min-height: 36px;
           border-radius: 999px;
-          background: linear-gradient(
-            to right,
-            #f5b400 0%,
-            #f5b400 38%,
-            #111111 38%,
-            #111111 62%,
-            #f5b400 62%,
-            #f5b400 100%
-          );
-          box-shadow: 0 0 0 1px rgba(245, 180, 0, 0.32);
+          background: #f5b400;
           pointer-events: none;
         }
         .mobile-back-to-top {
           position: fixed;
           left: 50%;
-          bottom: 76px;
+          bottom: calc(76px + env(safe-area-inset-bottom, 0px));
           transform: translateX(-50%);
           width: 38px;
           height: 38px;
@@ -903,15 +910,20 @@ const videoSchema = {
         }
         .chips-bar {
           gap: 8px;
+          padding-right: 18px;
           padding-bottom: 12px;
+          scroll-padding-left: 12px;
+          scroll-padding-right: 18px;
           scroll-snap-type: x proximity;
+          touch-action: pan-x;
         }
         .chip {
           scroll-snap-align: start;
         }
         .scrollable-grid-container {
-          padding: 0 12px 12px 12px;
+          padding: 0 12px calc(96px + env(safe-area-inset-bottom, 0px)) 12px;
         }
+
         .video-card {
           width: 100%;
           min-width: 0;
@@ -942,7 +954,8 @@ const videoSchema = {
           bottom: 0;
           left: 0;
           right: 0;
-          height: 60px;
+          height: calc(64px + env(safe-area-inset-bottom, 0px));
+          padding: 0 4px env(safe-area-inset-bottom, 0px);
           background-color: #0f0f0f;
           border-top: 1px solid #222222;
           justify-content: space-around;
@@ -951,13 +964,18 @@ const videoSchema = {
         }
         .mobile-nav-item {
           display: flex;
+          flex: 1 1 0;
+          min-width: 0;
+          min-height: 48px;
           flex-direction: column;
           align-items: center;
           justify-content: center;
           color: #aaaaaa;
           text-decoration: none;
+          text-align: center;
           font-size: 10px;
-          gap: 2px;
+          line-height: 1.25;
+          gap: 3px;
         }
         .mobile-nav-item.active,
         .mobile-nav-item:hover {
@@ -967,6 +985,7 @@ const videoSchema = {
           font-size: 22px;
         }
       }
+
     </style>
     <!-- Google Analytics (GA4) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-Z4B6GBNNE8"></script>
@@ -978,21 +997,23 @@ const videoSchema = {
     </script>
   </head>
   <body>
+    <MobileInstallPrompt lang={lang} />
     <!-- FIXED TOP NAVBAR -->
     <header class="navbar">
       <button
         type="button"
         class="mobile-menu-button"
         data-mobile-menu-open
+        aria-controls="site-mobile-navigation"
         aria-label="Open menu"
         aria-expanded="false"
       >
         <span class="material-symbols-outlined" aria-hidden="true">menu</span>
       </button>
       <div class="nav-left">
-        <a href="/" class="brand-logo">
+        <a href={`/${lang}`} class="brand-logo">
           <img
-            src="/brand-icon.png"
+            src="/favicon.ico?v=3"
             alt=""
             class="brand-icon"
             width="28"
@@ -1005,12 +1026,12 @@ const videoSchema = {
       <div class="nav-center">
         <div class="search-box">
           <input
-            type="text"
+            type="search"
             id="searchInput"
             placeholder={t['search.placeholder']}
             class="search-input"
           />
-          <button class="search-btn" aria-label="Search">
+          <button class="search-btn" type="button" aria-label="Search" data-search-button>
             <span class="material-symbols-outlined">search</span>
           </button>
         </div>
@@ -1027,24 +1048,24 @@ const videoSchema = {
             <span data-current-language-flag>{currentLanguageFlag}</span>
           </button>
           <div class="mobile-language-menu" data-mobile-language-menu>
-            <a href="/en/" class="mobile-language-option" data-lang-code="en"><span class="mobile-language-flag">🇬🇧</span><span>English</span></a>
-            <a href="/tr/" class="mobile-language-option" data-lang-code="tr"><span class="mobile-language-flag">🇹🇷</span><span>Türkçe</span></a>
-            <a href="/de/" class="mobile-language-option" data-lang-code="de"><span class="mobile-language-flag">🇩🇪</span><span>Deutsch</span></a>
-            <a href="/es/" class="mobile-language-option" data-lang-code="es"><span class="mobile-language-flag">🇪🇸</span><span>Español</span></a>
-            <a href="/it/" class="mobile-language-option" data-lang-code="it"><span class="mobile-language-flag">🇮🇹</span><span>Italiano</span></a>
-            <a href="/fr/" class="mobile-language-option" data-lang-code="fr"><span class="mobile-language-flag">🇫🇷</span><span>Français</span></a>
-            <a href="/ja/" class="mobile-language-option" data-lang-code="ja"><span class="mobile-language-flag">🇯🇵</span><span>日本語</span></a>
-            <a href="/pt/" class="mobile-language-option" data-lang-code="pt"><span class="mobile-language-flag">🇵🇹</span><span>Português</span></a>
-            <a href="/ru/" class="mobile-language-option" data-lang-code="ru"><span class="mobile-language-flag">🇷🇺</span><span>Русский</span></a>
-            <a href="/zh/" class="mobile-language-option" data-lang-code="zh"><span class="mobile-language-flag">🇨🇳</span><span>中文</span></a>
-            <a href="/ko/" class="mobile-language-option" data-lang-code="ko"><span class="mobile-language-flag">🇰🇷</span><span>한국어</span></a>
-            <a href="/ar/" class="mobile-language-option" data-lang-code="ar"><span class="mobile-language-flag">🇸🇦</span><span>العربية</span></a>
-            <a href="/hi/" class="mobile-language-option" data-lang-code="hi"><span class="mobile-language-flag">🇮🇳</span><span>हिन्दी</span></a>
-            <a href="/nl/" class="mobile-language-option" data-lang-code="nl"><span class="mobile-language-flag">🇳🇱</span><span>Nederlands</span></a>
-            <a href="/pl/" class="mobile-language-option" data-lang-code="pl"><span class="mobile-language-flag">🇵🇱</span><span>Polski</span></a>
-            <a href="/sv/" class="mobile-language-option" data-lang-code="sv"><span class="mobile-language-flag">🇸🇪</span><span>Svenska</span></a>
-            <a href="/id/" class="mobile-language-option" data-lang-code="id"><span class="mobile-language-flag">🇮🇩</span><span>Bahasa Indonesia</span></a>
-            <a href="/vi/" class="mobile-language-option" data-lang-code="vi"><span class="mobile-language-flag">🇻🇳</span><span>Tiếng Việt</span></a>
+            <a href="/en" class="mobile-language-option" data-lang-code="en"><span class="mobile-language-flag">🇬🇧</span><span>English</span></a>
+            <a href="/tr" class="mobile-language-option" data-lang-code="tr"><span class="mobile-language-flag">🇹🇷</span><span>Türkçe</span></a>
+            <a href="/de" class="mobile-language-option" data-lang-code="de"><span class="mobile-language-flag">🇩🇪</span><span>Deutsch</span></a>
+            <a href="/es" class="mobile-language-option" data-lang-code="es"><span class="mobile-language-flag">🇪🇸</span><span>Español</span></a>
+            <a href="/it" class="mobile-language-option" data-lang-code="it"><span class="mobile-language-flag">🇮🇹</span><span>Italiano</span></a>
+            <a href="/fr" class="mobile-language-option" data-lang-code="fr"><span class="mobile-language-flag">🇫🇷</span><span>Français</span></a>
+            <a href="/ja" class="mobile-language-option" data-lang-code="ja"><span class="mobile-language-flag">🇯🇵</span><span>日本語</span></a>
+            <a href="/pt" class="mobile-language-option" data-lang-code="pt"><span class="mobile-language-flag">🇵🇹</span><span>Português</span></a>
+            <a href="/ru" class="mobile-language-option" data-lang-code="ru"><span class="mobile-language-flag">🇷🇺</span><span>Русский</span></a>
+            <a href="/zh" class="mobile-language-option" data-lang-code="zh"><span class="mobile-language-flag">🇨🇳</span><span>中文</span></a>
+            <a href="/ko" class="mobile-language-option" data-lang-code="ko"><span class="mobile-language-flag">🇰🇷</span><span>한국어</span></a>
+            <a href="/ar" class="mobile-language-option" data-lang-code="ar"><span class="mobile-language-flag">🇸🇦</span><span>العربية</span></a>
+            <a href="/hi" class="mobile-language-option" data-lang-code="hi"><span class="mobile-language-flag">🇮🇳</span><span>हिन्दी</span></a>
+            <a href="/nl" class="mobile-language-option" data-lang-code="nl"><span class="mobile-language-flag">🇳🇱</span><span>Nederlands</span></a>
+            <a href="/pl" class="mobile-language-option" data-lang-code="pl"><span class="mobile-language-flag">🇵🇱</span><span>Polski</span></a>
+            <a href="/sv" class="mobile-language-option" data-lang-code="sv"><span class="mobile-language-flag">🇸🇪</span><span>Svenska</span></a>
+            <a href="/id" class="mobile-language-option" data-lang-code="id"><span class="mobile-language-flag">🇮🇩</span><span>Bahasa Indonesia</span></a>
+            <a href="/vi" class="mobile-language-option" data-lang-code="vi"><span class="mobile-language-flag">🇻🇳</span><span>Tiếng Việt</span></a>
           </div>
         </div>
         <button
@@ -1058,64 +1079,13 @@ const videoSchema = {
         </button>
       </div>
     </header>
-    <!-- MOBILE / TABLET MENU -->
-    <div class="mobile-menu-overlay" data-mobile-menu-overlay></div>
-    <aside class="mobile-menu-panel" data-mobile-menu-panel aria-hidden="true">
-      <div class="mobile-menu-head">
-        <a href={`/${lang}/`} class="brand-logo">
-          <img
-            src="/brand-icon.png"
-            alt=""
-            class="brand-icon"
-            width="28"
-            height="28"
-          />
-          <div class="logo-box-1">OLD</div>
-          <div class="logo-box-2">TOWNS</div>
-        </a>
-        <button type="button" class="mobile-menu-close" data-mobile-menu-close aria-label="Close menu">
-          <span class="material-symbols-outlined" aria-hidden="true">close</span>
-        </button>
-      </div>
-      <a href={`/${lang}/`} class="nav-link active">
-        <span class="material-symbols-outlined">home</span>
-        <span>{t['nav.home'] || 'Home'}</span>
-      </a>
-      <a href={`/${lang}/map`} class="nav-link">
-        <span class="material-symbols-outlined">public</span>
-        <span>{t['nav.map'] || 'World Map'}</span>
-      </a>
-      <a href={`/${lang}/airports`} class="nav-link">
-        <span class="material-symbols-outlined">flight</span>
-        <span>{t['nav.airports'] || 'Airport Map'}</span>
-      </a>
-      <a href={`/${lang}/hotels`} class="nav-link">
-        <span class="material-symbols-outlined">hotel</span>
-        <span>{t['nav.hotels'] || 'Hotels'}</span>
-      </a>
-      <hr class="sidebar-divider" />
-      <div class="sidebar-lang">
-        <span class="material-symbols-outlined">language</span>
-        <LanguagePicker />
-      </div>
-      <a href="/about" class="nav-link">
-        <span class="material-symbols-outlined">info</span>
-        <span>{t['nav.about'] || 'About'}</span>
-      </a>
-      <a href="/privacy" class="nav-link">
-        <span class="material-symbols-outlined">policy</span>
-        <span>{t['nav.privacy'] || 'Privacy Policy'}</span>
-      </a>
-      <a href="/contact" class="nav-link">
-        <span class="material-symbols-outlined">mail</span>
-        <span>{t['nav.contact'] || 'Contact'}</span>
-      </a>
-    </aside>
+    <!-- Shared mobile navigation -->
+    <MobileNavigation lang={lang} activePath={Astro.url.pathname} />
     <!-- MAIN APP STRUCTURE -->
     <div class="app-body">
       <!-- FIXED SIDEBAR -->
       <aside class="sidebar">
-        <a href={`/${lang}/`} class="nav-link active">
+        <a href={`/${lang}`} class="nav-link active">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
@@ -1157,15 +1127,15 @@ const videoSchema = {
           </svg>
           <LanguagePicker />
         </div>
-        <a href="/about" class="nav-link">
+        <a href={`/${lang}/about`} class="nav-link">
           <span class="material-symbols-outlined">info</span>
           <span>{t['nav.about'] || 'About'}</span>
         </a>
-        <a href="/privacy" class="nav-link">
+        <a href={`/${lang}/privacy`} class="nav-link">
           <span class="material-symbols-outlined">policy</span>
           <span>{t['nav.privacy'] || 'Privacy Policy'}</span>
         </a>
-        <a href="/contact" class="nav-link">
+        <a href={`/${lang}/contact`} class="nav-link">
           <span class="material-symbols-outlined">mail</span>
           <span>{t['nav.contact'] || 'Contact'}</span>
         </a>
@@ -1280,22 +1250,22 @@ const videoSchema = {
       <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
     </button>
     <!-- MOBILE NAVIGATION BAR -->
-    <nav class="mobile-bottom-nav">
-      <a href={`/${lang}/`} class="mobile-nav-item active">
-        <span class="material-symbols-outlined">home</span>
+    <nav class="mobile-bottom-nav" aria-label="Primary navigation">
+      <a href={`/${lang}`} class="mobile-nav-item active" aria-current="page">
+        <span class="material-symbols-outlined" aria-hidden="true">home</span>
         <span>{t['nav.home'] || 'Home'}</span>
       </a>
-      <a href="#" class="mobile-nav-item">
-        <span class="material-symbols-outlined">bolt</span>
-        <span>Shorts</span>
+      <a href={`/${lang}/map`} class="mobile-nav-item">
+        <span class="material-symbols-outlined" aria-hidden="true">public</span>
+        <span>{t['nav.map'] || 'World Map'}</span>
       </a>
-      <a href="#" class="mobile-nav-item">
-        <span class="material-symbols-outlined">flight</span>
-        <span>Drone</span>
+      <a href={`/${lang}/airports`} class="mobile-nav-item">
+        <span class="material-symbols-outlined" aria-hidden="true">flight</span>
+        <span>{t['nav.airports'] || 'Airport Map'}</span>
       </a>
-      <a href="#" class="mobile-nav-item">
-        <span class="material-symbols-outlined">grid_view</span>
-        <span>Categories</span>
+      <a href={`/${lang}/hotels`} class="mobile-nav-item">
+        <span class="material-symbols-outlined" aria-hidden="true">hotel</span>
+        <span>{t['nav.hotels'] || 'Hotels'}</span>
       </a>
     </nav>
     <!-- Inline Script -->
@@ -1306,12 +1276,17 @@ const videoSchema = {
         const videoGrid = document.querySelector('.video-grid');
         const emptyState = document.getElementById('emptyState');
         const searchInput = document.getElementById('searchInput');
+        const searchButton = document.querySelector('[data-search-button]');
+        if (searchButton && searchInput instanceof HTMLInputElement) {
+          searchButton.addEventListener('click', () => searchInput.focus());
+        }
         const initialSearch = new URLSearchParams(window.location.search).get('q');
         if (searchInput instanceof HTMLInputElement && initialSearch) {
           searchInput.value = initialSearch;
         }
         if (!chips.length && !videoCards.length) return;
         let currentCategory = 'All';
+        let refreshMobilePreview = null;
         function filterVideos() {
           const searchTerm = searchInput
             ? searchInput.value.toLowerCase().trim()
@@ -1368,6 +1343,7 @@ const videoSchema = {
               wrapper.insertAdjacentElement('afterend', adSlot);
             });
           }
+          if (refreshMobilePreview) requestAnimationFrame(refreshMobilePreview);
         }
         chips.forEach(chip => {
           chip.addEventListener('click', (e) => {
@@ -1392,10 +1368,11 @@ const videoSchema = {
         if (initialSearch) {
           filterVideos();
         }
-        // Hover Video Preview
+        // Desktop hover/focus and mobile center-of-screen previews share one controller per card.
         const previewWrappers = Array.from(
           document.querySelectorAll('.thumbnail-wrapper')
         );
+        const previewControllers = new Map();
         previewWrappers.forEach(wrapper => {
           let previewActive = false;
           let previewFrame = null;
@@ -1429,12 +1406,103 @@ const videoSchema = {
             }
           };
           // Bilgisayar: mouse hover
-          wrapper.addEventListener('mouseenter', startPreview);
-          wrapper.addEventListener('mouseleave', stopPreview);
-          // Smart TV / klavye: kumanda odağı karta geldiğinde aynı önizleme davranışı
-          wrapper.addEventListener('focus', startPreview);
-          wrapper.addEventListener('blur', stopPreview);
+          const hoverEnabled = window.matchMedia('(hover: hover)');
+          wrapper.addEventListener('mouseenter', () => { if (hoverEnabled.matches) startPreview(); });
+          wrapper.addEventListener('mouseleave', () => { if (hoverEnabled.matches) stopPreview(); });
+          // Smart TV and keyboard focus retain the existing desktop preview behavior.
+          const keyboardPreviewEnabled = () => hoverEnabled.matches || !window.matchMedia('(pointer: coarse)').matches;
+          wrapper.addEventListener('focus', () => { if (keyboardPreviewEnabled()) startPreview(); });
+          wrapper.addEventListener('blur', () => { if (keyboardPreviewEnabled()) stopPreview(); });
+          previewControllers.set(wrapper, { startPreview, stopPreview });
         });
+
+        // Mobile uses the actual scrolling area, not the window's intersection events.
+        // Sample the visible thumbnail under the center of the content area without
+        // measuring every card in the catalogue on each scroll event.
+        if (window.matchMedia) {
+          const mobilePreviewMedia = window.matchMedia('(max-width: 900px) and (pointer: coarse)');
+          const mobileScrollRoot = document.querySelector('.content-area');
+          let mobileCandidate = null;
+          let mobileActive = null;
+          let mobileTimer = null;
+          let mobileFrameRequested = false;
+
+          const stopMobilePreview = () => {
+            if (mobileTimer !== null) {
+              window.clearTimeout(mobileTimer);
+              mobileTimer = null;
+            }
+            if (mobileActive) {
+              previewControllers.get(mobileActive)?.stopPreview();
+              mobileActive = null;
+            }
+          };
+
+          const findCenteredThumbnail = () => {
+            if (!mobileScrollRoot) return null;
+            const area = mobileScrollRoot.getBoundingClientRect();
+            const top = Math.max(0, area.top);
+            const bottom = Math.min(window.innerHeight, area.bottom);
+            if (bottom - top < 120) return null;
+            const x = Math.max(area.left + 8, Math.min(area.right - 8, area.left + area.width / 2));
+            const height = bottom - top;
+            for (const fraction of [0.50, 0.43, 0.57, 0.35, 0.65, 0.75]) {
+              const y = top + height * fraction;
+              const element = document.elementFromPoint(x, y);
+              const wrapper = element?.closest?.('.thumbnail-wrapper');
+              const card = wrapper?.closest('.video-card');
+              if (wrapper && card && card.style.display !== 'none' &&
+                  wrapper.getBoundingClientRect().width > 0 &&
+                  previewControllers.has(wrapper)) {
+                return wrapper;
+              }
+            }
+            return null;
+          };
+
+          const updateMobilePreview = () => {
+            if (!mobilePreviewMedia.matches || document.hidden) {
+              mobileCandidate = null;
+              stopMobilePreview();
+              return;
+            }
+            const next = findCenteredThumbnail();
+            if (next === mobileCandidate) return;
+            mobileCandidate = next;
+            stopMobilePreview();
+            if (!next) return;
+            mobileTimer = window.setTimeout(() => {
+              mobileTimer = null;
+              if (mobileCandidate !== next || !mobilePreviewMedia.matches || document.hidden ||
+                  findCenteredThumbnail() !== next) return;
+              previewControllers.get(next)?.startPreview();
+              mobileActive = next;
+            }, 350);
+          };
+
+          const scheduleMobilePreview = () => {
+            if (mobileFrameRequested) return;
+            mobileFrameRequested = true;
+            window.requestAnimationFrame(() => {
+              mobileFrameRequested = false;
+              updateMobilePreview();
+            });
+          };
+
+          mobileScrollRoot?.addEventListener('scroll', scheduleMobilePreview, { passive: true });
+          window.addEventListener('scroll', scheduleMobilePreview, { passive: true });
+          window.addEventListener('resize', scheduleMobilePreview);
+          window.addEventListener('pageshow', scheduleMobilePreview);
+          document.addEventListener('visibilitychange', scheduleMobilePreview);
+          window.addEventListener('pagehide', stopMobilePreview);
+          if (mobilePreviewMedia.addEventListener) {
+            mobilePreviewMedia.addEventListener('change', scheduleMobilePreview);
+          } else {
+            mobilePreviewMedia.addListener(scheduleMobilePreview);
+          }
+          refreshMobilePreview = scheduleMobilePreview;
+          scheduleMobilePreview();
+        }
       }
       if (document.readyState === 'loading') {
         document.addEventListener(
@@ -1495,6 +1563,7 @@ const videoSchema = {
         mobileMenuPanel.classList.toggle('is-open', open);
         mobileMenuOverlay.classList.toggle('is-open', open);
         mobileMenuPanel.setAttribute('aria-hidden', String(!open));
+        mobileMenuPanel.inert = !open;
         if (mobileMenuOpen instanceof HTMLButtonElement) {
           mobileMenuOpen.setAttribute('aria-expanded', String(open));
         }
