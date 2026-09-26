@@ -25,7 +25,7 @@ const cleanPath = langKeys.includes(pathSegments[0])
       const label = languages[lang];
       const newPath =
         cleanPath === '/' || cleanPath === ''
-          ? `/${lang}/`
+          ? `/${lang}`
           : `/${lang}${cleanPath}`;
 
       return (

@@ -310,6 +310,26 @@ function parseArguments() {
     process.argv.slice(2);
 
   if (
+    args[0]?.toUpperCase() === 'DOCUMENTARIES'
+  ) {
+    const handles = args.slice(1);
+
+    if (handles.length === 0) {
+      throw new Error(
+        'Usage: node fetch-channel-videos.mjs DOCUMENTARIES @Channel'
+      );
+    }
+
+    return {
+      mode: 'DOCUMENTARIES',
+      city: '',
+      country: '',
+      limit: Infinity,
+      handles
+    };
+  }
+
+  if (
     args[0]?.toUpperCase() === 'ALL'
   ) {
     const handles =
@@ -393,10 +413,13 @@ async function main() {
   let blacklistedChannels = 0;
 
   if (
-    config.mode === 'ALL'
+    config.mode === 'ALL' ||
+    config.mode === 'DOCUMENTARIES'
   ) {
     console.log(
-      'Mode: ALL eligible videos'
+      config.mode === 'DOCUMENTARIES'
+        ? 'Mode: DOCUMENTARIES candidates only'
+        : 'Mode: ALL eligible videos'
     );
   } else {
     console.log(
@@ -502,6 +525,7 @@ async function main() {
     missingFromApi,
     wrongCity: 0,
     tooShort: 0,
+    excludedDocumentaryFormat: 0,
     uncategorized: 0
   };
 
@@ -579,8 +603,21 @@ async function main() {
       continue;
     }
 
+    if (config.mode === 'DOCUMENTARIES') {
+      const broadcast = video.snippet?.liveBroadcastContent;
+      const titleIsExcluded =
+        /(?:^|\W)(?:shorts?|canl[ıi] yay[ıi]n|live stream|livestream|yay[ıi]n tekrar[ıi]|duyuru|announcement|fragman|trailer)(?:$|\W)/iu.test(title);
+
+      if (broadcast === 'live' || broadcast === 'upcoming' || titleIsExcluded) {
+        rejection.excludedDocumentaryFormat++;
+        continue;
+      }
+    }
+
     const category =
-      categoryFor(title);
+      config.mode === 'DOCUMENTARIES'
+        ? 'Documentaries'
+        : categoryFor(title);
 
     if (!category) {
       rejection.uncategorized++;
@@ -623,10 +660,12 @@ async function main() {
         channelId,
 
       badge:
-        badgeFor(
-          title,
-          category
-        ),
+        config.mode === 'DOCUMENTARIES'
+          ? 'DOCUMENTARY'
+          : badgeFor(
+              title,
+              category
+            ),
 
       publishedAt:
         video.snippet?.publishedAt || '',
@@ -659,7 +698,7 @@ async function main() {
   );
 
   const selected =
-    config.mode === 'ALL'
+    config.mode !== 'CITY'
       ? candidates
       : candidates.slice(
           0,

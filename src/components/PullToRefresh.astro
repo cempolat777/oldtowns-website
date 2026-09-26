@@ -1,0 +1,279 @@
+<div
+  class="oww-pull-refresh"
+  data-oww-pull-refresh
+  hidden
+  aria-hidden="true"
+>
+  <svg
+    viewBox="0 0 24 24"
+    width="26"
+    height="26"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2.4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  >
+    <path d="M20 11a8 8 0 1 0-2.4 6" />
+    <path d="M20 4v7h-7" />
+  </svg>
+</div>
+
+<style is:global>
+  .oww-pull-refresh[hidden] {
+    display: none !important;
+  }
+
+  .oww-pull-refresh {
+    position: fixed;
+    top: 64px;
+    left: 50%;
+    z-index: 10001;
+
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border: 1px solid rgba(245, 183, 0, 0.45);
+    border-radius: 50%;
+
+    background: #161a20;
+    color: #f5b700;
+
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+
+    pointer-events: none;
+
+    transform: translate(-50%, -12px);
+    will-change: transform;
+  }
+
+  .oww-pull-refresh svg {
+    display: block;
+    transform-origin: center;
+  }
+
+  .oww-pull-refresh.is-loading svg {
+    animation: oww-pull-spin 0.75s linear infinite;
+  }
+
+  @keyframes oww-pull-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (min-width: 901px), (pointer: fine) {
+    .oww-pull-refresh {
+      display: none !important;
+    }
+  }
+</style>
+
+<script is:inline>
+  (() => {
+    const indicator = document.querySelector(
+      '[data-oww-pull-refresh]'
+    );
+
+    if (!(indicator instanceof HTMLElement)) return;
+
+    const mobile = window.matchMedia(
+      '(max-width: 900px) and (pointer: coarse)'
+    );
+
+    if (!mobile.matches) return;
+
+    const icon = indicator.querySelector('svg');
+
+    const THRESHOLD = 85;
+
+    let startY = 0;
+    let startX = 0;
+    let distance = 0;
+
+    let tracking = false;
+    let refreshing = false;
+
+    const atTop = () => {
+      const scrollTop =
+        document.scrollingElement?.scrollTop ??
+        window.scrollY;
+
+      return scrollTop <= 1;
+    };
+
+    const reset = () => {
+      if (refreshing) return;
+
+      tracking = false;
+      distance = 0;
+
+      indicator.hidden = true;
+      indicator.classList.remove('is-loading');
+
+      indicator.style.transform =
+        'translate(-50%, -12px)';
+
+      if (icon) {
+        icon.style.transform = '';
+      }
+    };
+
+    const isBlockedTarget = (target) => {
+      if (!(target instanceof Element)) return true;
+
+      if (
+        target.closest(
+          'input, textarea, select, iframe, video, ' +
+          '[contenteditable="true"], ' +
+          '[data-no-pull-refresh], ' +
+          '[data-mobile-menu-panel]'
+        )
+      ) {
+        return true;
+      }
+
+      let parent = target;
+
+      while (parent && parent !== document.body) {
+        if (parent instanceof HTMLElement) {
+          const style = window.getComputedStyle(parent);
+
+          const scrollable =
+            /auto|scroll/.test(style.overflowY) &&
+            parent.scrollHeight > parent.clientHeight + 2;
+
+          if (scrollable) return true;
+        }
+
+        parent = parent.parentElement;
+      }
+
+      return false;
+    };
+
+    document.addEventListener(
+      'touchstart',
+      (event) => {
+        if (
+          refreshing ||
+          !mobile.matches ||
+          !atTop() ||
+          event.touches.length !== 1 ||
+          isBlockedTarget(event.target)
+        ) {
+          tracking = false;
+          return;
+        }
+
+        const touch = event.touches[0];
+
+        startY = touch.clientY;
+        startX = touch.clientX;
+
+        distance = 0;
+        tracking = true;
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      'touchmove',
+      (event) => {
+        if (
+          !tracking ||
+          refreshing ||
+          event.touches.length !== 1
+        ) {
+          return;
+        }
+
+        if (!atTop()) {
+          reset();
+          return;
+        }
+
+        const touch = event.touches[0];
+
+        const deltaY = touch.clientY - startY;
+        const deltaX = Math.abs(touch.clientX - startX);
+
+        if (deltaY <= 0) {
+          reset();
+          return;
+        }
+
+        if (deltaX > deltaY) {
+          reset();
+          return;
+        }
+
+        if (deltaY < 8) return;
+
+        if (event.cancelable) {
+          event.preventDefault();
+        }
+
+        distance = Math.min(deltaY, 150);
+
+        indicator.hidden = false;
+
+        const offset = Math.min(distance * 0.48, 58);
+
+        indicator.style.transform =
+          `translate(-50%, ${offset - 12}px)`;
+
+        if (icon) {
+          icon.style.transform =
+            `rotate(${distance * 2}deg)`;
+        }
+      },
+      { passive: false }
+    );
+
+    document.addEventListener(
+      'touchend',
+      () => {
+        if (!tracking || refreshing) return;
+
+        if (distance < THRESHOLD) {
+          reset();
+          return;
+        }
+
+        tracking = false;
+        refreshing = true;
+
+        indicator.hidden = false;
+        indicator.classList.add('is-loading');
+
+        indicator.style.transform =
+          'translate(-50%, 32px)';
+
+        if (icon) {
+          icon.style.transform = '';
+        }
+
+        window.setTimeout(() => {
+          window.location.reload();
+        }, 250);
+      },
+      { passive: true }
+    );
+
+    document.addEventListener(
+      'touchcancel',
+      reset,
+      { passive: true }
+    );
+
+    window.addEventListener('pageshow', () => {
+      refreshing = false;
+      reset();
+    });
+  })();
+</script>

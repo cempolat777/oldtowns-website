@@ -1,0 +1,939 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { defaultLang, languages, ui } from '../../i18n/ui';
+import { env } from 'cloudflare:workers';
+import { getVideoCardTitle } from '../../lib/videoSeo';
+
+export const prerender = false;
+
+const PAGE_SIZE = 24;
+const MAX_SEARCH_LENGTH = 80;
+const MAX_SHUFFLE_SEED = 9999;
+const MAX_OFFSET = 1000000;
+
+function shuffleSeed(raw: string | null): number {
+  const parsed = Number(raw);
+  if (raw && Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_SHUFFLE_SEED) {
+    return parsed;
+  }
+  return Math.floor(Math.random() * MAX_SHUFFLE_SEED) + 1;
+}
+const { lang } = Astro.params;
+const currentLang = lang && lang in languages ? lang : defaultLang;
+const translations = ui as Record<string, Record<string, string>>;
+const t = translations[currentLang] || translations.en;
+const db = (env as any).oldtowns_db;
+
+if (!db) {
+  throw new Error('D1 binding oldtowns_db is not available.');
+}
+
+type VideoRow = {
+  id: string;
+  title: string | null;
+  raw_json: string | null;
+  category: string | null;
+  city: string | null;
+  country: string | null;
+  thumbnail: string | null;
+  channel: string | null;
+  channel_title: string | null;
+  badge: string | null;
+  published_at: string | null;
+};
+
+type VideoData = {
+  id: string;
+  title: string;
+  category?: string;
+  city?: string;
+  country?: string;
+  thumbnail?: string;
+  channel?: string;
+  channelTitle?: string;
+  badge?: string;
+  publishedAt?: string;
+  geo?: {
+    latitude?: number;
+    longitude?: number;
+    verified?: boolean;
+    integrityVerified?: boolean;
+    precision?: string;
+  };
+};
+
+type WalkCard = {
+  id: string;
+  title: string;
+  city: string;
+  country: string;
+  category: string;
+  channel: string;
+  thumbnail: string;
+  badge: string;
+  publishedAt: string;
+};
+
+const listHeading: Record<string, string> = {
+  en: 'Walking videos near hotels', tr: 'Otellere yakın yürüyüş videoları',
+  de: 'Spaziervideos in Hotelnähe', es: 'Videos de paseos cerca de hoteles',
+  it: 'Video di passeggiate vicino agli hotel', fr: 'Vidéos de promenades près des hôtels',
+  ja: 'ホテル周辺の散策動画', pt: 'Vídeos de caminhadas perto de hotéis',
+  ru: 'Видео прогулок рядом с отелями', zh: '酒店附近的步行视频',
+  ko: '호텔 근처 도보 영상', ar: 'فيديوهات المشي بالقرب من الفنادق',
+  hi: 'होटलों के पास पैदल यात्रा के वीडियो', nl: 'Wandelvideo’s bij hotels',
+  pl: 'Filmy ze spacerów w pobliżu hoteli', sv: 'Promenadvideor nära hotell',
+  id: 'Video jalan kaki di dekat hotel', vi: 'Video đi bộ gần khách sạn'
+};
+
+const searchPrompt: Record<string, string> = {
+  en: 'Search city, country or walking route...',
+  tr: 'Şehir, ülke veya yürüyüş rotası ara...',
+  de: 'Stadt, Land oder Wanderroute suchen...',
+  es: 'Buscar ciudad, país o ruta a pie...',
+  it: 'Cerca città, paese o percorso a piedi...',
+  fr: 'Rechercher une ville, un pays ou un itinéraire...',
+  ja: '都市、国、散策ルートを検索...',
+  pt: 'Buscar cidade, país ou percurso a pé...',
+  ru: 'Поиск города, страны или маршрута...',
+  zh: '搜索城市、国家或步行路线...',
+  ko: '도시, 국가 또는 도보 경로 검색...',
+  ar: 'ابحث عن مدينة أو بلد أو مسار مشي...',
+  hi: 'शहर, देश या पैदल मार्ग खोजें...',
+  nl: 'Zoek stad, land of wandelroute...',
+  pl: 'Szukaj miasta, kraju lub trasy spaceru...',
+  sv: 'Sök stad, land eller promenadrutt...',
+  id: 'Cari kota, negara, atau rute jalan kaki...',
+  vi: 'Tìm thành phố, quốc gia hoặc tuyến đi bộ...'
+};
+
+const loadMoreText: Record<string, string> = {
+  en: 'Load more videos', tr: 'Daha fazla video yükle',
+  de: 'Weitere Videos laden', es: 'Cargar más vídeos',
+  it: 'Carica altri video', fr: 'Charger plus de vidéos',
+  ja: '動画をさらに表示', pt: 'Carregar mais vídeos',
+  ru: 'Загрузить ещё видео', zh: '加载更多视频',
+  ko: '동영상 더 보기', ar: 'تحميل المزيد من الفيديوهات',
+  hi: 'और वीडियो लोड करें', nl: 'Meer video’s laden',
+  pl: 'Załaduj więcej filmów', sv: 'Ladda fler videor',
+  id: 'Muat lebih banyak video', vi: 'Tải thêm video'
+};
+
+function parseVideo(row: VideoRow): VideoData | null {
+  if (!row.id) return null;
+  let data: Partial<VideoData> = {};
+  if (row.raw_json) {
+    try {
+      data = JSON.parse(row.raw_json) as Partial<VideoData>;
+    } catch {
+      data = {};
+    }
+  }
+  const title = String(data.title || row.title || '').trim();
+  if (!title) return null;
+  return {
+    id: row.id,
+    title,
+    city: String(data.city || row.city || '').trim(),
+    country: String(data.country || row.country || '').trim(),
+    category: String(data.category || row.category || '').trim(),
+    thumbnail: String(data.thumbnail || row.thumbnail || '').trim(),
+    channel: String(data.channel || row.channel || '').trim(),
+    channelTitle: String(data.channelTitle || row.channel_title || '').trim(),
+    badge: String(data.badge || row.badge || '').trim(),
+    publishedAt: String(data.publishedAt || row.published_at || '').trim(),
+    geo: data.geo
+  };
+}
+
+function cardFromVideo(video: VideoData): WalkCard {
+  return {
+    id: video.id,
+    title: getVideoCardTitle(video as Parameters<typeof getVideoCardTitle>[0], currentLang),
+    city: video.city || '',
+    country: video.country || '',
+    category: video.category || '',
+    channel: video.channelTitle || video.channel || '',
+    thumbnail: video.thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`,
+    badge: video.badge || '',
+    publishedAt: video.publishedAt || ''
+  };
+}
+
+// The seed is fixed for the whole visit, including search and pagination.
+// Only previously verified hotel/video links are used in the directory.
+const url = Astro.url;
+const query = (url.searchParams.get('q') || '').trim().toLocaleLowerCase().slice(0, MAX_SEARCH_LENGTH);
+const seed = shuffleSeed(url.searchParams.get('seed'));
+const requestedOffset = Number(url.searchParams.get('offset') || '0');
+const offset = Number.isSafeInteger(requestedOffset) && requestedOffset >= 0 && requestedOffset <= MAX_OFFSET
+  ? requestedOffset
+  : 0;
+
+const ELIGIBLE_WALKS = `
+  FROM videos AS v
+  WHERE v.active = 1
+    AND LENGTH(TRIM(COALESCE(v.title, ''))) > 0
+    AND EXISTS (
+      SELECT 1
+      FROM video_hotels AS vh
+      INNER JOIN hotels AS h ON h.id = vh.hotel_id
+      WHERE vh.video_id = v.id
+        AND vh.active = 1 AND vh.verified = 1
+        AND vh.distance_meters BETWEEN 0 AND 3000
+        AND h.active = 1
+    )
+    AND (
+      ?1 = ''
+      OR INSTR(LOWER(COALESCE(v.title, '')), ?1) > 0
+      OR INSTR(LOWER(COALESCE(v.city, '')), ?1) > 0
+      OR INSTR(LOWER(COALESCE(v.country, '')), ?1) > 0
+      OR INSTR(LOWER(COALESCE(v.description, '')), ?1) > 0
+    )
+`;
+
+// SQLite has no stable seeded RANDOM(). Use a bounded per-ID permutation key.
+// The numeric expression is deterministic across HTTP requests for a given seed.
+const SHUFFLE_KEY = `(
+  ((unicode(substr(v.id, 1, 1)) * 73856093
+    + unicode(substr(v.id, 2, 1)) * 19349663
+    + unicode(substr(v.id, 4, 1)) * 83492791
+    + unicode(substr(v.id, 7, 1)) * 26544357
+    + unicode(substr(v.id, -1, 1)) * 97531) % 2147483647)
+  * ?2 % 2147483647
+)`;
+
+type FeedResult = {
+  items: WalkCard[];
+  hasMore: boolean;
+  nextOffset: number;
+  total: number;
+  seed: number;
+  queryFailed?: boolean;
+};
+
+async function fetchWalks(): Promise<FeedResult> {
+  const multiplier = 2 * seed + 1;
+  const rowsStatement = db.prepare(`
+    SELECT v.id, v.title, v.raw_json, v.category, v.city, v.country,
+           v.thumbnail, v.channel, v.channel_title, v.badge, v.published_at
+    ${ELIGIBLE_WALKS}
+    ORDER BY ${SHUFFLE_KEY} ASC, v.id ASC
+    LIMIT ?3 OFFSET ?4
+  `).bind(query, multiplier, PAGE_SIZE + 1, offset);
+
+  const countStatement = db.prepare(`
+    SELECT COUNT(*) AS total ${ELIGIBLE_WALKS}
+  `).bind(query);
+
+  const [rowsResult, countRow] = await Promise.all([
+    rowsStatement.all() as Promise<{ results?: VideoRow[] }>,
+    countStatement.first() as Promise<{ total: number } | null>
+  ]);
+
+  const rows = rowsResult.results || [];
+  const selected = rows.slice(0, PAGE_SIZE);
+  const items: WalkCard[] = [];
+  for (const row of selected) {
+    const video = parseVideo(row);
+    if (!video) continue;
+    try {
+      items.push(cardFromVideo(video));
+    } catch (error) {
+      console.error('A walking-video card could not be formatted:', row.id, error);
+      items.push({
+        id: video.id,
+        title: video.title,
+        city: video.city || '',
+        country: video.country || '',
+        category: video.category || '',
+        channel: video.channelTitle || video.channel || '',
+        thumbnail: video.thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`,
+        badge: video.badge || '',
+        publishedAt: video.publishedAt || ''
+      });
+    }
+  }
+  return {
+    items,
+    hasMore: rows.length > PAGE_SIZE,
+    nextOffset: offset + selected.length,
+    total: Number(countRow?.total || 0),
+    seed
+  };
+}
+
+let result: FeedResult;
+try {
+  result = await fetchWalks();
+} catch (error) {
+  console.error('The hotel walking-video directory query failed:', error);
+  result = { items: [], hasMore: false, nextOffset: offset, total: 0, seed, queryFailed: true };
+  Astro.response.headers.set('Retry-After', '60');
+}
+
+if (url.searchParams.get('feed') === '1') {
+  return new Response(JSON.stringify(result), {
+    status: result.queryFailed ? 503 : 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'private, no-store',
+      'X-Robots-Tag': 'noindex, follow'
+    }
+  });
+}
+
+// A transient database failure must not deindex this established page.
+Astro.response.headers.set('X-Robots-Tag', result.queryFailed || result.total > 0 ? 'index, follow' : 'noindex, follow');
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+const title = `${t['nav.hotels']} | Old Towns Walks`;
+const description = t['hotels.subtitle'];
+---
+
+<BaseLayout title={title} description={description}>
+  <div
+    class:list={['hotel-directory', { rtl: currentLang === 'ar' }]}
+    data-hotel-directory
+  >
+    <aside class="hotel-sidebar" aria-label={t['nav.categories']}>
+      <nav class="hotel-sidebar-nav">
+        <a href={`/${currentLang}/`} class="sidebar-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 10.8 12 3l9 7.8v9.4a.8.8 0 0 1-.8.8h-5.4v-6.4H9.2V21H3.8a.8.8 0 0 1-.8-.8z" />
+          </svg>
+          <span>{t['nav.home']}</span>
+        </a>
+        <a href={`/${currentLang}/map`} class="sidebar-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M3 12h18M12 3c2.2 2.5 3.3 5.5 3.3 9S14.2 18.5 12 21M12 3C9.8 5.5 8.7 8.5 8.7 12S9.8 18.5 12 21" />
+          </svg>
+          <span>{t['nav.map']}</span>
+        </a>
+        <a
+          href={`/${currentLang}/hotels`}
+          class="sidebar-link active"
+          aria-current="page"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="5" y="3" width="14" height="18" rx="1.5" />
+            <path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2M10 21v-2.5h4V21" />
+          </svg>
+          <span>{t['nav.hotels']}</span>
+        </a>
+      </nav>
+      <div class="sidebar-divider"></div>
+      <nav class="hotel-sidebar-nav secondary">
+        <a href={`/${currentLang}/about`} class="sidebar-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path d="M12 10.7v5.5M12 7.4h.01" />
+          </svg>
+          <span>{t['nav.about']}</span>
+        </a>
+        <a href={`/${currentLang}/privacy`} class="sidebar-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 3 5.5 5.7v5.6c0 4.2 2.6 7.8 6.5 9.7 3.9-1.9 6.5-5.5 6.5-9.7V5.7z" />
+            <path d="m9.2 12 1.8 1.8 3.8-4" />
+          </svg>
+          <span>{t['nav.privacy']}</span>
+        </a>
+        <a href={`/${currentLang}/contact`} class="sidebar-link">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3" y="5" width="18" height="14" rx="1.5" />
+            <path d="m4 7 8 6 8-6" />
+          </svg>
+          <span>{t['nav.contact']}</span>
+        </a>
+      </nav>
+    </aside>
+    <div class="hotel-content" role="main">
+      <section class="hotel-hero">
+        <div class="hero-glow"></div>
+        <div class="hero-copy">
+          <span class="hero-kicker">OLD TOWNS STAYS</span>
+          <h1>{t['hotels.title']}</h1>
+          <p>{t['hotels.subtitle']}</p>
+          <label class="hotel-search">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <path d="m16 16 4 4" />
+            </svg>
+            <span class="sr-only">{searchPrompt[currentLang] || searchPrompt.en}</span>
+            <input
+              type="search"
+              placeholder={searchPrompt[currentLang] || searchPrompt.en}
+              autocomplete="off"
+              maxlength={MAX_SEARCH_LENGTH}
+              value={query}
+              data-hotel-search
+            />
+          </label>
+        </div>
+        <div class="hero-mark" aria-hidden="true">
+          <svg viewBox="0 0 120 120">
+            <path d="M28 102V24c0-5 4-9 9-9h46c5 0 9 4 9 9v78" />
+            <path d="M18 102h84M43 36h10M67 36h10M43 53h10M67 53h10M43 70h10M67 70h10M51 102V85h18v17" />
+          </svg>
+        </div>
+      </section>
+      <section class="directory-section walk-results-section">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">OLD TOWNS STAYS</span>
+            <h2>{listHeading[currentLang] || listHeading.en}</h2>
+          </div>
+          <span class="result-total" data-result-total>{result.total}</span>
+        </div>
+        <div class="walk-grid" data-walk-grid data-has-more={result.hasMore ? "true" : "false"} data-next-offset={result.nextOffset} data-seed={result.seed} data-total={result.total}>
+          {result.items.map((walk) => (
+            <article class="video-card" data-walk-card data-video-id={walk.id}>
+              <a class="thumbnail-wrapper" href={`/${currentLang}/walks/${walk.id}`} aria-label={walk.title}>
+                <img src={walk.thumbnail} alt={walk.title} loading="lazy" decoding="async" data-walk-thumbnail data-youtube-id={walk.id} />
+              </a>
+              <div class="video-details">
+                <h3 class="video-title"><a href={`/${currentLang}/walks/${walk.id}`}>{walk.title}</a></h3>
+                <p class="video-channel">{walk.channel}</p>
+                <p class="video-location">{[walk.city, walk.country].filter(Boolean).join(', ')}</p>
+                <div class="video-footer">
+                  {walk.badge && <span class="badge-tag">{walk.badge}</span>}
+                  <span class="hotel-label">{t['nav.hotels']}</span>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div class="empty-search-state" data-empty-search data-no-results={t['hotels.noResults']} data-preparing={t['hotels.preparing']} hidden={result.items.length > 0 || result.hasMore || result.queryFailed}>
+          <p>{query ? t['hotels.noResults'] : t['hotels.preparing']}</p>
+        </div>
+        <div class="loading-state" data-loading-state hidden aria-live="polite"></div>
+        <div class="walk-sentinel" data-walk-sentinel aria-hidden="true"></div>
+        <button type="button" class="load-more" data-load-more hidden={!result.hasMore}>
+          {loadMoreText[currentLang] || loadMoreText.en}
+        </button>
+      </section>
+    </div>
+  </div>
+  <script>
+    type WalkCardResponse = {
+      id: string;
+      title: string;
+      thumbnail: string;
+      city: string;
+      country: string;
+      channel: string;
+      badge: string;
+    };
+
+    type WalkFeedResponse = {
+      items: WalkCardResponse[];
+      hasMore: boolean;
+      nextOffset: number;
+      total: number;
+      seed: number;
+    };
+
+    const input = document.querySelector<HTMLInputElement>('[data-hotel-search]');
+    const grid = document.querySelector<HTMLDivElement>('[data-walk-grid]');
+    const counter = document.querySelector<HTMLElement>('[data-result-total]');
+    const empty = document.querySelector<HTMLElement>('[data-empty-search]');
+    const sentinel = document.querySelector<HTMLElement>('[data-walk-sentinel]');
+    const loading = document.querySelector<HTMLElement>('[data-loading-state]');
+    const moreButton = document.querySelector<HTMLButtonElement>('[data-load-more]');
+    let hasMore = grid?.getAttribute('data-has-more') === 'true';
+    let nextOffset = Number(grid?.getAttribute('data-next-offset') || '0');
+    const seed = grid?.getAttribute('data-seed') || '1';
+    let busy = false;
+    let sequence = 0;
+    let debounce: number | undefined;
+    let loaded = grid?.querySelectorAll('[data-walk-card]').length || 0;
+    let total = Number(grid?.getAttribute('data-total') || '0');
+    let activeRequest: AbortController | null = null;
+    const shownIds = new Set(Array.from(grid?.querySelectorAll<HTMLElement>('[data-walk-card]') || []).map((card) => card.dataset.videoId || ''));
+
+    const escapeHtml = (value: string): string =>
+      String(value || '').replace(/[&<>"']/g, (character) => {
+        const escaped: Record<string, string> = {
+          '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        };
+        return escaped[character] || character;
+      });
+
+    function makeCard(item: WalkCardResponse): string {
+      const language = encodeURIComponent(window.location.pathname.split('/')[1] || 'en');
+      const href = `/${language}/walks/${encodeURIComponent(item.id)}`;
+      const locationText = [item.city, item.country].filter(Boolean).join(', ');
+      const hotelLabel = document.querySelector('.hotel-sidebar [aria-current="page"] span')?.textContent || 'Hotels';
+      let thumbnail = '';
+      try {
+        const url = new URL(item.thumbnail, window.location.origin);
+        if (url.protocol === 'https:' || (url.protocol === 'http:' && url.origin === window.location.origin)) {
+          thumbnail = url.href;
+        }
+      } catch {
+        thumbnail = '';
+      }
+      const imageSrc = escapeHtml(thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(item.id)}/hqdefault.jpg`);
+      return `<article class="video-card" data-walk-card data-video-id="${escapeHtml(item.id)}">
+        <a class="thumbnail-wrapper" href="${escapeHtml(href)}" aria-label="${escapeHtml(item.title)}">
+          <img src="${imageSrc}" alt="${escapeHtml(item.title)}" loading="lazy" decoding="async" data-walk-thumbnail data-youtube-id="${escapeHtml(item.id)}" />
+        </a>
+        <div class="video-details">
+          <h3 class="video-title"><a href="${escapeHtml(href)}">${escapeHtml(item.title)}</a></h3>
+          ${item.channel ? `<p class="video-channel">${escapeHtml(item.channel)}</p>` : ''}
+          ${locationText ? `<p class="video-location">${escapeHtml(locationText)}</p>` : ''}
+          <div class="video-footer">
+            ${item.badge ? `<span class="badge-tag">${escapeHtml(item.badge)}</span>` : ''}
+            <span class="hotel-label">${escapeHtml(hotelLabel)}</span>
+          </div>
+        </div>
+      </article>`;
+    }
+
+    async function loadWalks(reset = false): Promise<void> {
+      if (!grid || !input || (busy && !reset) || (!hasMore && !reset)) return;
+      if (reset) {
+        sequence += 1;
+        activeRequest?.abort();
+        busy = false;
+        hasMore = true;
+        nextOffset = 0;
+        shownIds.clear();
+        loaded = 0;
+        grid.replaceChildren();
+        counter && (counter.textContent = '0');
+        if (empty) empty.hidden = true;
+      }
+      const requestSequence = sequence;
+      const controller = new AbortController();
+      activeRequest = controller;
+      busy = true;
+      if (loading) loading.hidden = false;
+      if (moreButton) moreButton.hidden = true;
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('feed', '1');
+        url.searchParams.set('q', input.value.trim());
+        url.searchParams.set('offset', String(nextOffset));
+        url.searchParams.set('seed', seed);
+        const response = await fetch(url, {
+          headers: { Accept: 'application/json' },
+          signal: controller.signal
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = (await response.json()) as WalkFeedResponse;
+        if (requestSequence !== sequence) return;
+        for (const item of payload.items || []) {
+          if (shownIds.has(item.id)) continue;
+          shownIds.add(item.id);
+          grid.insertAdjacentHTML('beforeend', makeCard(item));
+          loaded += 1;
+        }
+        hasMore = Boolean(payload.hasMore);
+        nextOffset = Number(payload.nextOffset || 0);
+        total = Number(payload.total || 0);
+        if (counter) counter.textContent = String(total);
+        if (empty) {
+          empty.hidden = loaded > 0 || hasMore;
+          if (!empty.hidden) {
+            const message = empty.querySelector('p');
+            if (message) message.textContent = input.value.trim()
+              ? (empty.dataset.noResults || '')
+              : (empty.dataset.preparing || '');
+          }
+        }
+        if (moreButton) moreButton.hidden = !hasMore;
+      } catch (error) {
+        if (!controller.signal.aborted) {
+          if (requestSequence === sequence && moreButton) moreButton.hidden = false;
+          console.error('Could not load walking videos:', error);
+        }
+      } finally {
+        if (activeRequest === controller) {
+          activeRequest = null;
+          busy = false;
+          if (loading) loading.hidden = true;
+        }
+      }
+    }
+
+    input?.addEventListener('input', () => {
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => void loadWalks(true), 260);
+    });
+    moreButton?.addEventListener('click', () => void loadWalks());
+    document.addEventListener('error', (event) => {
+      const image = event.target;
+      if (!(image instanceof HTMLImageElement) || !image.matches('[data-walk-thumbnail]')) return;
+      const id = image.dataset.youtubeId || '';
+      const fallback = `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
+      if (id && !image.dataset.thumbnailFallback && image.src !== fallback) {
+        image.dataset.thumbnailFallback = '1';
+        image.src = fallback;
+        return;
+      }
+      image.hidden = true;
+      image.closest('.thumbnail-wrapper')?.classList.add('thumbnail-unavailable');
+    }, true);
+    if ('IntersectionObserver' in window && sentinel) {
+      const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting) && hasMore && !busy) {
+          void loadWalks();
+        }
+      }, { rootMargin: '350px' });
+      observer.observe(sentinel);
+    }
+  </script>
+</BaseLayout>
+<style is:global>
+  body {
+    background: #0d0f12;
+  }
+  .hotel-directory {
+    min-height: calc(100vh - 56px);
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    background: #0d0f12;
+    color: #f8fafc;
+  }
+  .hotel-directory.rtl {
+    direction: rtl;
+  }
+  .hotel-sidebar {
+    position: sticky;
+    top: 56px;
+    height: calc(100vh - 56px);
+    align-self: start;
+    padding: 20px 12px;
+    background: #0d0d0e;
+    border-inline-end: 1px solid #25272a;
+  }
+  .hotel-sidebar-nav {
+    display: grid;
+    gap: 5px;
+  }
+  .hotel-sidebar-nav.secondary {
+    margin-top: 18px;
+  }
+  .sidebar-link {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 13px;
+    border-radius: 10px;
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 160ms ease, background 160ms ease;
+  }
+  .sidebar-link:hover {
+    color: #ffffff;
+    background: #1a1b1d;
+  }
+  .sidebar-link.active {
+    color: #ffffff;
+    background: #292a2d;
+  }
+  .sidebar-link svg {
+    width: 21px;
+    height: 21px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .sidebar-link:first-child svg path:first-child {
+    fill: none;
+  }
+  .sidebar-divider {
+    height: 1px;
+    margin: 20px 0 0;
+    background: #25272a;
+  }
+  .hotel-content {
+    width: 100%;
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 28px 28px 56px;
+    overflow: hidden;
+  }
+  .hotel-hero {
+    min-height: 330px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding: 48px clamp(28px, 5vw, 76px);
+    border: 1px solid #2b2e33;
+    border-radius: 22px;
+    background:
+      radial-gradient(circle at 82% 18%, rgba(245, 183, 0, .18), transparent 33%),
+      linear-gradient(130deg, #17191d 0%, #111318 58%, #18150b 100%);
+  }
+  .hero-glow {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(90deg, transparent 49%, rgba(255, 255, 255, .025) 50%, transparent 51%),
+      linear-gradient(0deg, transparent 49%, rgba(255, 255, 255, .02) 50%, transparent 51%);
+    background-size: 64px 64px;
+    mask-image: linear-gradient(to left, #000, transparent 82%);
+    pointer-events: none;
+  }
+  .hero-copy {
+    width: min(760px, 72%);
+    position: relative;
+    z-index: 2;
+  }
+  .hero-kicker,
+  .section-kicker {
+    display: block;
+    margin-bottom: 10px;
+    color: #f5b700;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.7px;
+  }
+  .hotel-hero h1 {
+    max-width: 760px;
+    font-size: clamp(34px, 4.1vw, 64px);
+    line-height: 1.02;
+    letter-spacing: -2.5px;
+  }
+  .hotel-hero p {
+    max-width: 690px;
+    margin-top: 18px;
+    color: #b8c0cc;
+    font-size: 17px;
+    line-height: 1.65;
+  }
+  .hotel-search {
+    width: min(680px, 100%);
+    height: 54px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+    padding: 0 18px;
+    border: 1px solid #343840;
+    border-radius: 12px;
+    background: rgba(8, 10, 13, .78);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .28);
+  }
+  .hotel-search:focus-within {
+    border-color: rgba(245, 183, 0, .8);
+    box-shadow: 0 0 0 3px rgba(245, 183, 0, .12);
+  }
+  .hotel-search svg {
+    width: 22px;
+    height: 22px;
+    flex: 0 0 auto;
+    fill: none;
+    stroke: #f5b700;
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+  .hotel-search input {
+    width: 100%;
+    border: 0;
+    outline: 0;
+    color: #ffffff;
+    background: transparent;
+    font: inherit;
+    font-size: 15px;
+  }
+  .hotel-search input::placeholder {
+    color: #818a98;
+    opacity: 1;
+  }
+  .hero-mark {
+    width: 280px;
+    height: 280px;
+    position: absolute;
+    inset-inline-end: clamp(22px, 5vw, 74px);
+    top: 26px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(245, 183, 0, .16);
+    border-radius: 50%;
+    background: rgba(245, 183, 0, .04);
+    color: rgba(245, 183, 0, .2);
+  }
+  .hero-mark::before,
+  .hero-mark::after {
+    content: '';
+    position: absolute;
+    border: 1px solid rgba(245, 183, 0, .1);
+    border-radius: 50%;
+  }
+  .hero-mark::before {
+    inset: 24px;
+  }
+  .hero-mark::after {
+    inset: 52px;
+  }
+  .hero-mark svg {
+    width: 130px;
+    height: 130px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+  .directory-section {
+    margin-top: 38px;
+  }
+  .section-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 17px;
+  }
+  .section-heading h2 {
+    font-size: clamp(23px, 2vw, 31px);
+    line-height: 1.15;
+    letter-spacing: -.65px;
+  }
+
+  .result-total {
+    min-width: 38px;
+    height: 38px;
+    display: grid;
+    place-items: center;
+    padding: 0 10px;
+    border: 1px solid #343840;
+    border-radius: 10px;
+    color: #f5b700;
+    background: #17191d;
+    font-size: 13px;
+    font-weight: 800;
+  }
+  .walk-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px 18px;
+  }
+  .video-card { min-width: 0; }
+  .thumbnail-wrapper {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid #282b30;
+    border-radius: 12px;
+    background: #1f1f1f;
+  }
+  .thumbnail-wrapper.thumbnail-unavailable { background: linear-gradient(135deg, #30343a, #141619); }
+  .thumbnail-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 250ms ease;
+  }
+  .thumbnail-wrapper:hover img { transform: scale(1.03); }
+  .thumbnail-wrapper:focus-visible, .video-title a:focus-visible {
+    outline: 3px solid #f5b700;
+    outline-offset: 3px;
+  }
+  .video-details { padding: 11px 2px 0; }
+  .video-title {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.45;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .video-title a { color: #f1f1f1; text-decoration: none; }
+  .video-title a:hover { color: #f5b700; }
+  .video-channel, .video-location {
+    margin-top: 5px;
+    color: #aaaaaa;
+    font-size: 12px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .video-footer { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+  .badge-tag, .hotel-label {
+    padding: 3px 7px;
+    border: 1px solid #343840;
+    border-radius: 4px;
+    color: #cbd5e1;
+    background: #23262b;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .hotel-label { color: #f5b700; }
+  .empty-search-state {
+    min-height: 180px;
+    display: grid;
+    place-items: center;
+    padding: 40px 20px;
+    color: #aeb7c4;
+    font-size: 14px;
+    text-align: center;
+  }
+  [hidden] { display: none !important; }
+  .loading-state { height: 24px; margin-top: 16px; text-align: center; }
+  .loading-state:not([hidden])::after {
+    content: '';
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    border: 2px solid #575d68;
+    border-top-color: #f5b700;
+    border-radius: 50%;
+    animation: hotel-directory-spin 650ms linear infinite;
+  }
+  @keyframes hotel-directory-spin { to { transform: rotate(360deg); } }
+  .walk-sentinel { height: 2px; }
+  .load-more {
+    display: block;
+    margin: 16px auto 0;
+    padding: 10px 18px;
+    border: 1px solid #343840;
+    border-radius: 9px;
+    color: #f1f1f1;
+    background: #1a1d22;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+  @media (max-width: 1280px) { .walk-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 900px) {
+    .hotel-directory { display: block; }
+    .hotel-sidebar { display: none; }
+    .hotel-content { padding: 18px 16px 44px; }
+    .hotel-hero { min-height: 310px; padding: 38px 26px; }
+    .hero-copy { width: 100%; }
+    .hero-mark { opacity: .22; }
+  }
+  @media (max-width: 650px) {
+    .hotel-content { padding: 12px 10px 38px; }
+    .hotel-hero { min-height: 0; padding: 24px 18px; border-radius: 16px; }
+    .hotel-hero h1 { font-size: clamp(26px, 7.6vw, 30px); line-height: 1.12; letter-spacing: -.8px; }
+    .hotel-hero p { margin-top: 12px; font-size: 14px; line-height: 1.45; }
+    .hotel-search { height: 48px; margin-top: 18px; padding: 0 12px; gap: 10px; }
+    .hotel-search input { min-width: 0; font-size: 14px; }
+    .directory-section { margin-top: 24px; }
+    .section-heading { align-items: center; gap: 8px; }
+    .section-heading h2 { font-size: 20px; }
+    .result-total { min-width: 34px; height: 34px; }
+    .walk-grid { grid-template-columns: 1fr; }
+  }
+</style>

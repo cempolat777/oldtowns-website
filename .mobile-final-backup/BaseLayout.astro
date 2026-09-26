@@ -1,0 +1,411 @@
+---
+import LanguagePicker from '../components/LanguagePicker.astro';
+import MobileNavigation from '../components/MobileNavigation.astro';
+import { languages, defaultLang, ui } from '../i18n/ui';
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+}
+
+const {
+  title = "OLD TOWNS | Global Walking Tours & Cinematic Urban Exploration",
+  description = "Experience immersive 4K 60fps walking tours across historic cities, ancient streets, and modern metropolis routes around the world.",
+  canonical
+} = Astro.props;
+
+const pathnameLang = Astro.url.pathname.split('/').filter(Boolean)[0];
+const currentLang = Astro.currentLocale ||
+  (pathnameLang && pathnameLang in languages ? pathnameLang : defaultLang);
+const canonicalUrl = canonical || new URL(Astro.url.pathname, Astro.url.origin).href;
+const textDirection = currentLang === 'ar' ? 'rtl' : 'ltr';
+const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui];
+---
+
+<!DOCTYPE html>
+<html lang={currentLang} dir={textDirection}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Favicons -->
+    <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=3" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=3" />
+
+    <meta name="generator" content={Astro.generator} />
+
+    <title>{title}</title>
+
+    <!-- SEO & Open Graph Meta Tags -->
+    <meta name="description" content={description} />
+    <meta
+      name="keywords"
+      content="walking tour, 4k walking tour, old towns, binaural audio, city walk, izmir walking tour, dusseldorf walk, travel 4k"
+    />
+    <meta name="author" content="Old Towns Walks" />
+    <link rel="canonical" href={canonicalUrl} />
+    <slot name="head" />
+
+    <!-- Social Media Share (Open Graph) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta
+      property="og:image"
+      content="https://oldtownswalks.com/android-chrome-512x512.png"
+    />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalUrl} />
+    <meta property="twitter:title" content={title} />
+    <meta property="twitter:description" content={description} />
+    <meta
+      property="twitter:image"
+      content="https://oldtownswalks.com/android-chrome-512x512.png"
+    />
+
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Roboto:wght@400;500;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <style is:global>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        background-color: #0b0f17;
+        color: #f1f5f9;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: #0f0f0f;
+        border-bottom: 1px solid #222222;
+      }
+
+      .nav-container {
+        width: 100%;
+        padding: 0 24px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+      }
+
+      .nav-actions {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-left: auto;
+      }
+
+      .brand-logo {
+        display: flex;
+        align-items: center;
+        overflow: hidden;
+        border-radius: 3px;
+        font-family: 'Roboto', sans-serif;
+        font-size: 15px;
+        font-weight: 800;
+        letter-spacing: .5px;
+        text-decoration: none;
+      }
+
+      .brand-icon {
+        width: 26px;
+        height: 26px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 7px;
+        flex-shrink: 0;
+      }
+
+      .logo-box-1 {
+        padding: 4px 8px;
+        background: #0f0f0f;
+        border: 1px solid rgba(245, 180, 0, .35);
+        border-right: 0;
+        color: #f5b400;
+      }
+
+      .logo-box-2 {
+        padding: 4px 8px;
+        background: #f5b400;
+        border: 1px solid #f5b400;
+        color: #0f0f0f;
+      }
+
+      .nav-center {
+        width: 45%;
+        max-width: 650px;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+      }
+
+      .search-box {
+        width: 100%;
+        display: flex;
+      }
+
+      .search-input {
+        width: 100%;
+        min-width: 0;
+        padding: 8px 16px;
+        background: #121212;
+        border: 1px solid #303030;
+        border-radius: 40px 0 0 40px;
+        color: #f1f1f1;
+        font-family: 'Roboto', sans-serif;
+        font-size: 14px;
+        outline: none;
+      }
+
+      .search-input::placeholder {
+        color: #9ca3af;
+        opacity: 1;
+      }
+
+      .search-input:focus {
+        border-color: #aaaaaa;
+      }
+
+      .search-button {
+        min-width: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #222222;
+        border: 1px solid #303030;
+        border-left: 0;
+        border-radius: 0 40px 40px 0;
+        color: #f1f1f1;
+        cursor: pointer;
+      }
+
+      .search-button:hover {
+        background: #2b2b2b;
+      }
+
+      .search-button svg {
+        width: 20px;
+        height: 20px;
+        fill: none;
+        stroke: currentColor;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        stroke-width: 2;
+      }
+
+      .site-main {
+        padding-top: 56px;
+      }
+
+      footer {
+        background: #070a0f;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 40px 24px;
+        text-align: center;
+        color: #64748b;
+        font-size: 13px;
+      }
+
+      .layout-mobile-menu-button { display: none; }
+
+      @media (max-width: 900px) {
+        .layout-mobile-menu-button {
+          display: inline-flex;
+          flex: 0 0 36px;
+          width: 36px;
+          height: 36px;
+          align-items: center;
+          justify-content: center;
+          margin-right: 8px;
+          background: transparent;
+          border: 1px solid #2d2d2d;
+          border-radius: 9px;
+          color: #f1f1f1;
+          cursor: pointer;
+        }
+        .layout-mobile-menu-button .material-symbols-outlined { font-size: 22px; }
+        .nav-center { display: none; }
+        .nav-container { padding: 0 12px; gap: 8px; min-width: 0; }
+        .layout-mobile-menu-button { margin-right: 0; }
+        .brand-logo { flex: 0 0 auto; white-space: nowrap; }
+        .brand-icon { width: 32px; height: 32px; margin-right: 5px; }
+        .nav-actions { gap: 4px; flex: 0 0 auto; min-width: 0; }
+        .nav-actions .lang-select { width: 96px; max-width: 96px; padding: 6px 5px; font-size: 12px; }
+      }
+
+      @media (max-width: 700px) {
+        .nav-container {
+          height: 56px;
+          padding: 0 10px;
+          gap: 6px;
+        }
+
+        .brand-logo { font-size: 13px; letter-spacing: 0; }
+        .brand-icon { width: 30px; height: 30px; margin-right: 4px; }
+        .logo-box-1, .logo-box-2 { padding: 4px 5px; }
+        .nav-actions .lang-select { width: 82px; max-width: 82px; }
+
+        .site-main {
+          padding-top: 56px;
+        }
+
+        .nav-center {
+          display: none;
+        }
+      }
+
+      @media (max-width: 350px) {
+        .brand-icon { width: 28px; height: 28px; }
+        .logo-box-1, .logo-box-2 { padding: 4px; }
+        .nav-actions .lang-select { width: 72px; max-width: 72px; }
+      }
+    </style>
+
+    <!-- Google Analytics (GA4) -->
+    <script
+      async
+      src="https://www.googletagmanager.com/gtag/js?id=G-Z4B6GBNNE8"
+    ></script>
+
+    <script is:inline>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-Z4B6GBNNE8');
+    </script>
+  </head>
+
+  <body>
+    <header>
+      <div class="nav-container">
+        <button type="button" class="layout-mobile-menu-button" data-mobile-menu-open aria-label="Open menu" aria-expanded="false" aria-controls="site-mobile-navigation">
+          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+        </button>
+        <a href={`/${currentLang}/`} class="brand-logo" aria-label="Old Towns">
+          <img
+            src="/android-chrome-192x192.png"
+            alt=""
+            class="brand-icon"
+            width="26"
+            height="26"
+          />
+          <span class="logo-box-1">OLD</span>
+          <span class="logo-box-2">TOWNS</span>
+        </a>
+
+        <form class="nav-center" action={`/${currentLang}/`} method="get" role="search">
+          <div class="search-box">
+            <input
+              class="search-input"
+              type="search"
+              name="q"
+              placeholder={t['search.placeholder']}
+              aria-label="Search videos"
+            />
+            <button class="search-button" type="submit" aria-label="Search">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4"></path>
+              </svg>
+            </button>
+          </div>
+        </form>
+
+        <div class="nav-actions">
+          <LanguagePicker />
+        </div>
+      </div>
+    </header>
+
+    <MobileNavigation lang={currentLang} activePath={Astro.url.pathname} />
+    <script is:inline>
+      (() => {
+        const trigger = document.querySelector('[data-mobile-menu-open]');
+        const closeButton = document.querySelector('[data-mobile-menu-close]');
+        const overlay = document.querySelector('[data-mobile-menu-overlay]');
+        const panel = document.querySelector('[data-mobile-menu-panel]');
+        if (!(trigger instanceof HTMLButtonElement) || !(panel instanceof HTMLElement) || !(overlay instanceof HTMLElement)) return;
+        let previousOverflow = '';
+        const setOpen = (open) => {
+          panel.classList.toggle('is-open', open);
+          overlay.classList.toggle('is-open', open);
+          panel.setAttribute('aria-hidden', String(!open));
+          panel.inert = !open;
+          trigger.setAttribute('aria-expanded', String(open));
+          if (open) {
+            previousOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            if (closeButton instanceof HTMLElement) closeButton.focus();
+          } else {
+            document.body.style.overflow = previousOverflow;
+            trigger.focus();
+          }
+        };
+        trigger.addEventListener('click', () => setOpen(true));
+        if (closeButton) closeButton.addEventListener('click', () => setOpen(false));
+        overlay.addEventListener('click', () => setOpen(false));
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && panel.classList.contains('is-open')) setOpen(false);
+        });
+      })();
+    </script>
+
+    <main class="site-main">
+      <slot />
+    </main>
+
+    <footer>
+      <div>
+        <div>
+          <a href={`/${currentLang}/about`}>{t['nav.about']}</a>
+          <span> · </span>
+          <a href={`/${currentLang}/privacy`}>{t['nav.privacy']}</a>
+          <span> · </span>
+          <a href={`/${currentLang}/contact`}>{t['nav.contact']}</a>
+        </div>
+
+        <p style="margin-top:12px;">
+          &copy; {new Date().getFullYear()} Old Towns Walks
+        </p>
+      </div>
+    </footer>
+
+    <!-- Schema.org Structural Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Old Towns Walks",
+      "url": "https://oldtownswalks.com/"
+    }
+    </script>
+  </body>
+</html>

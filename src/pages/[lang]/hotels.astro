@@ -1,14 +1,23 @@
-﻿---
+---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { defaultLang, languages, ui } from '../../i18n/ui';
 import { env } from 'cloudflare:workers';
 import { getVideoCardTitle } from '../../lib/videoSeo';
-import { getNearbyHotelsForVideo } from '../../lib/nearbyHotels';
 
 export const prerender = false;
 
 const PAGE_SIZE = 24;
 const MAX_SEARCH_LENGTH = 80;
+const MAX_SHUFFLE_SEED = 9999;
+const MAX_OFFSET = 1000000;
+
+function shuffleSeed(raw: string | null): number {
+  const parsed = Number(raw);
+  if (raw && Number.isInteger(parsed) && parsed >= 1 && parsed <= MAX_SHUFFLE_SEED) {
+    return parsed;
+  }
+  return Math.floor(Math.random() * MAX_SHUFFLE_SEED) + 1;
+}
 const { lang } = Astro.params;
 const currentLang = lang && lang in languages ? lang : defaultLang;
 const translations = ui as Record<string, Record<string, string>>;
@@ -31,7 +40,6 @@ type VideoRow = {
   channel_title: string | null;
   badge: string | null;
   published_at: string | null;
-  has_verified_link: number;
 };
 
 type VideoData = {
@@ -118,7 +126,7 @@ function parseVideo(row: VideoRow): VideoData | null {
     try {
       data = JSON.parse(row.raw_json) as Partial<VideoData>;
     } catch {
-      return null;
+      data = {};
     }
   }
   const title = String(data.title || row.title || '').trim();
@@ -152,129 +160,134 @@ function cardFromVideo(video: VideoData): WalkCard {
   };
 }
 
-// The fallback matches trusted route/landmark/airport anchors against hotels
-// already independently verified for at least one video. A city centroid alone
-// does not make a walk eligible.
-const trustedAnchor = `
-  json_valid(v.raw_json) = 1
-  AND json_extract(v.raw_json, '$.geo.verified') = 1
-  AND json_extract(v.raw_json, '$.geo.integrityVerified') = 1
-  AND LOWER(json_extract(v.raw_json, '$.geo.precision')) IN ('route-point', 'landmark', 'airport')
-  AND json_type(v.raw_json, '$.geo.latitude') IN ('real', 'integer')
-  AND json_type(v.raw_json, '$.geo.longitude') IN ('real', 'integer')
-  AND json_extract(v.raw_json, '$.geo.latitude') BETWEEN -90 AND 90
-  AND json_extract(v.raw_json, '$.geo.longitude') BETWEEN -180 AND 180
+// The seed is fixed for the whole visit, including search and pagination.
+// Only previously verified hotel/video links are used in the directory.
+const url = Astro.url;
+const query = (url.searchParams.get('q') || '').trim().toLocaleLowerCase().slice(0, MAX_SEARCH_LENGTH);
+const seed = shuffleSeed(url.searchParams.get('seed'));
+const requestedOffset = Number(url.searchParams.get('offset') || '0');
+const offset = Number.isSafeInteger(requestedOffset) && requestedOffset >= 0 && requestedOffset <= MAX_OFFSET
+  ? requestedOffset
+  : 0;
+
+const ELIGIBLE_WALKS = `
+  FROM videos AS v
+  WHERE v.active = 1
+    AND LENGTH(TRIM(COALESCE(v.title, ''))) > 0
+    AND EXISTS (
+      SELECT 1
+      FROM video_hotels AS vh
+      INNER JOIN hotels AS h ON h.id = vh.hotel_id
+      WHERE vh.video_id = v.id
+        AND vh.active = 1 AND vh.verified = 1
+        AND vh.distance_meters BETWEEN 0 AND 3000
+        AND h.active = 1
+    )
+    AND (
+      ?1 = ''
+      OR INSTR(LOWER(COALESCE(v.title, '')), ?1) > 0
+      OR INSTR(LOWER(COALESCE(v.city, '')), ?1) > 0
+      OR INSTR(LOWER(COALESCE(v.country, '')), ?1) > 0
+      OR INSTR(LOWER(COALESCE(v.description, '')), ?1) > 0
+    )
 `;
 
-// This bounding box intentionally includes a small margin. Candidates from
-// this fallback are checked with the exact distance calculation in the shared
-// nearbyHotels helper before they are shown.
-const geoHotelExists = `
-  EXISTS (
-    SELECT 1
-    FROM hotels AS h
-    WHERE h.active = 1
-      AND EXISTS (
-        SELECT 1 FROM video_hotels AS vh
-        WHERE vh.hotel_id = h.id AND vh.active = 1 AND vh.verified = 1
-      )
-      AND ABS(h.latitude - json_extract(v.raw_json, '$.geo.latitude')) < 0.028
-      AND ABS(h.longitude - json_extract(v.raw_json, '$.geo.longitude'))
-        < CASE
-            WHEN ABS(json_extract(v.raw_json, '$.geo.latitude')) < 30 THEN 0.034
-            WHEN ABS(json_extract(v.raw_json, '$.geo.latitude')) < 45 THEN 0.042
-            WHEN ABS(json_extract(v.raw_json, '$.geo.latitude')) < 60 THEN 0.060
-            WHEN ABS(json_extract(v.raw_json, '$.geo.latitude')) < 75 THEN 0.115
-            ELSE 0.75
-          END
-  )
-`;
+// SQLite has no stable seeded RANDOM(). Use a bounded per-ID permutation key.
+// The numeric expression is deterministic across HTTP requests for a given seed.
+const SHUFFLE_KEY = `(
+  ((unicode(substr(v.id, 1, 1)) * 73856093
+    + unicode(substr(v.id, 2, 1)) * 19349663
+    + unicode(substr(v.id, 4, 1)) * 83492791
+    + unicode(substr(v.id, 7, 1)) * 26544357
+    + unicode(substr(v.id, -1, 1)) * 97531) % 2147483647)
+  * ?2 % 2147483647
+)`;
 
-const verifiedLinkExists = `
-  EXISTS (
-    SELECT 1 FROM video_hotels AS vh
-    JOIN hotels AS h ON h.id = vh.hotel_id AND h.active = 1
-    WHERE vh.video_id = v.id AND vh.active = 1 AND vh.verified = 1
-      AND vh.distance_meters BETWEEN 0 AND 3000
-  )
-`;
+type FeedResult = {
+  items: WalkCard[];
+  hasMore: boolean;
+  nextOffset: number;
+  total: number;
+  seed: number;
+  queryFailed?: boolean;
+};
 
-async function fetchWalks(query: string, afterDate: string, afterId: string) {
-  // Bind fixed slots even when search or cursor is absent; ?4 is the batch size.
-  const sql = `
+async function fetchWalks(): Promise<FeedResult> {
+  const multiplier = 2 * seed + 1;
+  const rowsStatement = db.prepare(`
     SELECT v.id, v.title, v.raw_json, v.category, v.city, v.country,
-           v.thumbnail, v.channel, v.channel_title, v.badge, v.published_at,
-           CASE WHEN ${verifiedLinkExists} THEN 1 ELSE 0 END AS has_verified_link
-    FROM videos AS v
-    WHERE v.active = 1 AND v.raw_json IS NOT NULL
-      AND (${verifiedLinkExists} OR (${trustedAnchor} AND ${geoHotelExists}))
-      AND (?1 = '' OR INSTR(LOWER(COALESCE(v.title, '')), ?1) > 0
-        OR INSTR(LOWER(COALESCE(v.city, '')), ?1) > 0
-        OR INSTR(LOWER(COALESCE(v.country, '')), ?1) > 0
-        OR INSTR(LOWER(COALESCE(v.description, '')), ?1) > 0)
-      AND (?3 = '' OR COALESCE(v.published_at, '') < ?2
-        OR (COALESCE(v.published_at, '') = ?2 AND v.id < ?3))
-    ORDER BY COALESCE(v.published_at, '') DESC, v.id DESC
-    LIMIT ?4
-  `;
-  const searchText = query;
-  const result = await db.prepare(sql)
-    .bind(searchText, afterDate, afterId, PAGE_SIZE + 1)
-    .all() as { results?: VideoRow[] };
-  const rows = result.results || [];
+           v.thumbnail, v.channel, v.channel_title, v.badge, v.published_at
+    ${ELIGIBLE_WALKS}
+    ORDER BY ${SHUFFLE_KEY} ASC, v.id ASC
+    LIMIT ?3 OFFSET ?4
+  `).bind(query, multiplier, PAGE_SIZE + 1, offset);
+
+  const countStatement = db.prepare(`
+    SELECT COUNT(*) AS total ${ELIGIBLE_WALKS}
+  `).bind(query);
+
+  const [rowsResult, countRow] = await Promise.all([
+    rowsStatement.all() as Promise<{ results?: VideoRow[] }>,
+    countStatement.first() as Promise<{ total: number } | null>
+  ]);
+
+  const rows = rowsResult.results || [];
   const selected = rows.slice(0, PAGE_SIZE);
   const items: WalkCard[] = [];
   for (const row of selected) {
     const video = parseVideo(row);
     if (!video) continue;
-    if (Number(row.has_verified_link) !== 1) {
-      // The candidate is a new video with no precomputed video_hotels link.
-      const matched = await getNearbyHotelsForVideo(db, video.id, 1, video.geo);
-      if (!matched.items.some((hotel) => hotel.distanceMeters >= 0 && hotel.distanceMeters <= 3000)) {
-        continue;
-      }
+    try {
+      items.push(cardFromVideo(video));
+    } catch (error) {
+      console.error('A walking-video card could not be formatted:', row.id, error);
+      items.push({
+        id: video.id,
+        title: video.title,
+        city: video.city || '',
+        country: video.country || '',
+        category: video.category || '',
+        channel: video.channelTitle || video.channel || '',
+        thumbnail: video.thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(video.id)}/hqdefault.jpg`,
+        badge: video.badge || '',
+        publishedAt: video.publishedAt || ''
+      });
     }
-    items.push(cardFromVideo(video));
   }
-  const lastRow = selected[selected.length - 1];
   return {
     items,
     hasMore: rows.length > PAGE_SIZE,
-    nextDate: lastRow?.published_at || '',
-    nextId: lastRow?.id || ''
+    nextOffset: offset + selected.length,
+    total: Number(countRow?.total || 0),
+    seed
   };
 }
 
-const url = Astro.url;
-const query = (url.searchParams.get('q') || '').trim().toLocaleLowerCase().slice(0, MAX_SEARCH_LENGTH);
-const afterDate = (url.searchParams.get('afterDate') || '').slice(0, 40);
-const afterId = (url.searchParams.get('afterId') || '').slice(0, 80);
-let result: Awaited<ReturnType<typeof fetchWalks>>;
+let result: FeedResult;
 try {
-  result = await fetchWalks(query, afterDate, afterId);
+  result = await fetchWalks();
 } catch (error) {
-  const message = error instanceof Error ? error.message : String(error);
-  if (/no such table:\s*(hotels|hotel_sources|video_hotels|videos)/i.test(message)) {
-    result = { items: [], hasMore: false, nextDate: '', nextId: '' };
-  } else {
-    throw error;
-  }
+  console.error('The hotel walking-video directory query failed:', error);
+  result = { items: [], hasMore: false, nextOffset: offset, total: 0, seed, queryFailed: true };
+  Astro.response.headers.set('Retry-After', '60');
 }
 
 if (url.searchParams.get('feed') === '1') {
   return new Response(JSON.stringify(result), {
+    status: result.queryFailed ? 503 : 200,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'public, max-age=60, s-maxage=60',
+      'Cache-Control': 'private, no-store',
       'X-Robots-Tag': 'noindex, follow'
     }
   });
 }
 
+// A transient database failure must not deindex this established page.
+Astro.response.headers.set('X-Robots-Tag', result.queryFailed || result.total > 0 ? 'index, follow' : 'noindex, follow');
+Astro.response.headers.set('Cache-Control', 'private, no-store');
 const title = `${t['nav.hotels']} | Old Towns Walks`;
 const description = t['hotels.subtitle'];
-// An empty first page is not enough to prove the entire directory is empty.
-Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore ? 'index, follow' : 'noindex, follow');
 ---
 
 <BaseLayout title={title} description={description}>
@@ -351,6 +364,8 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
               type="search"
               placeholder={searchPrompt[currentLang] || searchPrompt.en}
               autocomplete="off"
+              maxlength={MAX_SEARCH_LENGTH}
+              value={query}
               data-hotel-search
             />
           </label>
@@ -368,13 +383,13 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
             <span class="section-kicker">OLD TOWNS STAYS</span>
             <h2>{listHeading[currentLang] || listHeading.en}</h2>
           </div>
-          <span class="result-total" data-result-total>{result.items.length}</span>
+          <span class="result-total" data-result-total>{result.total}</span>
         </div>
-        <div class="walk-grid" data-walk-grid data-has-more={result.hasMore ? "true" : "false"} data-after-date={result.nextDate} data-after-id={result.nextId}>
+        <div class="walk-grid" data-walk-grid data-has-more={result.hasMore ? "true" : "false"} data-next-offset={result.nextOffset} data-seed={result.seed} data-total={result.total}>
           {result.items.map((walk) => (
-            <article class="video-card" data-walk-card>
-              <a class="thumbnail-wrapper" href={`/${currentLang}/walks/${walk.id}`} aria-label={walk.title}>
-                <img src={walk.thumbnail} alt={walk.title} loading="lazy" decoding="async" />
+            <article class="video-card" data-walk-card data-video-id={walk.id}>
+              <a class="thumbnail-wrapper" href={`/${currentLang}/walks/${walk.id}`} aria-label={walk.title} data-mobile-video-preview={walk.id}>
+                <img src={walk.thumbnail} alt={walk.title} loading="lazy" decoding="async" data-walk-thumbnail data-youtube-id={walk.id} />
               </a>
               <div class="video-details">
                 <h3 class="video-title"><a href={`/${currentLang}/walks/${walk.id}`}>{walk.title}</a></h3>
@@ -388,7 +403,7 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
             </article>
           ))}
         </div>
-        <div class="empty-search-state" data-empty-search hidden={result.items.length > 0 || result.hasMore}>
+        <div class="empty-search-state" data-empty-search data-no-results={t['hotels.noResults']} data-preparing={t['hotels.preparing']} hidden={result.items.length > 0 || result.hasMore || result.queryFailed}>
           <p>{query ? t['hotels.noResults'] : t['hotels.preparing']}</p>
         </div>
         <div class="loading-state" data-loading-state hidden aria-live="polite"></div>
@@ -400,6 +415,7 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
     </div>
   </div>
   <script>
+    import { enableMobileVideoPreviews } from '../../scripts/mobileVideoPreview';
     type WalkCardResponse = {
       id: string;
       title: string;
@@ -413,24 +429,29 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
     type WalkFeedResponse = {
       items: WalkCardResponse[];
       hasMore: boolean;
-      nextDate: string;
-      nextId: string;
+      nextOffset: number;
+      total: number;
+      seed: number;
     };
 
     const input = document.querySelector<HTMLInputElement>('[data-hotel-search]');
     const grid = document.querySelector<HTMLDivElement>('[data-walk-grid]');
+    if (grid) enableMobileVideoPreviews(grid);
     const counter = document.querySelector<HTMLElement>('[data-result-total]');
     const empty = document.querySelector<HTMLElement>('[data-empty-search]');
     const sentinel = document.querySelector<HTMLElement>('[data-walk-sentinel]');
     const loading = document.querySelector<HTMLElement>('[data-loading-state]');
     const moreButton = document.querySelector<HTMLButtonElement>('[data-load-more]');
     let hasMore = grid?.getAttribute('data-has-more') === 'true';
-    let afterDate = grid?.getAttribute('data-after-date') || '';
-    let afterId = grid?.getAttribute('data-after-id') || '';
+    let nextOffset = Number(grid?.getAttribute('data-next-offset') || '0');
+    const seed = grid?.getAttribute('data-seed') || '1';
     let busy = false;
     let sequence = 0;
     let debounce: number | undefined;
     let loaded = grid?.querySelectorAll('[data-walk-card]').length || 0;
+    let total = Number(grid?.getAttribute('data-total') || '0');
+    let activeRequest: AbortController | null = null;
+    const shownIds = new Set(Array.from(grid?.querySelectorAll<HTMLElement>('[data-walk-card]') || []).map((card) => card.dataset.videoId || ''));
 
     const escapeHtml = (value: string): string =>
       String(value || '').replace(/[&<>"']/g, (character) => {
@@ -455,9 +476,9 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
         thumbnail = '';
       }
       const imageSrc = escapeHtml(thumbnail || `https://i.ytimg.com/vi/${encodeURIComponent(item.id)}/hqdefault.jpg`);
-      return `<article class="video-card" data-walk-card>
-        <a class="thumbnail-wrapper" href="${escapeHtml(href)}" aria-label="${escapeHtml(item.title)}">
-          <img src="${imageSrc}" alt="${escapeHtml(item.title)}" loading="lazy" decoding="async" />
+      return `<article class="video-card" data-walk-card data-video-id="${escapeHtml(item.id)}">
+        <a class="thumbnail-wrapper" href="${escapeHtml(href)}" aria-label="${escapeHtml(item.title)}" data-mobile-video-preview="${escapeHtml(item.id)}">
+          <img src="${imageSrc}" alt="${escapeHtml(item.title)}" loading="lazy" decoding="async" data-walk-thumbnail data-youtube-id="${escapeHtml(item.id)}" />
         </a>
         <div class="video-details">
           <h3 class="video-title"><a href="${escapeHtml(href)}">${escapeHtml(item.title)}</a></h3>
@@ -475,15 +496,19 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
       if (!grid || !input || (busy && !reset) || (!hasMore && !reset)) return;
       if (reset) {
         sequence += 1;
+        activeRequest?.abort();
+        busy = false;
         hasMore = true;
-        afterDate = '';
-        afterId = '';
+        nextOffset = 0;
+        shownIds.clear();
         loaded = 0;
         grid.replaceChildren();
         counter && (counter.textContent = '0');
         if (empty) empty.hidden = true;
       }
       const requestSequence = sequence;
+      const controller = new AbortController();
+      activeRequest = controller;
       busy = true;
       if (loading) loading.hidden = false;
       if (moreButton) moreButton.hidden = true;
@@ -491,27 +516,43 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
         const url = new URL(window.location.href);
         url.searchParams.set('feed', '1');
         url.searchParams.set('q', input.value.trim());
-        url.searchParams.set('afterDate', afterDate);
-        url.searchParams.set('afterId', afterId);
-        const response = await fetch(url, { headers: { Accept: 'application/json' } });
+        url.searchParams.set('offset', String(nextOffset));
+        url.searchParams.set('seed', seed);
+        const response = await fetch(url, {
+          headers: { Accept: 'application/json' },
+          signal: controller.signal
+        });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload = (await response.json()) as WalkFeedResponse;
         if (requestSequence !== sequence) return;
         for (const item of payload.items || []) {
+          if (shownIds.has(item.id)) continue;
+          shownIds.add(item.id);
           grid.insertAdjacentHTML('beforeend', makeCard(item));
+          loaded += 1;
         }
-        loaded += payload.items?.length || 0;
         hasMore = Boolean(payload.hasMore);
-        afterDate = String(payload.nextDate || '');
-        afterId = String(payload.nextId || '');
-        if (counter) counter.textContent = String(loaded);
-        if (empty) empty.hidden = loaded > 0 || hasMore;
+        nextOffset = Number(payload.nextOffset || 0);
+        total = Number(payload.total || 0);
+        if (counter) counter.textContent = String(total);
+        if (empty) {
+          empty.hidden = loaded > 0 || hasMore;
+          if (!empty.hidden) {
+            const message = empty.querySelector('p');
+            if (message) message.textContent = input.value.trim()
+              ? (empty.dataset.noResults || '')
+              : (empty.dataset.preparing || '');
+          }
+        }
         if (moreButton) moreButton.hidden = !hasMore;
       } catch (error) {
-        if (requestSequence === sequence && moreButton) moreButton.hidden = false;
-        console.error('Could not load walking videos:', error);
+        if (!controller.signal.aborted) {
+          if (requestSequence === sequence && moreButton) moreButton.hidden = false;
+          console.error('Could not load walking videos:', error);
+        }
       } finally {
-        if (requestSequence === sequence) {
+        if (activeRequest === controller) {
+          activeRequest = null;
           busy = false;
           if (loading) loading.hidden = true;
         }
@@ -523,6 +564,19 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
       debounce = window.setTimeout(() => void loadWalks(true), 260);
     });
     moreButton?.addEventListener('click', () => void loadWalks());
+    document.addEventListener('error', (event) => {
+      const image = event.target;
+      if (!(image instanceof HTMLImageElement) || !image.matches('[data-walk-thumbnail]')) return;
+      const id = image.dataset.youtubeId || '';
+      const fallback = `https://i.ytimg.com/vi/${encodeURIComponent(id)}/hqdefault.jpg`;
+      if (id && !image.dataset.thumbnailFallback && image.src !== fallback) {
+        image.dataset.thumbnailFallback = '1';
+        image.src = fallback;
+        return;
+      }
+      image.hidden = true;
+      image.closest('.thumbnail-wrapper')?.classList.add('thumbnail-unavailable');
+    }, true);
     if ('IntersectionObserver' in window && sentinel) {
       const observer = new IntersectionObserver((entries) => {
         if (entries.some((entry) => entry.isIntersecting) && hasMore && !busy) {
@@ -768,6 +822,7 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
   }
   .video-card { min-width: 0; }
   .thumbnail-wrapper {
+    position: relative;
     display: block;
     width: 100%;
     aspect-ratio: 16 / 9;
@@ -776,6 +831,7 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
     border-radius: 12px;
     background: #1f1f1f;
   }
+  .thumbnail-wrapper.thumbnail-unavailable { background: linear-gradient(135deg, #30343a, #141619); }
   .thumbnail-wrapper img {
     width: 100%;
     height: 100%;
@@ -871,9 +927,16 @@ Astro.response.headers.set('X-Robots-Tag', result.items.length || result.hasMore
     .hero-mark { opacity: .22; }
   }
   @media (max-width: 650px) {
-    .hotel-hero { min-height: 320px; border-radius: 16px; }
-    .hotel-hero h1 { font-size: 36px; letter-spacing: -1.6px; }
-    .hotel-hero p { font-size: 15px; }
+    .hotel-content { padding: 12px 10px 38px; }
+    .hotel-hero { min-height: 0; padding: 24px 18px; border-radius: 16px; }
+    .hotel-hero h1 { font-size: clamp(26px, 7.6vw, 30px); line-height: 1.12; letter-spacing: -.8px; }
+    .hotel-hero p { margin-top: 12px; font-size: 14px; line-height: 1.45; }
+    .hotel-search { height: 48px; margin-top: 18px; padding: 0 12px; gap: 10px; }
+    .hotel-search input { min-width: 0; font-size: 14px; }
+    .directory-section { margin-top: 24px; }
+    .section-heading { align-items: center; gap: 8px; }
+    .section-heading h2 { font-size: 20px; }
+    .result-total { min-width: 34px; height: 34px; }
     .walk-grid { grid-template-columns: 1fr; }
   }
 </style>

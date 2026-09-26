@@ -2,6 +2,7 @@
 import LanguagePicker from './LanguagePicker.astro';
 import MobileNavigation from './MobileNavigation.astro';
 import MobileInstallPrompt from './MobileInstallPrompt.astro';
+import PullToRefresh from './PullToRefresh.astro';
 import { ui } from '../i18n/ui';
 import { getPageSeo, getVideoCardTitle, getVideoSchema } from '../lib/videoSeo';
 // Dışarıdan gelecek verileri (props) tanımlıyoruz
@@ -54,7 +55,7 @@ const categories = [
   { id: 'Museums & Culture', label: t['cat.museumsCulture'] || 'Museums & Culture' },
   { id: 'Street Food', label: t['cat.streetFood'] || 'Street Food' },
   { id: 'Nature Trails', label: t['cat.natureTrails'] || 'Nature Trails' },
-  { id: 'Documentaries', label: t['cat.documentaries'] || 'Documentaries' }
+  { id: 'Documentaries', label: t['cat.documentaries'] || (lang === 'tr' ? 'Belgeseller' : 'Documentaries') }
 ];
 const POPULAR_CITIES_INITIAL = [
   'Tokyo', 'London', 'Paris', 'New York', 'Istanbul', 'Rome', 'Bangkok',
@@ -139,7 +140,12 @@ function buildInitialMixedOrder(items: Array<any>) {
   }
   return result;
 }
-const initialVideos = buildInitialMixedOrder(videos);
+const homepageVideos = videos.filter((video) => String(video?.category || '').trim().toLowerCase() !== 'documentaries');
+const initialVideos = buildInitialMixedOrder(homepageVideos);
+const categoryVideos = [
+  ...initialVideos,
+  ...videos.filter((video) => String(video?.category || '').trim().toLowerCase() === 'documentaries')
+];
 const videoSchema = {
   "@context": "https://schema.org",
   "@graph": initialVideos.map((video) => getVideoSchema(video, lang))
@@ -997,6 +1003,7 @@ const videoSchema = {
     </script>
   </head>
   <body>
+    <PullToRefresh />
     <MobileInstallPrompt lang={lang} />
     <!-- FIXED TOP NAVBAR -->
     <header class="navbar">
@@ -1160,9 +1167,9 @@ const videoSchema = {
         <!-- VIDEO GRID CONTAINER -->
         <div class="scrollable-grid-container">
           <div class="video-grid" style="opacity:0" data-js-shuffle-pending>
-            {initialVideos.map((video, index) => (
+            {categoryVideos.map((video, index) => (
               <>
-                <div class="video-card-wrapper">
+                <div class="video-card-wrapper" style={String(video?.category || '').trim().toLowerCase() === 'documentaries' ? 'display:none' : undefined}>
                   <div
                     class="video-card"
                     data-category={video.category || 'Walking Tours'}
@@ -1204,7 +1211,7 @@ const videoSchema = {
                   </div>
                   </div>
                 </div>
-                {(index + 1) % 5 === 0 && (
+                {(index < initialVideos.length && (index + 1) % 5 === 0) && (
                   <div class="ad-card-slot" aria-hidden="true"></div>
                 )}
               </>
@@ -1219,20 +1226,25 @@ const videoSchema = {
               if (!grid) return;
               var wrappers = Array.prototype.slice.call(grid.querySelectorAll('.video-card-wrapper'));
               grid.querySelectorAll('.ad-card-slot').forEach(function (ad) { ad.remove(); });
+
               for (var i = wrappers.length - 1; i > 0; i -= 1) {
                 var j = Math.floor(Math.random() * (i + 1));
                 var tmp = wrappers[i];
                 wrappers[i] = wrappers[j];
                 wrappers[j] = tmp;
               }
+
               wrappers.forEach(function (wrapper) { grid.appendChild(wrapper); });
-              wrappers.forEach(function (wrapper, index) {
-                if ((index + 1) % 5 !== 0) return;
-                var adSlot = document.createElement('div');
-                adSlot.className = 'ad-card-slot';
-                adSlot.setAttribute('aria-hidden', 'true');
-                wrapper.insertAdjacentElement('afterend', adSlot);
-              });
+
+              wrappers
+                .filter(function (wrapper) { return wrapper.style.display !== 'none'; })
+                .forEach(function (wrapper, index) {
+                  if ((index + 1) % 5 !== 0) return;
+                  var adSlot = document.createElement('div');
+                  adSlot.className = 'ad-card-slot';
+                  adSlot.setAttribute('aria-hidden', 'true');
+                  wrapper.insertAdjacentElement('afterend', adSlot);
+                });
               grid.style.opacity = '1';
               grid.removeAttribute('data-js-shuffle-pending');
             })();
@@ -1280,12 +1292,37 @@ const videoSchema = {
         if (searchButton && searchInput instanceof HTMLInputElement) {
           searchButton.addEventListener('click', () => searchInput.focus());
         }
-        const initialSearch = new URLSearchParams(window.location.search).get('q');
+        const searchParams = new URLSearchParams(window.location.search);
+        const initialSearch = searchParams.get('q');
+        const requestedCategory = searchParams.get('category');
+
         if (searchInput instanceof HTMLInputElement && initialSearch) {
           searchInput.value = initialSearch;
         }
+
         if (!chips.length && !videoCards.length) return;
-        let currentCategory = 'All';
+
+        const availableCategories = new Set(
+          Array.from(chips).map(
+            chip => chip.getAttribute('data-category-target') || 'All'
+          )
+        );
+
+        let currentCategory =
+          requestedCategory && availableCategories.has(requestedCategory)
+            ? requestedCategory
+            : 'All';
+
+        chips.forEach(chip => {
+          const category =
+            chip.getAttribute('data-category-target') || 'All';
+
+          chip.classList.toggle(
+            'active',
+            category === currentCategory
+          );
+        });
+
         let refreshMobilePreview = null;
         function filterVideos() {
           const searchTerm = searchInput
@@ -1301,11 +1338,13 @@ const videoSchema = {
                 ? titleEl.textContent.toLowerCase()
                 : '';
             const matchesCategory =
-              currentCategory === 'All' ||
+              currentCategory === 'All' ? videoCategory.toLowerCase().trim() !== 'documentaries' :
               videoCategory.toLowerCase().trim() ===
               currentCategory.toLowerCase().trim();
             const matchesSearch =
               title.includes(searchTerm);
+            const cardWrapper = card.closest('.video-card-wrapper');
+            if (cardWrapper) cardWrapper.style.display = matchesCategory && matchesSearch ? 'contents' : 'none';
             if (matchesCategory && matchesSearch) {
               card.style.setProperty(
                 'display',
@@ -1354,6 +1393,26 @@ const videoSchema = {
             chip.classList.add('active');
             currentCategory =
               chip.getAttribute('data-category-target') || 'All';
+
+            const categoryUrl = new URL(window.location.href);
+
+            if (currentCategory === 'All') {
+              categoryUrl.searchParams.delete('category');
+            } else {
+              categoryUrl.searchParams.set(
+                'category',
+                currentCategory
+              );
+            }
+
+            window.history.replaceState(
+              {},
+              '',
+              categoryUrl.pathname +
+                categoryUrl.search +
+                categoryUrl.hash
+            );
+
             filterVideos();
           });
         });
@@ -1363,11 +1422,8 @@ const videoSchema = {
             filterVideos
           );
         }
-        // The initial grid and ad slots are already rendered by Astro.
-        // Only apply client-side filtering on load when a URL search query exists.
-        if (initialSearch) {
-          filterVideos();
-        }
+        // Apply the selected category and search state on every page load.
+        filterVideos();
         // Desktop hover/focus and mobile center-of-screen previews share one controller per card.
         const previewWrappers = Array.from(
           document.querySelectorAll('.thumbnail-wrapper')
@@ -1444,6 +1500,30 @@ const videoSchema = {
             const top = Math.max(0, area.top);
             const bottom = Math.min(window.innerHeight, area.bottom);
             if (bottom - top < 120) return null;
+
+            // In the installed app, prefer the first visible card while the feed is at the top.
+            // The browser's existing center-of-screen selection remains unchanged.
+            const isInstalledApp =
+              window.matchMedia('(display-mode: standalone)').matches ||
+              window.navigator.standalone === true;
+
+            if (isInstalledApp && mobileScrollRoot.scrollTop <= 24) {
+              const grid = mobileScrollRoot.querySelector('.video-grid');
+              if (grid) {
+                for (const item of grid.children) {
+                  if (!item.classList.contains('video-card-wrapper')) continue;
+                  const card = item.querySelector('.video-card');
+                  const thumbnail = card?.querySelector('.thumbnail-wrapper');
+                  if (!card || !thumbnail || card.getClientRects().length === 0 ||
+                      !previewControllers.has(thumbnail)) continue;
+                  const rect = thumbnail.getBoundingClientRect();
+                  if (rect.width > 0 && rect.bottom > top && rect.top < bottom) {
+                    return thumbnail;
+                  }
+                }
+              }
+            }
+
             const x = Math.max(area.left + 8, Math.min(area.right - 8, area.left + area.width / 2));
             const height = bottom - top;
             for (const fraction of [0.50, 0.43, 0.57, 0.35, 0.65, 0.75]) {

@@ -1,0 +1,32 @@
+
+export default {
+  async scheduled(_event, env, ctx) {
+    ctx.waitUntil(scanPendingVideos(env));
+  }
+};
+
+async function scanPendingVideos(env) {
+  if (!env.oldtowns_db) {
+    throw new Error('D1 binding oldtowns_db is missing.');
+  }
+
+  const { results = [] } = await env.oldtowns_db.prepare(`
+    SELECT v.id, v.title, v.city, v.country
+    FROM videos AS v
+    WHERE v.active = 1
+      AND LOWER(TRIM(COALESCE(v.category, ''))) <> 'documentaries'
+      AND NOT EXISTS (
+        SELECT 1 FROM hotel_scan_status AS s WHERE s.video_id = v.id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM video_hotels AS vh WHERE vh.video_id = v.id
+      )
+    ORDER BY v.id
+    LIMIT 10
+  `).all();
+
+  console.log(`Pending hotel scans (sample): ${results.length}`);
+  for (const video of results) {
+    console.log(JSON.stringify(video));
+  }
+}

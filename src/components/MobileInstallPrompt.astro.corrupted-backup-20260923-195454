@@ -1,0 +1,96 @@
+---
+interface Props { lang?: string }
+const { lang = 'en' } = Astro.props;
+const messages: Record<string, [string, string, string, string]> = {
+  en: ['Save Old Towns Walks to your home screen.', 'Save to phone', 'Open your browser menu and choose Add to Home Screen.', 'In Safari, tap Share, then Add to Home Screen.'],
+  tr: ['Old Towns Walks uygulamasÄ±nÄ± ana ekranÄ±na ekle.', 'Telefona kaydet', 'TarayÄ±cÄ± menÃ¼sÃ¼nden Ana ekrana ekle seÃ§eneÄŸini kullan.', 'Safariâ€™de PaylaÅŸ simgesine, ardÄ±ndan Ana Ekrana Ekle seÃ§eneÄŸine dokun.'],
+  de: ['Old Towns Walks zum Startbildschirm hinzufÃ¼gen.', 'Auf Handy speichern', 'Im BrowsermenÃ¼ Zum Startbildschirm hinzufÃ¼gen wÃ¤hlen.', 'In Safari Teilen und dann Zum Home-Bildschirm wÃ¤hlen.'],
+  es: ['AÃ±ade Old Towns Walks a tu pantalla de inicio.', 'Guardar en el mÃ³vil', 'En el menÃº del navegador, elige AÃ±adir a pantalla de inicio.', 'En Safari, pulsa Compartir y despuÃ©s AÃ±adir a pantalla de inicio.'],
+  fr: ["Ajoutez Old Towns Walks Ã  votre Ã©cran dâ€™accueil.", 'Enregistrer', "Dans le menu du navigateur, choisissez Ajouter Ã  lâ€™Ã©cran dâ€™accueil.", "Dans Safari, touchez Partager puis Sur lâ€™Ã©cran dâ€™accueil."],
+  it: ['Aggiungi Old Towns Walks alla schermata Home.', 'Salva sul telefono', 'Nel menu del browser scegli Aggiungi a schermata Home.', 'In Safari tocca Condividi, poi Aggiungi alla schermata Home.'],
+  pt: ['Adicione Old Towns Walks Ã  tela inicial.', 'Guardar no telemÃ³vel', 'No menu do navegador, escolha Adicionar Ã  tela inicial.', 'No Safari, toque em Compartilhar e Adicionar Ã  Tela de InÃ­cio.'],
+  ja: ['Old Towns Walksã‚’ãƒ›ãƒ¼ãƒ ç”»é¢ã«è¿½åŠ ã§ãã¾ã™ã€‚', 'ãƒ›ãƒ¼ãƒ ç”»é¢ã«ä¿å­˜', 'ãƒ–ãƒ©ã‚¦ã‚¶ã®ãƒ¡ãƒ‹ãƒ¥ãƒ¼ã‹ã‚‰ã€Œãƒ›ãƒ¼ãƒ ç”»é¢ã«è¿½åŠ ã€ã‚’é¸æŠžã—ã¦ãã ã•ã„ã€‚', 'Safariã®å…±æœ‰ã‹ã‚‰ã€Œãƒ›ãƒ¼ãƒ ç”»é¢ã«è¿½åŠ ã€ã‚’é¸ã‚“ã§ãã ã•ã„ã€‚'],
+  ru: ['Ð”Ð¾Ð±Ð°Ð²ÑŒÑ‚Ðµ Old Towns Walks Ð½Ð° Ð³Ð»Ð°Ð²Ð½Ñ‹Ð¹ ÑÐºÑ€Ð°Ð½.', 'Ð¡Ð¾Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑŒ Ð½Ð° Ñ‚ÐµÐ»ÐµÑ„Ð¾Ð½', 'Ð’ Ð¼ÐµÐ½ÑŽ Ð±Ñ€Ð°ÑƒÐ·ÐµÑ€Ð° Ð²Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Â«Ð”Ð¾Ð±Ð°Ð²Ð¸Ñ‚ÑŒ Ð½Ð° Ð³Ð»Ð°Ð²Ð½Ñ‹Ð¹ ÑÐºÑ€Ð°Ð½Â».', 'Ð’ Safari Ð¾Ñ‚ÐºÑ€Ð¾Ð¹Ñ‚Ðµ Â«ÐŸÐ¾Ð´ÐµÐ»Ð¸Ñ‚ÑŒÑÑÂ» Ð¸ Ð²Ñ‹Ð±ÐµÑ€Ð¸Ñ‚Ðµ Â«ÐÐ° ÑÐºÑ€Ð°Ð½ Ð”Ð¾Ð¼Ð¾Ð¹Â».'],
+  zh: ['å°† Old Towns Walks æ·»åŠ åˆ°ä¸»å±å¹•ã€‚', 'ä¿å­˜åˆ°æ‰‹æœº', 'æ‰“å¼€æµè§ˆå™¨èœå•ï¼Œé€‰æ‹©æ·»åŠ åˆ°ä¸»å±å¹•ã€‚', 'åœ¨ Safari ä¸­ç‚¹æŒ‰å…±äº«ï¼Œç„¶åŽé€‰æ‹©æ·»åŠ åˆ°ä¸»å±å¹•ã€‚'],
+  ko: ['Old Towns Walksë¥¼ í™ˆ í™”ë©´ì— ì¶”ê°€í•˜ì„¸ìš”.', 'íœ´ëŒ€ì „í™”ì— ì €ìž¥', 'ë¸Œë¼ìš°ì € ë©”ë‰´ì—ì„œ í™ˆ í™”ë©´ì— ì¶”ê°€ë¥¼ ì„ íƒí•˜ì„¸ìš”.', 'Safariì—ì„œ ê³µìœ ë¥¼ ëˆ„ë¥¸ ë‹¤ìŒ í™ˆ í™”ë©´ì— ì¶”ê°€ë¥¼ ì„ íƒí•˜ì„¸ìš”.'],
+  ar: ['Ø£Ø¶Ù Old Towns Walks Ø¥Ù„Ù‰ Ø´Ø§Ø´ØªÙƒ Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©.', 'Ø­ÙØ¸ Ø¹Ù„Ù‰ Ø§Ù„Ù‡Ø§ØªÙ', 'Ø§ÙØªØ­ Ù‚Ø§Ø¦Ù…Ø© Ø§Ù„Ù…ØªØµÙØ­ ÙˆØ§Ø®ØªØ± Ø§Ù„Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ø´Ø§Ø´Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©.', 'ÙÙŠ Safari Ø§Ø¶ØºØ· Ù…Ø´Ø§Ø±ÙƒØ© Ø«Ù… Ø¥Ø¶Ø§ÙØ© Ø¥Ù„Ù‰ Ø§Ù„Ø´Ø§Ø´Ø© Ø§Ù„Ø±Ø¦ÙŠØ³ÙŠØ©.'],
+  hi: ['Old Towns Walks à¤•à¥‹ à¤¹à¥‹à¤® à¤¸à¥à¤•à¥à¤°à¥€à¤¨ à¤ªà¤° à¤œà¥‹à¤¡à¤¼à¥‡à¤‚à¥¤', 'à¤«à¤¼à¥‹à¤¨ à¤ªà¤° à¤¸à¥‡à¤µ à¤•à¤°à¥‡à¤‚', 'à¤¬à¥à¤°à¤¾à¤‰à¤œà¤¼à¤° à¤®à¥‡à¤¨à¥‚ à¤¸à¥‡ à¤¹à¥‹à¤® à¤¸à¥à¤•à¥à¤°à¥€à¤¨ à¤ªà¤° à¤œà¥‹à¤¡à¤¼à¥‡à¤‚ à¤šà¥à¤¨à¥‡à¤‚à¥¤', 'Safari à¤®à¥‡à¤‚ à¤¶à¥‡à¤¯à¤° à¤”à¤° à¤«à¤¿à¤° à¤¹à¥‹à¤® à¤¸à¥à¤•à¥à¤°à¥€à¤¨ à¤ªà¤° à¤œà¥‹à¤¡à¤¼à¥‡à¤‚ à¤šà¥à¤¨à¥‡à¤‚à¥¤'],
+  nl: ['Zet Old Towns Walks op je startscherm.', 'Opslaan op telefoon', 'Kies Toevoegen aan startscherm in het browsermenu.', 'Tik in Safari op Deel en dan op Zet op beginscherm.'],
+  pl: ['Dodaj Old Towns Walks do ekranu gÅ‚Ã³wnego.', 'Zapisz na telefonie', 'W menu przeglÄ…darki wybierz Dodaj do ekranu gÅ‚Ã³wnego.', 'W Safari wybierz UdostÄ™pnij, a potem Do ekranu poczÄ…tkowego.'],
+  sv: ['LÃ¤gg till Old Towns Walks pÃ¥ hemskÃ¤rmen.', 'Spara pÃ¥ mobilen', 'VÃ¤lj LÃ¤gg till pÃ¥ hemskÃ¤rmen i webblÃ¤sarens meny.', 'I Safari vÃ¤ljer du Dela och sedan LÃ¤gg till pÃ¥ hemskÃ¤rmen.'],
+  id: ['Tambahkan Old Towns Walks ke layar utama.', 'Simpan ke ponsel', 'Pilih Tambahkan ke layar utama dari menu browser.', 'Di Safari, ketuk Bagikan lalu Tambahkan ke Layar Utama.'],
+  vi: ['ThÃªm Old Towns Walks vÃ o mÃ n hÃ¬nh chÃ­nh.', 'LÆ°u vÃ o Ä‘iá»‡n thoáº¡i', 'Má»Ÿ menu trÃ¬nh duyá»‡t vÃ  chá»n ThÃªm vÃ o mÃ n hÃ¬nh chÃ­nh.', 'Trong Safari, chá»n Chia sáº» rá»“i ThÃªm vÃ o MÃ n hÃ¬nh chÃ­nh.']
+};
+const [subtitle, saveLabel, androidHelp, iosHelp] = messages[lang] || messages.en;
+---
+<div class="oww-install" data-oww-install hidden role="region" aria-label="Old Towns Walks">
+  <img src="/android-chrome-192x192.png" alt="" width="46" height="46" />
+  <div class="oww-install-content">
+    <strong>Old Towns Walks</strong>
+    <p data-oww-install-message>{subtitle}</p>
+    <button type="button" class="oww-install-save" data-oww-install-save>{saveLabel}</button>
+  </div>
+  <button type="button" class="oww-install-close" data-oww-install-close aria-label="Close" title="Close">Ã—</button>
+</div>
+<style is:global>
+  .oww-install[hidden] { display: none !important; }
+  .oww-install { display: none; }
+  @media (max-width: 900px) and (pointer: coarse) {
+    .oww-install:not([hidden]) {
+      position: fixed; z-index: 10000; inset-inline: 12px; bottom: max(12px, env(safe-area-inset-bottom));
+      display: flex; align-items: flex-start; gap: 10px; max-width: 440px;
+      margin-inline: auto; padding: 13px; border: 1px solid #785f28; border-radius: 14px;
+      background: #161a20; color: #f7f7f7; box-shadow: 0 10px 40px #000b;
+      font-family: Arial, sans-serif; direction: ltr;
+    }
+    .oww-install > img { flex: 0 0 46px; border-radius: 10px; }
+    .oww-install-content { min-width: 0; flex: 1 1 auto; }
+    .oww-install-content strong { display: block; margin-bottom: 4px; font-size: 14px; }
+    .oww-install-content p { margin: 0 0 10px; font-size: 12px; line-height: 1.45; color: #d9dce0; }
+    .oww-install-save { padding: 9px 15px; border: 0; border-radius: 8px; background: #f5b700; color: #141414; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .oww-install-close { flex: 0 0 30px; width: 30px; height: 30px; border: 0; background: transparent; color: #ddd; font-size: 24px; cursor: pointer; }
+  }
+</style>
+<script is:inline define:vars={{ androidHelp, iosHelp }}>
+  (() => {
+    const banner = document.querySelector('[data-oww-install]');
+    if (!(banner instanceof HTMLElement)) return;
+    const mobile = window.matchMedia('(max-width: 900px) and (pointer: coarse)');
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!mobile.matches || standalone) return;
+    const close = banner.querySelector('[data-oww-install-close]');
+    const save = banner.querySelector('[data-oww-install-save]');
+    const message = banner.querySelector('[data-oww-install-message]');
+
+    if (ios) {
+      if (message) message.textContent = iosHelp;
+      if (save instanceof HTMLButtonElement) save.hidden = true;
+    }
+
+    let installEvent = null;
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      installEvent = event;
+    });
+    const closeBanner = () => {
+      banner.hidden = true;
+    };
+    close?.addEventListener('click', closeBanner);
+    window.addEventListener('appinstalled', closeBanner);
+    save?.addEventListener('click', async () => {
+      if (installEvent) {
+        const event = installEvent;
+        installEvent = null;
+        try { await event.prompt(); } catch { /* Browser may reject an installation prompt. */ }
+        return;
+      }
+      if (message) message.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent) ? iosHelp : androidHelp;
+    });
+    window.setTimeout(() => {
+      if (!mobile.matches || window.matchMedia('(display-mode: standalone)').matches) return;
+      banner.hidden = false;
+    }, 850);
+  })();
+</script>

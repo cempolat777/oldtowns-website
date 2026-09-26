@@ -23,6 +23,7 @@ interface MapPoint {
   videoCount: number;
   categories: string[];
   thumbnail: string;
+  videoId: string;
   cityUrl: string;
   countryUrl: string;
 }
@@ -536,6 +537,7 @@ for (const group of cityGroups.values()) {
       videoCount: group.videos.length,
       categories,
       thumbnail,
+      videoId: heroVideo?.id || '',
       cityUrl,
       countryUrl
     });
@@ -572,6 +574,7 @@ const countrySummaryMap = new Map<
     videos: number;
     cities: Set<string>;
     thumbnail: string;
+    videoId: string;
   }
 >();
 for (const video of allVideos) {
@@ -582,7 +585,8 @@ for (const video of allVideos) {
       name: video.country,
       videos: 0,
       cities: new Set<string>(),
-      thumbnail: ''
+      thumbnail: '',
+      videoId: ''
     });
   }
   const summary = countrySummaryMap.get(key);
@@ -592,6 +596,7 @@ for (const video of allVideos) {
     summary.cities.add(normalizeKey(video.city));
   }
   if (!summary.thumbnail) {
+    summary.videoId = video.id;
     summary.thumbnail =
       video.thumbnail ||
       `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
@@ -606,6 +611,7 @@ const countrySummaries = Array.from(
     videoCount: country.videos,
     cityCount: country.cities.size,
     thumbnail: country.thumbnail,
+    videoId: country.videoId,
     url:
       `/${currentLang}/countries/${createSlug(country.name)}`
   }))
@@ -630,6 +636,7 @@ const citySummaries = Array.from(
         (heroVideo
           ? `https://i.ytimg.com/vi/${heroVideo.id}/hqdefault.jpg`
           : ''),
+      videoId: heroVideo?.id || '',
       url:
         `/${currentLang}/cities/${createSlug(group.city)}`
     };
@@ -883,7 +890,7 @@ const clientLabels = {
                 data-city={point.city.toLowerCase()}
                 data-country={point.country.toLowerCase()}
               >
-                <div class="destination-thumb">
+                <div class="destination-thumb" data-mobile-video-preview={point.videoId}>
                   {point.thumbnail ? (
                     <img
                       src={point.thumbnail}
@@ -992,7 +999,7 @@ const clientLabels = {
         <div class="country-grid">
           {countrySummaries.map((country) => (
             <a href={country.url} class="country-card">
-              <div class="country-thumb">
+              <div class="country-thumb" data-mobile-video-preview={country.videoId}>
                 {country.thumbnail && (
                   <img
                     src={country.thumbnail}
@@ -1031,7 +1038,7 @@ const clientLabels = {
         <div class="city-grid">
           {citySummaries.map((city) => (
             <a href={city.url} class="city-card">
-              <div class="city-thumb">
+              <div class="city-thumb" data-mobile-video-preview={city.videoId}>
                 {city.thumbnail && (
                   <img
                     src={city.thumbnail}
@@ -1058,6 +1065,11 @@ const clientLabels = {
       </section>
     </div>
   </main>
+  <script>
+    import { enableMobileVideoPreviews } from '../../scripts/mobileVideoPreview';
+    const mapPage = document.querySelector<HTMLElement>('.map-page');
+    if (mapPage) enableMobileVideoPreviews(mapPage);
+  </script>
   <script
     type="application/ld+json"
     set:html={JSON.stringify(mapSchema)}
@@ -1859,6 +1871,7 @@ const clientLabels = {
     display: none;
   }
   .destination-thumb {
+    position: relative;
     width: 104px;
     aspect-ratio: 16 / 9;
     overflow: hidden;

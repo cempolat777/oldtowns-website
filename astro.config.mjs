@@ -1,25 +1,199 @@
 // @ts-check
+import fs from 'node:fs';
+import path from 'node:path';
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import cloudflare from '@astrojs/cloudflare';
+import { getVideoIndexDecision } from './src/lib/videoSeo.ts';
 
-// https://astro.build/config
+const SITE = 'https://oldtownswalks.com';
+
+const LANGUAGES = [
+  'en', 'tr', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'pt',
+  'sv', 'ru', 'ja', 'ko', 'zh', 'hi', 'id', 'vi', 'ar'
+];
+
+const VIDEOS_PATH = path.resolve(
+  'src',
+  'data',
+  'videos.json'
+);
+
+function createSlug(value = '') {
+  return String(value)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+function isActiveVideo(video) {
+  if (!video || typeof video !== 'object') {
+    return false;
+  }
+
+  const id = String(video.id || '').trim();
+
+  if (!id) {
+    return false;
+  }
+
+  return !(
+    video.active === false ||
+    Number(video.active) === 0
+  );
+}
+
+function isVideoSitemapEligible(video) {
+  if (!isActiveVideo(video)) {
+    return false;
+  }
+
+  try {
+    return (
+      getVideoIndexDecision(video)
+        .sitemapEligible === true
+    );
+  } catch {
+    return false;
+  }
+}
+
+let sourceVideos = [];
+
+try {
+  const raw = fs.readFileSync(
+    VIDEOS_PATH,
+    'utf8'
+  );
+
+  const parsed = JSON.parse(raw);
+
+  if (!Array.isArray(parsed)) {
+    throw new Error(
+      'src/data/videos.json must contain an array.'
+    );
+  }
+
+  sourceVideos = parsed;
+} catch (error) {
+  throw new Error(
+    `Could not build sitemap URLs: ${error.message}`
+  );
+}
+
+const activeVideos =
+  sourceVideos.filter(isActiveVideo);
+
+const sitemapVideos =
+  sourceVideos.filter(
+    isVideoSitemapEligible
+  );
+
+const videoIds = [
+  ...new Set(
+    sitemapVideos
+      .map((video) =>
+        String(video.id || '').trim()
+      )
+      .filter(Boolean)
+  )
+];
+
+const citySlugs = [
+  ...new Set(
+    activeVideos
+      .map((video) =>
+        createSlug(video.city)
+      )
+      .filter(Boolean)
+  )
+];
+
+const countrySlugs = [
+  ...new Set(
+    activeVideos
+      .map((video) =>
+        createSlug(video.country)
+      )
+      .filter(Boolean)
+  )
+];
+
+const sitemapPages = new Set();
+
+for (const lang of LANGUAGES) {
+  for (const id of videoIds) {
+    sitemapPages.add(
+      `${SITE}/${lang}/walks/${encodeURIComponent(id)}`
+    );
+  }
+
+  for (const city of citySlugs) {
+    sitemapPages.add(
+      `${SITE}/${lang}/cities/${city}`
+    );
+  }
+
+  for (const country of countrySlugs) {
+    sitemapPages.add(
+      `${SITE}/${lang}/countries/${country}`
+    );
+  }
+}
+
+const customPages =
+  [...sitemapPages].sort();
+
+if (customPages.length < 1000) {
+  throw new Error(
+    `Sitemap safety check failed: only ${customPages.length} URLs were generated.`
+  );
+}
+
+console.log(
+  `[sitemap] Source videos: ${sourceVideos.length}`
+);
+console.log(
+  `[sitemap] Active videos: ${activeVideos.length}`
+);
+console.log(
+  `[sitemap] Sitemap-eligible videos: ${videoIds.length}`
+);
+console.log(
+  `[sitemap] Excluded noindex videos: ${activeVideos.length - videoIds.length}`
+);
+console.log(
+  `[sitemap] Cities: ${citySlugs.length}`
+);
+console.log(
+  `[sitemap] Countries: ${countrySlugs.length}`
+);
+console.log(
+  `[sitemap] Generated URLs: ${customPages.length}`
+);
+
 export default defineConfig({
-  site: 'https://oldtownswalks.com',
+  site: SITE,
   trailingSlash: 'never',
 
-  integrations: [sitemap()],
+  integrations: [
+    sitemap({
+      customPages,
 
-  i18n: {
-    defaultLocale: 'en',
-    locales: [
-      'en', 'tr', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'pt',
-      'sv', 'ru', 'ja', 'ko', 'zh', 'hi', 'id', 'vi', 'ar'
-    ],
-    routing: {
-      prefixDefaultLocale: true
-    }
-  },
+      filter(page) {
+        const pathname =
+          new URL(page).pathname;
+
+        return (
+          pathname.includes('/walks/') ||
+          pathname.includes('/cities/') ||
+          pathname.includes('/countries/')
+        );
+      }
+    })
+  ],
 
   adapter: cloudflare()
 });

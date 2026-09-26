@@ -1,0 +1,23 @@
+{
+  "id": "/",
+  "name": "Old Towns Walks",
+  "short_name": "Old Towns",
+  "description": "Walking tours and city explorations",
+  "start_url": "/en/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0b0f17",
+  "theme_color": "#0f0f0f",
+  "icons": [
+    {
+      "src": "/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

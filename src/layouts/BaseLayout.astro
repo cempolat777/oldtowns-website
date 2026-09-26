@@ -1,5 +1,8 @@
 ---
 import LanguagePicker from '../components/LanguagePicker.astro';
+import MobileNavigation from '../components/MobileNavigation.astro';
+import MobileInstallPrompt from '../components/MobileInstallPrompt.astro';
+import PullToRefresh from '../components/PullToRefresh.astro';
 import { languages, defaultLang, ui } from '../i18n/ui';
 
 interface Props {
@@ -28,6 +31,9 @@ const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui]
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#0f0f0f" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
     <!-- Favicons -->
     <link rel="icon" href="/favicon.ico?v=3" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=3" />
@@ -68,6 +74,7 @@ const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui]
       content="https://oldtownswalks.com/android-chrome-512x512.png"
     />
 
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -232,11 +239,44 @@ const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui]
         font-size: 13px;
       }
 
+      .layout-mobile-menu-button { display: none; }
+
+      @media (max-width: 900px) {
+        .layout-mobile-menu-button {
+          display: inline-flex;
+          flex: 0 0 36px;
+          width: 36px;
+          height: 36px;
+          align-items: center;
+          justify-content: center;
+          margin-right: 8px;
+          background: transparent;
+          border: 1px solid #2d2d2d;
+          border-radius: 9px;
+          color: #f1f1f1;
+          cursor: pointer;
+        }
+        .layout-mobile-menu-button .material-symbols-outlined { font-size: 22px; }
+        .nav-center { display: none; }
+        .nav-container { padding: 0 12px; gap: 8px; min-width: 0; }
+        .layout-mobile-menu-button { margin-right: 0; }
+        .brand-logo { flex: 0 0 auto; white-space: nowrap; }
+        .brand-icon { width: 32px; height: 32px; margin-right: 5px; }
+        .nav-actions { gap: 4px; flex: 0 0 auto; min-width: 0; }
+        .nav-actions .lang-select { width: 96px; max-width: 96px; padding: 6px 5px; font-size: 12px; }
+      }
+
       @media (max-width: 700px) {
         .nav-container {
           height: 56px;
-          padding: 0 14px;
+          padding: 0 10px;
+          gap: 6px;
         }
+
+        .brand-logo { font-size: 13px; letter-spacing: 0; }
+        .brand-icon { width: 30px; height: 30px; margin-right: 4px; }
+        .logo-box-1, .logo-box-2 { padding: 4px 5px; }
+        .nav-actions .lang-select { width: 82px; max-width: 82px; }
 
         .site-main {
           padding-top: 56px;
@@ -245,6 +285,12 @@ const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui]
         .nav-center {
           display: none;
         }
+      }
+
+      @media (max-width: 350px) {
+        .brand-icon { width: 28px; height: 28px; }
+        .logo-box-1, .logo-box-2 { padding: 4px; }
+        .nav-actions .lang-select { width: 72px; max-width: 72px; }
       }
     </style>
 
@@ -265,6 +311,9 @@ const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui]
   <body>
     <header>
       <div class="nav-container">
+        <button type="button" class="layout-mobile-menu-button" data-mobile-menu-open aria-label="Open menu" aria-expanded="false" aria-controls="site-mobile-navigation">
+          <span class="material-symbols-outlined" aria-hidden="true">menu</span>
+        </button>
         <a href={`/${currentLang}/`} class="brand-logo" aria-label="Old Towns">
           <img
             src="/android-chrome-192x192.png"
@@ -300,6 +349,41 @@ const t = ui[(currentLang in ui ? currentLang : defaultLang) as keyof typeof ui]
         </div>
       </div>
     </header>
+
+    <MobileNavigation lang={currentLang} activePath={Astro.url.pathname} />
+    <MobileInstallPrompt lang={currentLang} />
+    <PullToRefresh />
+    <script is:inline>
+      (() => {
+        const trigger = document.querySelector('[data-mobile-menu-open]');
+        const closeButton = document.querySelector('[data-mobile-menu-close]');
+        const overlay = document.querySelector('[data-mobile-menu-overlay]');
+        const panel = document.querySelector('[data-mobile-menu-panel]');
+        if (!(trigger instanceof HTMLButtonElement) || !(panel instanceof HTMLElement) || !(overlay instanceof HTMLElement)) return;
+        let previousOverflow = '';
+        const setOpen = (open) => {
+          panel.classList.toggle('is-open', open);
+          overlay.classList.toggle('is-open', open);
+          panel.setAttribute('aria-hidden', String(!open));
+          panel.inert = !open;
+          trigger.setAttribute('aria-expanded', String(open));
+          if (open) {
+            previousOverflow = document.body.style.overflow;
+            document.body.style.overflow = 'hidden';
+            if (closeButton instanceof HTMLElement) closeButton.focus();
+          } else {
+            document.body.style.overflow = previousOverflow;
+            trigger.focus();
+          }
+        };
+        trigger.addEventListener('click', () => setOpen(true));
+        if (closeButton) closeButton.addEventListener('click', () => setOpen(false));
+        overlay.addEventListener('click', () => setOpen(false));
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape' && panel.classList.contains('is-open')) setOpen(false);
+        });
+      })();
+    </script>
 
     <main class="site-main">
       <slot />

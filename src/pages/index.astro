@@ -1,36 +1,150 @@
 ---
 // src/pages/index.astro
+
+export const prerender = false;
+
+const request = Astro.request as Request & {
+  cf?: {
+    country?: string;
+  };
+};
+
+const rawCountry =
+  request.cf?.country ||
+  request.headers.get('CF-IPCountry') ||
+  '';
+
+const country = /^[A-Z]{2}$/.test(rawCountry.toUpperCase())
+  ? rawCountry.toUpperCase()
+  : '';
 ---
+
 <!DOCTYPE html>
-<html>
+<html lang="en" data-geo-country={country}>
   <head>
     <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+
     <script is:inline>
-      (function() {
-        // 1. Önce kullanıcının önceden seçtiği bir dil var mı bak
-        const savedLang = localStorage.getItem('preferredLang');
-        
-        if (savedLang) {
+      (() => {
+        const supportedLangs = [
+          'en',
+          'de',
+          'es',
+          'fr',
+          'tr',
+          'it',
+          'nl',
+          'pl',
+          'pt',
+          'sv',
+          'ru',
+          'ja',
+          'ko',
+          'zh',
+          'hi',
+          'id',
+          'vi',
+          'ar'
+        ];
+
+        const countryLanguages = {
+          TR: 'tr',
+          DE: 'de',
+          AT: 'de',
+          JP: 'ja',
+
+          US: 'en',
+          GB: 'en',
+          CA: 'en',
+          AU: 'en',
+          NZ: 'en',
+          IE: 'en',
+
+          FR: 'fr',
+          IT: 'it',
+
+          ES: 'es',
+          MX: 'es',
+          AR: 'es',
+          CL: 'es',
+          CO: 'es',
+          PE: 'es',
+          VE: 'es',
+          UY: 'es',
+          PY: 'es',
+          BO: 'es',
+          EC: 'es',
+          CR: 'es',
+          PA: 'es',
+          GT: 'es',
+          HN: 'es',
+          SV: 'es',
+          NI: 'es',
+          CU: 'es',
+          DO: 'es',
+
+          PT: 'pt',
+          BR: 'pt',
+
+          NL: 'nl',
+          PL: 'pl',
+          SE: 'sv',
+          RU: 'ru',
+          BY: 'ru',
+
+          CN: 'zh',
+          TW: 'zh',
+          HK: 'zh',
+          MO: 'zh',
+
+          KR: 'ko',
+          IN: 'hi',
+          ID: 'id',
+          VN: 'vi',
+
+          SA: 'ar',
+          AE: 'ar',
+          EG: 'ar',
+          QA: 'ar',
+          KW: 'ar',
+          BH: 'ar',
+          OM: 'ar',
+          JO: 'ar',
+          LB: 'ar',
+          IQ: 'ar',
+          MA: 'ar',
+          DZ: 'ar',
+          TN: 'ar',
+          LY: 'ar',
+          YE: 'ar'
+        };
+
+        let savedLang = null;
+
+        try {
+          savedLang = localStorage.getItem('preferredLang');
+        } catch {
+          savedLang = null;
+        }
+
+        if (savedLang && supportedLangs.includes(savedLang)) {
           window.location.replace('/' + savedLang + '/');
           return;
         }
 
-        // 2. Seçtiği dil yoksa tarayıcı dilini kontrol et
-        const userLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-        let targetLang = 'en';
+        const country =
+          document.documentElement.dataset.geoCountry || '';
 
-        // Desteklediğin diller listesi
-        const supportedLangs = ['tr', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'sv', 'ru', 'ja', 'ko', 'zh', 'hi', 'id', 'vi', 'ar'];
-        
-        const langCode = userLang.split('-')[0];
-        if (supportedLangs.includes(langCode)) {
-          targetLang = langCode;
-        }
+        const targetLang = countryLanguages[country] || 'en';
 
         window.location.replace('/' + targetLang + '/');
       })();
     </script>
   </head>
-  <body>
-  </body>
+
+  <body></body>
 </html>

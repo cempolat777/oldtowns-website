@@ -20,7 +20,8 @@ const DEFAULT_OUTPUT_PATH = path.join(
 function parseArguments(argv) {
   const args = {
     videosPath: DEFAULT_VIDEOS_PATH,
-    outputPath: DEFAULT_OUTPUT_PATH
+    outputPath: DEFAULT_OUTPUT_PATH,
+    hotelsOnly: false
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -30,6 +31,8 @@ function parseArguments(argv) {
       args.videosPath = path.resolve(argv[++index]);
     } else if (value === '--output' && argv[index + 1]) {
       args.outputPath = path.resolve(argv[++index]);
+    } else if (value === '--hotels-only') {
+      args.hotelsOnly = true;
     }
   }
 
@@ -227,43 +230,168 @@ function validateVideos(videos) {
   };
 }
 
-function createSqlFile(videos, outputPath) {
-  const statements = videos.map(
-    buildInsertStatement
-  );
+const MAX_DISTANCE_METERS = 3000;
+const EARTH_RADIUS_METERS = 6371000;
 
+function hasTrustedRouteGeo(video) {
+  const geo = video?.geo;
+  return geo?.verified === true &&
+    geo?.integrityVerified === true &&
+    ['route-point', 'landmark', 'airport'].includes(geo.precision) &&
+    typeof geo.latitude === 'number' &&
+    Number.isFinite(geo.latitude) &&
+    Math.abs(geo.latitude) <= 90 &&
+    typeof geo.longitude === 'number' &&
+    Number.isFinite(geo.longitude) &&
+    Math.abs(geo.longitude) <= 180;
+}
+
+function distanceInMeters(a, b) {
+  const toRadians = Math.PI / 180;
+  const latDelta = (b.latitude - a.latitude) * toRadians;
+  const lngDelta = (b.longitude - a.longitude) * toRadians;
+  const latitudeA = a.latitude * toRadians;
+  const latitudeB = b.latitude * toRadians;
+  const haversine = Math.sin(latDelta / 2) ** 2 +
+    Math.cos(latitudeA) * Math.cos(latitudeB) * Math.sin(lngDelta / 2) ** 2;
+  return 2 * EARTH_RADIUS_METERS * Math.asin(Math.sqrt(Math.min(1, haversine)));
+}
+
+function isVerifiedHotel(hotel) {
+  return hotel?.verified === true &&
+    hotel?.cityContextVerified !== false &&
+    String(hotel?.id || '').trim() &&
+    String(hotel?.name || '').trim() &&
+    typeof hotel.latitude === 'number' &&
+    Number.isFinite(hotel.latitude) &&
+    Math.abs(hotel.latitude) <= 90 &&
+    typeof hotel.longitude === 'number' &&
+    Number.isFinite(hotel.longitude) &&
+    Math.abs(hotel.longitude) <= 180;
+}
+
+// Source evidence is required for every hotel. A city name by itself never
+// creates an association. Cross-video matches reuse existing verified places.
+function collectVerifiedHotelLinks(videos) {
+  const trustedVideos = [];
+  const hotelPool = new Map();
+
+  for (const normalized of videos) {
+    const video = JSON.parse(normalized.rawJson);
+    if (!hasTrustedRouteGeo(video)) continue;
+    trustedVideos.push(video);
+
+    for (const hotel of Array.isArray(video.nearbyHotels) ? video.nearbyHotels : []) {
+      if (!isVerifiedHotel(hotel)) continue;
+      if (distanceInMeters(video.geo, hotel) > MAX_DISTANCE_METERS) continue;
+      if (!hotelPool.has(hotel.id)) {
+        hotelPool.set(hotel.id, {
+          id: hotel.id,
+          name: hotel.name,
+          city: hotel.city || null,
+          country: hotel.country || null,
+          address: hotel.address || null,
+          latitude: hotel.latitude,
+          longitude: hotel.longitude
+        });
+      }
+    }
+  }
+
+  const links = [];
+  for (const video of trustedVideos) {
+    const nearby = [];
+    const maxLatDelta = MAX_DISTANCE_METERS / 110574;
+    const maxLngDelta = MAX_DISTANCE_METERS /
+      (111320 * Math.max(0.001, Math.cos(video.geo.latitude * Math.PI / 180)));
+
+    for (const hotel of hotelPool.values()) {
+      if (Math.abs(video.geo.latitude - hotel.latitude) > maxLatDelta ||
+          Math.abs(video.geo.longitude - hotel.longitude) > maxLngDelta) continue;
+      const distance = distanceInMeters(video.geo, hotel);
+      if (distance <= MAX_DISTANCE_METERS) {
+        nearby.push({ videoId: video.id, hotelId: hotel.id, distance: Math.round(distance) });
+      }
+    }
+
+    nearby.sort((a, b) => a.distance - b.distance || a.hotelId.localeCompare(b.hotelId));
+    const method = video.geo.precision === 'airport' ? 'airport' :
+      video.geo.precision === 'landmark' ? 'landmark' : 'route';
+    for (const [index, link] of nearby.slice(0, 30).entries()) {
+      links.push({ ...link, rank: index + 1, method });
+    }
+  }
+
+  return { hotels: [...hotelPool.values()], links, trustedVideoCount: trustedVideos.length };
+}
+
+function buildHotelStatements(verified) {
+  const statements = [
+    '-- Only trusted route anchors and independently verified hotels are used.',
+    '-- Preserve manually disabled hotels and video/hotel links.',
+    '-- No video row is activated by the hotel synchronization.'
+  ];
+
+  // The production database already has these tables. A missing schema is an
+  // operational error, not a reason to silently discard the hotel evidence.
+  for (let index = 0; index < verified.hotels.length; index += 50) {
+    const batch = verified.hotels.slice(index, index + 50);
+    statements.push(`INSERT INTO hotels (
+  id, canonical_name, city, country, address, latitude, longitude, active
+) VALUES\n${batch.map((hotel) => `  (${[
+  sqlValue(hotel.id), sqlValue(hotel.name), sqlValue(hotel.city),
+  sqlValue(hotel.country), sqlValue(hotel.address),
+  String(hotel.latitude), String(hotel.longitude), '1'
+].join(', ')})`).join(',\n')}\nON CONFLICT(id) DO NOTHING;`);
+  }
+
+  for (const link of verified.links) {
+    // INSERT ... SELECT ensures a hotels-only backfill cannot create an orphan
+    // association or activate a video previously disabled in D1.
+    statements.push(`INSERT INTO video_hotels (
+  video_id, hotel_id, distance_meters, selection_score, rank,
+  match_method, verified, active
+)
+SELECT ${sqlValue(link.videoId)}, ${sqlValue(link.hotelId)}, ${link.distance}, 0,
+  ${link.rank}, ${sqlValue(link.method)}, 1, 1
+FROM videos AS v
+INNER JOIN hotels AS h ON h.id = ${sqlValue(link.hotelId)} AND h.active = 1
+WHERE v.id = ${sqlValue(link.videoId)} AND v.active = 1
+ON CONFLICT(video_id, hotel_id) DO UPDATE SET
+  distance_meters = excluded.distance_meters,
+  rank = excluded.rank,
+  updated_at = CURRENT_TIMESTAMP
+WHERE video_hotels.active = 1 AND video_hotels.verified = 1;`);
+  }
+  return statements;
+}
+
+function createSqlFile(videos, outputPath, hotelsOnly = false) {
+  const verified = collectVerifiedHotelLinks(videos);
+  const statements = hotelsOnly ? [] : videos.map(buildInsertStatement);
   const sql = [
-    '-- Generated automatically',
-    '-- Source: src/data/videos.json',
-    '-- Safe additive/upsert D1 sync',
-    '-- All valid archive videos are inserted or updated',
-    '-- Synced videos are activated',
-    '-- Existing rows outside this source are left unchanged',
-    '-- No other tables are modified',
-    '-- No explicit transaction statements are used',
+    '-- Generated automatically from src/data/videos.json',
+    '-- Safe additive/upsert D1 sync; archived videos remain unchanged.',
+    '-- Hotel associations are limited to trusted route anchors.',
     '',
     ...statements,
+    ...buildHotelStatements(verified),
     ''
   ].join('\n');
 
-  fs.mkdirSync(
-    path.dirname(outputPath),
-    {
-      recursive: true
-    }
-  );
-
-  fs.writeFileSync(
-    outputPath,
-    sql,
-    'utf8'
-  );
+  fs.mkdirSync(path.dirname(outputPath), { recursive: true });
+  fs.writeFileSync(outputPath, sql, 'utf8');
+  return { ...verified, outputPath };
 }
 
 function main() {
   const args = parseArguments(
     process.argv.slice(2)
   );
+
+  if (args.hotelsOnly && args.outputPath === DEFAULT_OUTPUT_PATH) {
+    args.outputPath = path.join(__dirname, 'sync-hotel-links.generated.sql');
+  }
 
   console.log('Reading videos.json...');
 
@@ -308,9 +436,10 @@ function main() {
     'Generating safe D1 sync SQL file...'
   );
 
-  createSqlFile(
+  const hotelSummary = createSqlFile(
     validVideos,
-    args.outputPath
+    args.outputPath,
+    args.hotelsOnly
   );
 
   console.log(
@@ -325,13 +454,14 @@ function main() {
     'Existing rows outside this source were not deactivated.'
   );
 
-  console.log(
-    'No other D1 tables are touched by the generated SQL.'
-  );
+  console.log(`Trusted route videos: ${hotelSummary.trustedVideoCount}`);
+  console.log(`Verified hotel places: ${hotelSummary.hotels.length}`);
+  console.log(`Video/hotel associations prepared: ${hotelSummary.links.length}`);
+  console.log('Only the videos, hotels, and video_hotels tables are targeted.');
 
-  console.log(
-    'No explicit SQL transaction statements were generated.'
-  );
+  console.log(args.hotelsOnly
+    ? 'Hotel-only mode: no video rows will be written or activated.'
+    : 'Standard admission mode: accepted video rows and hotel links are included.');
 
   console.log(
     'No database changes were made by this script.'

@@ -1,0 +1,88 @@
+---
+interface Props { lang?: string }
+const { lang = 'en' } = Astro.props;
+const messages: Record<string, [string, string, string, string]> = {
+  en: ['Save Old Towns Walks to your home screen.', 'Save to phone', 'Open your browser menu and choose Add to Home Screen.', 'In Safari, tap Share, then Add to Home Screen.'],
+  tr: ['Old Towns Walks uygulamasını ana ekranına ekle.', 'Telefona kaydet', 'Tarayıcı menüsünden Ana ekrana ekle seçeneğini kullan.', 'Safari’de Paylaş simgesine, ardından Ana Ekrana Ekle seçeneğine dokun.'],
+  de: ['Old Towns Walks zum Startbildschirm hinzufügen.', 'Auf Handy speichern', 'Im Browsermenü Zum Startbildschirm hinzufügen wählen.', 'In Safari Teilen und dann Zum Home-Bildschirm wählen.'],
+  es: ['Añade Old Towns Walks a tu pantalla de inicio.', 'Guardar en el móvil', 'En el menú del navegador, elige Añadir a pantalla de inicio.', 'En Safari, pulsa Compartir y después Añadir a pantalla de inicio.'],
+  fr: ["Ajoutez Old Towns Walks à votre écran d’accueil.", 'Enregistrer', "Dans le menu du navigateur, choisissez Ajouter à l’écran d’accueil.", "Dans Safari, touchez Partager puis Sur l’écran d’accueil."],
+  it: ['Aggiungi Old Towns Walks alla schermata Home.', 'Salva sul telefono', 'Nel menu del browser scegli Aggiungi a schermata Home.', 'In Safari tocca Condividi, poi Aggiungi alla schermata Home.'],
+  pt: ['Adicione Old Towns Walks à tela inicial.', 'Guardar no telemóvel', 'No menu do navegador, escolha Adicionar à tela inicial.', 'No Safari, toque em Compartilhar e Adicionar à Tela de Início.'],
+  ja: ['Old Towns Walksをホーム画面に追加できます。', 'ホーム画面に保存', 'ブラウザのメニューから「ホーム画面に追加」を選択してください。', 'Safariの共有から「ホーム画面に追加」を選んでください。'],
+  ru: ['Добавьте Old Towns Walks на главный экран.', 'Сохранить на телефон', 'В меню браузера выберите «Добавить на главный экран».', 'В Safari откройте «Поделиться» и выберите «На экран Домой».'],
+  zh: ['将 Old Towns Walks 添加到主屏幕。', '保存到手机', '打开浏览器菜单，选择添加到主屏幕。', '在 Safari 中点按共享，然后选择添加到主屏幕。'],
+  ko: ['Old Towns Walks를 홈 화면에 추가하세요.', '휴대전화에 저장', '브라우저 메뉴에서 홈 화면에 추가를 선택하세요.', 'Safari에서 공유를 누른 다음 홈 화면에 추가를 선택하세요.'],
+  ar: ['أضف Old Towns Walks إلى شاشتك الرئيسية.', 'حفظ على الهاتف', 'افتح قائمة المتصفح واختر الإضافة إلى الشاشة الرئيسية.', 'في Safari اضغط مشاركة ثم إضافة إلى الشاشة الرئيسية.'],
+  hi: ['Old Towns Walks को होम स्क्रीन पर जोड़ें।', 'फ़ोन पर सेव करें', 'ब्राउज़र मेनू से होम स्क्रीन पर जोड़ें चुनें।', 'Safari में शेयर और फिर होम स्क्रीन पर जोड़ें चुनें।'],
+  nl: ['Zet Old Towns Walks op je startscherm.', 'Opslaan op telefoon', 'Kies Toevoegen aan startscherm in het browsermenu.', 'Tik in Safari op Deel en dan op Zet op beginscherm.'],
+  pl: ['Dodaj Old Towns Walks do ekranu głównego.', 'Zapisz na telefonie', 'W menu przeglądarki wybierz Dodaj do ekranu głównego.', 'W Safari wybierz Udostępnij, a potem Do ekranu początkowego.'],
+  sv: ['Lägg till Old Towns Walks på hemskärmen.', 'Spara på mobilen', 'Välj Lägg till på hemskärmen i webbläsarens meny.', 'I Safari väljer du Dela och sedan Lägg till på hemskärmen.'],
+  id: ['Tambahkan Old Towns Walks ke layar utama.', 'Simpan ke ponsel', 'Pilih Tambahkan ke layar utama dari menu browser.', 'Di Safari, ketuk Bagikan lalu Tambahkan ke Layar Utama.'],
+  vi: ['Thêm Old Towns Walks vào màn hình chính.', 'Lưu vào điện thoại', 'Mở menu trình duyệt và chọn Thêm vào màn hình chính.', 'Trong Safari, chọn Chia sẻ rồi Thêm vào Màn hình chính.']
+};
+const [subtitle, saveLabel, androidHelp, iosHelp] = messages[lang] || messages.en;
+---
+<div class="oww-install" data-oww-install hidden role="region" aria-label="Old Towns Walks">
+  <img src="/android-chrome-192x192.png" alt="" width="46" height="46" />
+  <div class="oww-install-content">
+    <strong>Old Towns Walks</strong>
+    <p data-oww-install-message>{subtitle}</p>
+    <button type="button" class="oww-install-save" data-oww-install-save>{saveLabel}</button>
+  </div>
+  <button type="button" class="oww-install-close" data-oww-install-close aria-label="Close" title="Close">×</button>
+</div>
+<style is:global>
+  .oww-install[hidden] { display: none !important; }
+  .oww-install { display: none; }
+  @media (max-width: 900px) and (pointer: coarse) {
+    .oww-install:not([hidden]) {
+      position: fixed; z-index: 10000; inset-inline: 12px; bottom: max(12px, env(safe-area-inset-bottom));
+      display: flex; align-items: flex-start; gap: 10px; max-width: 440px;
+      margin-inline: auto; padding: 13px; border: 1px solid #785f28; border-radius: 14px;
+      background: #161a20; color: #f7f7f7; box-shadow: 0 10px 40px #000b;
+      font-family: Arial, sans-serif; direction: ltr;
+    }
+    .oww-install > img { flex: 0 0 46px; border-radius: 10px; }
+    .oww-install-content { min-width: 0; flex: 1 1 auto; }
+    .oww-install-content strong { display: block; margin-bottom: 4px; font-size: 14px; }
+    .oww-install-content p { margin: 0 0 10px; font-size: 12px; line-height: 1.45; color: #d9dce0; }
+    .oww-install-save { padding: 9px 15px; border: 0; border-radius: 8px; background: #f5b700; color: #141414; font-size: 13px; font-weight: 700; cursor: pointer; }
+    .oww-install-close { flex: 0 0 30px; width: 30px; height: 30px; border: 0; background: transparent; color: #ddd; font-size: 24px; cursor: pointer; }
+  }
+</style>
+<script is:inline define:vars={{ androidHelp, iosHelp }}>
+  (() => {
+    const banner = document.querySelector('[data-oww-install]');
+    if (!(banner instanceof HTMLElement)) return;
+    const mobile = window.matchMedia('(max-width: 900px) and (pointer: coarse)');
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (!mobile.matches || standalone) return;
+    const close = banner.querySelector('[data-oww-install-close]');
+    const save = banner.querySelector('[data-oww-install-save]');
+    const message = banner.querySelector('[data-oww-install-message]');
+    let installEvent = null;
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      installEvent = event;
+    });
+    const closeBanner = () => {
+      banner.hidden = true;
+    };
+    close?.addEventListener('click', closeBanner);
+    window.addEventListener('appinstalled', closeBanner);
+    save?.addEventListener('click', async () => {
+      if (installEvent) {
+        const event = installEvent;
+        installEvent = null;
+        try { await event.prompt(); } catch { /* Browser may reject an installation prompt. */ }
+        return;
+      }
+      if (message) message.textContent = /iphone|ipad|ipod/i.test(navigator.userAgent) ? iosHelp : androidHelp;
+    });
+    window.setTimeout(() => {
+      if (!mobile.matches || window.matchMedia('(display-mode: standalone)').matches) return;
+      banner.hidden = false;
+    }, 850);
+  })();
+</script>

@@ -1,15 +1,18 @@
 {
-  "generatedAt": "2026-09-07T12:11:51.268Z",
-  "writeRequested": false,
-  "currentVideos": 223,
-  "candidatesChecked": 152,
+  "generatedAt": "2026-09-26T18:41:59.355Z",
+  "writeRequested": true,
+  "currentVideos": 2428,
+  "candidatesChecked": 1894,
   "accepted": 0,
-  "rejected": 152,
-  "finalVideos": 223,
+  "rejected": 1894,
+  "finalVideos": 2428,
   "languagesChecked": 18,
   "rejectionCounts": {
-    "duplicate-existing": 131,
-    "verified-location-required": 20,
-    "verified-nearby-hotel-required": 18
+    "metadata-admission-missing": 1894,
+    "metadata-evidence-below-threshold": 1894,
+    "verified-location-required": 1864,
+    "verified-nearby-hotel-required": 1863,
+    "insufficient-unique-value": 634,
+    "insufficient-context": 1
   }
 }

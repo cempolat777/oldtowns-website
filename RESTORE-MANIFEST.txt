@@ -1,0 +1,6 @@
+src/components/LanguagePicker.astro	99 lines	sha256=b6fc35ffb692b420b78a4d35f8e74e03f11a80b9279587021a7ca1059cdc8357
+src/components/MainPage.astro	1618 lines	sha256=8532067f76a9bff929a325de12e85801c78753295b4cb0abbdb44cf1e4aab7e1
+src/layouts/BaseLayout.astro	334 lines	sha256=87a39e90985538e69f7e642bde51755e35ce4686007351be483813540f41e9c4
+src/pages/[lang]/about.astro	231 lines	sha256=b04346d70f945a2ab12ac34ec7645f4bb30a6089f3a030375c9448115534f333
+src/pages/[lang]/contact.astro	781 lines	sha256=47437081455048094bda807e0d896c5e9f402d1739bb40271a443ed388acdcde
+src/pages/[lang]/privacy.astro	884 lines	sha256=32c0d846c21bcc296aa4f661657a1535fe6f36c95fed8e05641306512c3cdcc5

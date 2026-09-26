@@ -1,0 +1,36 @@
+---
+// src/pages/index.astro
+---
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <script is:inline>
+      (function() {
+        // 1. Önce kullanıcının önceden seçtiği bir dil var mı bak
+        const savedLang = localStorage.getItem('preferredLang');
+        
+        if (savedLang) {
+          window.location.replace('/' + savedLang + '/');
+          return;
+        }
+
+        // 2. Seçtiği dil yoksa tarayıcı dilini kontrol et
+        const userLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+        let targetLang = 'en';
+
+        // Desteklediğin diller listesi
+        const supportedLangs = ['tr', 'de', 'es', 'fr', 'it', 'nl', 'pl', 'pt', 'sv', 'ru', 'ja', 'ko', 'zh', 'hi', 'id', 'vi', 'ar'];
+        
+        const langCode = userLang.split('-')[0];
+        if (supportedLangs.includes(langCode)) {
+          targetLang = langCode;
+        }
+
+        window.location.replace('/' + targetLang + '/');
+      })();
+    </script>
+  </head>
+  <body>
+  </body>
+</html>

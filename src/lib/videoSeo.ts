@@ -81,6 +81,7 @@ export type Video = {
   chapters?: VideoChapter[];
   routePoints?: VideoRoutePoint[];
   nearbyHotels?: VideoNearbyHotel[];
+  youtubeTags?: string[];
 };
 
 export type VideoContentOverride = {
@@ -1539,7 +1540,7 @@ function cleanDetailText(value: string) {
       "'"
     )
     .replace(
-      /(?:\?|}|�)\s*s\b/gi,
+      /(?:\?|}| )\s*s\b/gi,
       "'s"
     )
     .replace(
@@ -2778,6 +2779,82 @@ function extractSeoTitleRoute(
   return '';
 }
 
+// Publisher tags support existing video information.
+function normalizeTagEvidence(value: string) {
+  return String(value || '')
+    .normalize('NFKC')
+    .toLocaleLowerCase('en')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+}
+
+function getTagSupportedDetails(video: Video): Detail[] {
+  if (!Array.isArray(video.youtubeTags) || !video.youtubeTags.length) {
+    return [];
+  }
+
+  const originalTitle = String(video.title || '');
+  const originalDescription = String(video.description || '');
+  const titleText = ' ' + normalizeTagEvidence(originalTitle) + ' ';
+  const descriptionText = ' ' + normalizeTagEvidence(originalDescription) + ' ';
+  const foundCountry = findCountry(cleanTitle(originalTitle));
+  const details = new Map<string, Detail>();
+
+  for (const rawTag of video.youtubeTags.slice(0, 60)) {
+    if (typeof rawTag !== 'string') continue;
+
+    const tag = rawTag.trim();
+
+    if (
+      tag.length < 3 ||
+      tag.length > 80 ||
+      isGenericLocationLabel(tag)
+    ) {
+      continue;
+    }
+
+    const candidate = sanitizeCandidate(
+      tag,
+      video,
+      foundCountry?.matched || null
+    );
+
+    const phrase = normalizeTagEvidence(candidate);
+
+    if (!phrase || phrase.length < 3) continue;
+
+    const inTitle = titleText.includes(' ' + phrase + ' ');
+    const inDescription = descriptionText.includes(' ' + phrase + ' ');
+
+    if (!inTitle && !inDescription) continue;
+
+    const detail = parseDetail(candidate);
+
+    if (!detail || !isSeoTitleDetailSafe(detail, video)) continue;
+    if (!detail.type && !inTitle) continue;
+
+    const key =
+      (detail.type || 'proper') +
+      '|' +
+      normalizeTagEvidence(detail.name);
+
+    const previous = details.get(key);
+
+    const scored = {
+      ...detail,
+      score: detail.score + (inTitle ? 20 : 0)
+    };
+
+    if (!previous || scored.score > previous.score) {
+      details.set(key, scored);
+    }
+  }
+
+  return [...details.values()].sort(
+    (a, b) => b.score - a.score
+  );
+}
+
 function getSeoPreferredDetail(
   video: Video,
   lang: string,
@@ -2813,27 +2890,22 @@ function getSeoPreferredDetail(
   const details = [
     ...extractTitleDetails(video),
     ...extractRouteDetails(video)
-  ];
+  ].filter((detail) => isSeoTitleDetailSafe(detail, video));
 
-  for (
-    const detail
-    of details
-  ) {
-    if (
-      isSeoTitleDetailSafe(
-        detail,
-        video
-      )
-    ) {
-      return localizeDetail(
-        detail,
-        lang
-      );
-    }
-  }
+  const tagDetails = getTagSupportedDetails(video);
 
-  return '';
+  const supported = details.find((detail) =>
+    tagDetails.some((tagDetail) =>
+      normalizeTagEvidence(tagDetail.name) ===
+      normalizeTagEvidence(detail.name)
+    )
+  );
+
+  const selected = supported || details[0] || tagDetails[0];
+
+  return selected ? localizeDetail(selected, lang) : '';
 }
+
 
 function styleFromDetail(
   detail: Detail | null,
@@ -2991,7 +3063,7 @@ export function getVideoSeoAnalysis(
     normalizeLang(lang);
 
   const cacheKey =
-    `${video.id}|${video.title}|${video.description || ''}|${video.category || ''}|${video.badge || ''}|${video.city || ''}|${video.country || ''}`;
+    `${video.id}|${video.title}|${video.description || ''}|${video.category || ''}|${video.badge || ''}|${video.city || ''}|${video.country || ''}|${Array.isArray(video.youtubeTags) ? video.youtubeTags.join('\u001f') : ''}`;
 
   const cached =
     titleAnalysisCache.get(
@@ -5030,6 +5102,9 @@ function getVideoSourcePayload(video: Video) {
     badge: cleanGeneratedText(video.badge || ''),
     city: cleanGeneratedText(video.city || ''),
     country: cleanGeneratedText(video.country || ''),
+    youtubeTags: Array.isArray(video.youtubeTags)
+      ? video.youtubeTags.filter((tag) => typeof tag === 'string').map((tag) => tag.trim())
+      : [],
     active: video.active !== false && video.active !== 0,
     embedAvailable: video.embedAvailable,
     thumbnailValid: video.thumbnailValid,

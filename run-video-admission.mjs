@@ -1,3 +1,5 @@
+﻿  runNodeStep('Sync YouTube tags', './sync-youtube-tags.mjs', ['--apply']);
+
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
@@ -5,7 +7,6 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const PATHS = {
   candidates: './video-candidates.json',
@@ -55,7 +56,7 @@ function printHelp() {
 }
 
 function absolute(filePath) {
-  return path.resolve(__dirname, filePath);
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), filePath);
 }
 
 function ensureFile(filePath) {
@@ -70,7 +71,7 @@ function runStep(label, command, args, captureOutput = false) {
   console.log(`\n=== ${label} ===`);
 
   const result = spawnSync(command, args, {
-    cwd: __dirname,
+    cwd: path.dirname(fileURLToPath(import.meta.url)),
     stdio: captureOutput ? ['ignore', 'pipe', 'pipe'] : 'inherit',
     encoding: captureOutput ? 'utf8' : undefined,
     windowsHide: true
