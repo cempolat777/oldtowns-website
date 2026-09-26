@@ -647,10 +647,24 @@ async function main() {
       }
     }
 
-    const category =
+    const detectedCategory =
       config.mode === 'DOCUMENTARIES'
         ? 'Documentaries'
         : categoryFor(title);
+
+    const normalizedChannelTitle =
+      clean(video.snippet?.channelTitle)
+        .toLocaleLowerCase('en-US');
+
+    const isScenicRelaxation =
+      normalizedChannelTitle === 'scenic relaxation';
+
+    const category =
+      detectedCategory === 'Documentaries'
+        ? 'Documentaries'
+        : isScenicRelaxation
+          ? 'Drone & Aerial'
+          : detectedCategory;
 
     if (!category) {
       rejection.uncategorized++;
@@ -807,3 +821,4 @@ main().catch(error => {
 
   process.exit(1);
 });
+
