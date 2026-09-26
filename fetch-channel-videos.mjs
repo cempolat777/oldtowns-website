@@ -1,4 +1,4 @@
-import fs from 'node:fs';
+﻿import fs from 'node:fs';
 import { loadEnvFile } from 'node:process';
 
 try {
@@ -12,7 +12,7 @@ const BLACKLIST_PATH = './src/data/video-blacklist.json';
 const MIN_DURATION_SECONDS = 30 * 60;
 
 const CATEGORY_PATTERNS = [
-  ['Airport Walks', /\b(?:airport|terminal|aeropuerto|aéroport|flughafen|aeroporto)\b/i],
+  ['Airport Walks', /\b(?:airport|terminal|aeropuerto|aÃ©roport|flughafen|aeroporto)\b/i],
   ['Beach Walking Tours', /\b(?:beach|seaside|seafront|coastal|coastline|oceanfront)\b/i],
   ['Night & Rain', /\b(?:night|rain|rainy|evening|after dark|storm)\b/i],
   ['Drone & Aerial', /\b(?:drone|aerial|fpv|from above|flying over|fly over)\b/i],
@@ -406,6 +406,24 @@ async function main() {
         .filter(Boolean)
     );
 
+  const existingChannelIds =
+    new Set(
+      existing
+        .map(video => String(video.channelId || '').trim())
+        .filter(Boolean)
+    );
+
+  const existingChannelNames =
+    new Set(
+      existing
+        .flatMap(video => [
+          video.channel,
+          video.channelTitle
+        ])
+        .map(value => String(value || '').trim().toLocaleLowerCase('en-US'))
+        .filter(Boolean)
+    );
+
   const archiveIds =
     new Set();
 
@@ -449,6 +467,21 @@ async function main() {
   ) {
     const channel =
       await resolveChannel(handle);
+
+    const normalizedChannelTitle =
+      String(channel.title || '')
+        .trim()
+        .toLocaleLowerCase('en-US');
+
+    if (
+      existingChannelIds.has(channel.id) ||
+      existingChannelNames.has(normalizedChannelTitle)
+    ) {
+      console.log(
+        `Skipped previously imported channel: ${channel.title} (${handle})`
+      );
+      continue;
+    }
 
     if (
       blacklist.channelIds.has(
@@ -606,7 +639,7 @@ async function main() {
     if (config.mode === 'DOCUMENTARIES') {
       const broadcast = video.snippet?.liveBroadcastContent;
       const titleIsExcluded =
-        /(?:^|\W)(?:shorts?|canl[ıi] yay[ıi]n|live stream|livestream|yay[ıi]n tekrar[ıi]|duyuru|announcement|fragman|trailer)(?:$|\W)/iu.test(title);
+        /(?:^|\W)(?:shorts?|canl[Ä±i] yay[Ä±i]n|live stream|livestream|yay[Ä±i]n tekrar[Ä±i]|duyuru|announcement|fragman|trailer)(?:$|\W)/iu.test(title);
 
       if (broadcast === 'live' || broadcast === 'upcoming' || titleIsExcluded) {
         rejection.excludedDocumentaryFormat++;
@@ -621,6 +654,12 @@ async function main() {
 
     if (!category) {
       rejection.uncategorized++;
+      continue;
+    }
+
+    if (category === 'Documentaries') {
+      rejection.documentary =
+        (rejection.documentary || 0) + 1;
       continue;
     }
 
