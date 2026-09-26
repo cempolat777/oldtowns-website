@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-09-26T21:11:00.857Z",
+  "generatedAt": "2026-09-26T22:01:34.583Z",
   "mode": "youtube-api",
   "writeRequested": true,
   "inputPath": ".\\channel-video-candidates.json",
-  "videos": 1010,
-  "sourceVerified": 1010,
+  "videos": 1389,
+  "sourceVerified": 1389,
   "unavailable": 0,
-  "descriptionsWithLineBreaks": 985,
-  "videosWithChapters": 151,
-  "totalChapters": 2303,
-  "videosWithRoutePoints": 151,
-  "totalRoutePoints": 2297
+  "descriptionsWithLineBreaks": 1362,
+  "videosWithChapters": 693,
+  "totalChapters": 6964,
+  "videosWithRoutePoints": 693,
+  "totalRoutePoints": 6900
 }
