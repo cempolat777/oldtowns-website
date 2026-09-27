@@ -1,6 +1,4 @@
 ---
-// src/pages/index.astro
-
 export const prerender = false;
 
 const request = Astro.request as Request & {
@@ -124,15 +122,23 @@ const country = /^[A-Z]{2}$/.test(rawCountry.toUpperCase())
         };
 
         let savedLang = null;
+        let hasExplicitLanguage = false;
 
         try {
           savedLang = localStorage.getItem('preferredLang');
+          hasExplicitLanguage =
+            localStorage.getItem('preferredLangExplicit') === '1';
         } catch {
           savedLang = null;
+          hasExplicitLanguage = false;
         }
 
-        if (savedLang && supportedLangs.includes(savedLang)) {
-          window.location.replace('/' + savedLang + '/');
+        if (
+          hasExplicitLanguage &&
+          savedLang &&
+          supportedLangs.includes(savedLang)
+        ) {
+          window.location.replace('/' + savedLang);
           return;
         }
 
@@ -141,7 +147,7 @@ const country = /^[A-Z]{2}$/.test(rawCountry.toUpperCase())
 
         const targetLang = countryLanguages[country] || 'en';
 
-        window.location.replace('/' + targetLang + '/');
+        window.location.replace('/' + targetLang);
       })();
     </script>
   </head>

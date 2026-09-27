@@ -53,6 +53,7 @@ const cleanPath = langKeys.includes(pathSegments[0])
 
         if (selectedLang) {
           localStorage.setItem('preferredLang', selectedLang);
+          localStorage.setItem('preferredLangExplicit', '1');
         }
 
         if (element.value) {

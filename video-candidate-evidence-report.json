@@ -1,14 +1,14 @@
 {
-  "generatedAt": "2026-09-26T22:58:11.405Z",
+  "generatedAt": "2026-09-27T20:28:34.900Z",
   "mode": "youtube-api",
   "writeRequested": true,
-  "inputPath": ".\\channel-video-candidates.json",
-  "videos": 229,
-  "sourceVerified": 229,
+  "inputPath": ".\\airport-video-candidates.new.json",
+  "videos": 393,
+  "sourceVerified": 393,
   "unavailable": 0,
-  "descriptionsWithLineBreaks": 229,
-  "videosWithChapters": 168,
-  "totalChapters": 2357,
-  "videosWithRoutePoints": 168,
-  "totalRoutePoints": 2325
+  "descriptionsWithLineBreaks": 359,
+  "videosWithChapters": 96,
+  "totalChapters": 924,
+  "videosWithRoutePoints": 95,
+  "totalRoutePoints": 885
 }
