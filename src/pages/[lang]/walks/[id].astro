@@ -844,6 +844,13 @@ const labels: Record<string, Record<string, string>> = {
     sv: 'Kopierad', id: 'Disalin', vi: 'Đã sao chép'
   },
 
+  copyLink: {
+    en: 'Copy', tr: 'Kopyala', de: 'Kopieren', es: 'Copiar', it: 'Copia',
+    fr: 'Copier', ja: 'コピー', pt: 'Copiar', ru: 'Копировать', zh: '复制',
+    ko: '복사', ar: 'نسخ', hi: 'कॉपी करें', nl: 'Kopiëren', pl: 'Kopiuj',
+    sv: 'Kopiera', id: 'Salin', vi: 'Sao chép'
+  },
+
   viewHotel: {
     en: 'View hotel', tr: 'Oteli incele', de: 'Hotel ansehen', es: 'Ver hotel',
     it: 'Vedi hotel', fr: 'Voir l’hôtel', ja: 'ホテルを見る', pt: 'Ver hotel',
@@ -3049,6 +3056,10 @@ const pageDescription = seoContent.paragraphs;
 
 const metaDescription = seoContent.metaDescription;
 
+const shareImage =
+  video.thumbnail ||
+  `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+
 const videoSchema = seoContent.videoObject;
 
 const defaultAlternateUrl =
@@ -3082,6 +3093,8 @@ const breadcrumbSchema = {
 
   description={metaDescription}
 
+image={shareImage}
+
 >
 
   <Fragment slot="head">
@@ -3101,6 +3114,17 @@ const breadcrumbSchema = {
       content={seoContent.robots}
 
     />
+
+    <meta property="og:type" content="video.other" />
+    <meta property="og:title" content={seoTitle} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={seoContent.canonicalUrl} />
+    <meta property="og:image" content={shareImage} />
+    <meta property="og:image:secure_url" content={shareImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={seoTitle} />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={shareImage} />
 
     {seoContent.sitemap.alternates.map((alternate) => (
       <link
@@ -3133,6 +3157,18 @@ const breadcrumbSchema = {
         ← {label('back')}
 
       </a>
+
+      <button
+        type="button"
+        class="share-button page-share-button"
+        data-share-button
+        aria-label={label('share')}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 16a3 3 0 0 0-2.4 1.2L8.9 13.7a3.3 3.3 0 0 0 0-3.4l6.7-3.5A3 3 0 1 0 15 5a3 3 0 0 0 .1.8L8.4 9.3a3 3 0 1 0 0 5.4l6.7 3.5A3 3 0 1 0 18 16Z" />
+        </svg>
+        <span data-share-label>{label('share')}</span>
+      </button>
 
     </div>
 
@@ -3314,17 +3350,7 @@ const breadcrumbSchema = {
 
           <h1 class="video-page-title">{seoTitle}</h1>
 
-          <button
-            type="button"
-            class="share-button"
-            data-share-button
-            aria-label={label('share')}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M18 16a3 3 0 0 0-2.4 1.2L8.9 13.7a3.3 3.3 0 0 0 0-3.4l6.7-3.5A3 3 0 1 0 15 5a3 3 0 0 0 .1.8L8.4 9.3a3 3 0 1 0 0 5.4l6.7 3.5A3 3 0 1 0 18 16Z" />
-            </svg>
-            <span data-share-label>{label('share')}</span>
-          </button>
+
 
         </div>
 
@@ -3574,6 +3600,71 @@ const breadcrumbSchema = {
 
   </div>
 
+  <div class="share-modal-backdrop" data-share-modal hidden>
+    <div
+      class="share-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="share-modal-title"
+    >
+      <div class="share-modal-header">
+        <h2 id="share-modal-title">{label('share')}</h2>
+        <button
+          type="button"
+          class="share-modal-close"
+          data-share-modal-close
+          aria-label="Close"
+        >
+          ×
+        </button>
+      </div>
+
+      <div class="share-social-row">
+        <a class="share-social-item" data-share-whatsapp target="_blank" rel="noopener noreferrer">
+          <span class="share-social-icon whatsapp">W</span>
+          <span>WhatsApp</span>
+        </a>
+        <a class="share-social-item" data-share-x target="_blank" rel="noopener noreferrer">
+          <span class="share-social-icon x">X</span>
+          <span>X</span>
+        </a>
+        <a class="share-social-item" data-share-facebook target="_blank" rel="noopener noreferrer">
+          <span class="share-social-icon facebook">f</span>
+          <span>Facebook</span>
+        </a>
+        <a class="share-social-item" data-share-reddit target="_blank" rel="noopener noreferrer">
+          <span class="share-social-icon reddit">r</span>
+          <span>Reddit</span>
+        </a>
+        <a class="share-social-item" data-share-telegram target="_blank" rel="noopener noreferrer">
+          <span class="share-social-icon telegram">T</span>
+          <span>Telegram</span>
+        </a>
+        <a class="share-social-item" data-share-email>
+          <span class="share-social-icon email">@</span>
+          <span>Email</span>
+        </a>
+      </div>
+
+      <div class="share-link-row">
+        <input
+          type="text"
+          class="share-link-input"
+          data-share-link
+          readonly
+          aria-label={label('share')}
+        />
+        <button
+          type="button"
+          class="share-copy-button"
+          data-share-copy
+        >
+          {label('copyLink')}
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script
 
     type="application/ld+json"
@@ -3592,39 +3683,123 @@ const breadcrumbSchema = {
     define:vars={{
       shareTitle: seoTitle,
       shareLabel: label('share'),
-      copiedLabel: label('copied')
+      copiedLabel: label('copied'),
+      copyLabel: label('copyLink')
     }}
   >
     const shareButton = document.querySelector('[data-share-button]');
+    const shareModal = document.querySelector('[data-share-modal]');
+    const shareModalClose = document.querySelector('[data-share-modal-close]');
+    const shareCopyButton = document.querySelector('[data-share-copy]');
+    const shareLinkInput = document.querySelector('[data-share-link]');
+
+    const shareUrl = `${window.location.origin}${window.location.pathname}`;
+    const encodedUrl = encodeURIComponent(shareUrl);
+    const encodedTitle = encodeURIComponent(shareTitle);
+    const useNativeShare =
+      navigator.maxTouchPoints > 0 &&
+      typeof navigator.share === 'function';
+
+    const setShareHref = (selector, href) => {
+      const element = document.querySelector(selector);
+      if (element instanceof HTMLAnchorElement) {
+        element.href = href;
+      }
+    };
+
+    setShareHref(
+      '[data-share-whatsapp]',
+      `https://wa.me/?text=${encodedTitle}%20${encodedUrl}`
+    );
+    setShareHref(
+      '[data-share-x]',
+      `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`
+    );
+    setShareHref(
+      '[data-share-facebook]',
+      `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`
+    );
+    setShareHref(
+      '[data-share-reddit]',
+      `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodedTitle}`
+    );
+    setShareHref(
+      '[data-share-telegram]',
+      `https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`
+    );
+    setShareHref(
+      '[data-share-email]',
+      `mailto:?subject=${encodedTitle}&body=${encodedTitle}%0A${encodedUrl}`
+    );
+
+    if (shareLinkInput instanceof HTMLInputElement) {
+      shareLinkInput.value = shareUrl;
+    }
+
+    const openShareModal = () => {
+      if (!(shareModal instanceof HTMLElement)) return;
+      shareModal.hidden = false;
+      document.body.classList.add('share-modal-open');
+    };
+
+    const closeShareModal = () => {
+      if (!(shareModal instanceof HTMLElement)) return;
+      shareModal.hidden = true;
+      document.body.classList.remove('share-modal-open');
+
+      if (shareCopyButton instanceof HTMLButtonElement) {
+        shareCopyButton.textContent = copyLabel;
+      }
+    };
 
     if (shareButton instanceof HTMLButtonElement) {
-      const shareButtonLabel = shareButton.querySelector('[data-share-label]');
-
       shareButton.addEventListener('click', async () => {
-        const shareUrl = `${window.location.origin}${window.location.pathname}`;
-        const useNativeShare =
-          navigator.maxTouchPoints > 0 &&
-          typeof navigator.share === 'function';
-
         try {
           if (useNativeShare) {
-            await navigator.share({ title: shareTitle, url: shareUrl });
+            await navigator.share({
+              title: shareTitle,
+              url: shareUrl
+            });
             return;
           }
 
-          await navigator.clipboard.writeText(shareUrl);
-
-          if (shareButtonLabel) {
-            shareButtonLabel.textContent = copiedLabel;
-            window.setTimeout(() => {
-              shareButtonLabel.textContent = shareLabel;
-            }, 1800);
-          }
+          openShareModal();
         } catch (error) {
           if (error instanceof Error && error.name !== 'AbortError') {
             console.error('Share failed.', error);
           }
         }
+      });
+    }
+
+    shareModalClose?.addEventListener('click', closeShareModal);
+
+    shareModal?.addEventListener('click', (event) => {
+      if (event.target === shareModal) {
+        closeShareModal();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeShareModal();
+      }
+    });
+
+    if (shareCopyButton instanceof HTMLButtonElement) {
+      shareCopyButton.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(shareUrl);
+          shareCopyButton.textContent = copiedLabel;
+        } catch (error) {
+          console.error('Copy failed.', error);
+        }
+      });
+    }
+
+    if (shareLinkInput instanceof HTMLInputElement) {
+      shareLinkInput.addEventListener('click', () => {
+        shareLinkInput.select();
       });
     }
   </script>
@@ -3651,13 +3826,21 @@ const breadcrumbSchema = {
 
     margin: 0 auto 10px;
 
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 12px;
+
   }
 
   .back-link {
 
     display: inline-flex;
 
-    margin-bottom: 6px;
+    margin-bottom: 0;
 
     padding: 7px 10px;
 
@@ -3768,6 +3951,251 @@ const breadcrumbSchema = {
     height: 17px;
 
     fill: currentColor;
+
+  }
+
+  body.share-modal-open {
+
+    overflow: hidden;
+
+  }
+
+  .share-modal-backdrop[hidden] {
+
+    display: none;
+
+  }
+
+  .share-modal-backdrop {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: 10000;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 24px;
+
+    background: rgba(0, 0, 0, .68);
+
+    backdrop-filter: blur(4px);
+
+    -webkit-backdrop-filter: blur(4px);
+
+  }
+
+  .share-modal {
+
+    width: min(620px, 100%);
+
+    padding: 22px;
+
+    border: 1px solid #343b45;
+
+    border-radius: 16px;
+
+    background: #212121;
+
+    box-shadow: 0 24px 80px rgba(0, 0, 0, .45);
+
+  }
+
+  .share-modal-header {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    gap: 16px;
+
+    margin-bottom: 22px;
+
+  }
+
+  .share-modal-header h2 {
+
+    margin: 0;
+
+    color: #ffffff;
+
+    font-size: 20px;
+
+    font-weight: 700;
+
+  }
+
+  .share-modal-close {
+
+    width: 36px;
+
+    height: 36px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border: 0;
+
+    border-radius: 50%;
+
+    background: transparent;
+
+    color: #ffffff;
+
+    font-size: 30px;
+
+    line-height: 1;
+
+    cursor: pointer;
+
+  }
+
+  .share-modal-close:hover {
+
+    background: rgba(255, 255, 255, .08);
+
+  }
+
+  .share-social-row {
+
+    display: grid;
+
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+
+    gap: 14px;
+
+    margin-bottom: 24px;
+
+  }
+
+  .share-social-item {
+
+    min-width: 0;
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: #eeeeee;
+
+    font-size: 12px;
+
+    text-align: center;
+
+    text-decoration: none;
+
+    cursor: pointer;
+
+  }
+
+  .share-social-icon {
+
+    width: 52px;
+
+    height: 52px;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    border-radius: 50%;
+
+    color: #ffffff;
+
+    font-size: 23px;
+
+    font-weight: 800;
+
+  }
+
+  .share-social-icon.whatsapp { background: #25d366; }
+  .share-social-icon.x { background: #000000; border: 1px solid #424242; }
+  .share-social-icon.facebook { background: #1877f2; }
+  .share-social-icon.reddit { background: #ff4500; }
+  .share-social-icon.telegram { background: #229ed9; }
+  .share-social-icon.email { background: #616161; }
+
+  .share-link-row {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+
+    padding: 7px;
+
+    border: 1px solid #4a4a4a;
+
+    border-radius: 12px;
+
+    background: #181818;
+
+  }
+
+  .share-link-input {
+
+    min-width: 0;
+
+    flex: 1;
+
+    border: 0;
+
+    outline: 0;
+
+    background: transparent;
+
+    color: #f1f1f1;
+
+    font: inherit;
+
+    font-size: 13px;
+
+  }
+
+  .share-copy-button {
+
+    flex: 0 0 auto;
+
+    padding: 9px 14px;
+
+    border: 1px solid #5a5a5a;
+
+    border-radius: 999px;
+
+    background: #2a2a2a;
+
+    color: #ffffff;
+
+    font: inherit;
+
+    font-size: 12px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+  }
+
+  .share-copy-button:hover {
+
+    background: #3a3a3a;
 
   }
 
@@ -4648,6 +5076,28 @@ const breadcrumbSchema = {
 
     }
 
+    .share-modal-backdrop {
+
+      padding: 14px;
+
+    }
+
+    .share-modal {
+
+      padding: 18px;
+
+      border-radius: 14px;
+
+    }
+
+    .share-social-row {
+
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+
+      row-gap: 18px;
+
+    }
+
     .video-page-title {
 
       font-size: 19px;
@@ -4662,7 +5112,7 @@ const breadcrumbSchema = {
 
     }
 
-    .share-button {
+    .video-title-row .share-button {
 
       align-self: flex-start;
 
