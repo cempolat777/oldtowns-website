@@ -14,7 +14,9 @@
     "audit:seo": "node audit-video-seo.mjs",
     "repair:integrity": "node repair-video-integrity.mjs",
     "update-videos": "node fetch-videos.js && node categorize.js && node enrich-locations.js",
-    "generate-types": "wrangler types"
+    "generate-types": "wrangler types",
+    "indexnow": "node scripts/indexnow-submit.mjs",
+    "deploy": "npm run build && npx wrangler deploy && npm run indexnow"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.5",
