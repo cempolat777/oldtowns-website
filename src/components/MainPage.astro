@@ -1,11 +1,11 @@
-﻿---
+---
 import LanguagePicker from './LanguagePicker.astro';
 import MobileNavigation from './MobileNavigation.astro';
 import MobileInstallPrompt from './MobileInstallPrompt.astro';
 import PullToRefresh from './PullToRefresh.astro';
 import { ui } from '../i18n/ui';
 import { getPageSeo, getVideoCardTitle, getVideoSchema } from '../lib/videoSeo';
-// DÄ±ÅŸarÄ±dan gelecek verileri (props) tanÄ±mlÄ±yoruz
+// Dışarıdan gelecek verileri (props) tanımlıyoruz
 interface Props {
   videos: Array<any>;
   lang?: string;
@@ -19,29 +19,29 @@ const {
 } = Astro.props;
 
 const lang = langProp || currentLang || 'en';
-// Dil Ã§evirisi iÃ§in ui.ts dosyasÄ±ndan ilgili dili Ã§ekiyoruz
+// Dil çevirisi için ui.ts dosyasından ilgili dili çekiyoruz
 const translations = ui as Record<string, Record<string, string>>;
 const t = translations[lang] || translations.en || translations.tr;
 const pageSeo = getPageSeo(lang);
 const emptyStateText = t['state.videosComingSoon'] || 'Videos coming soon';
 const shareLabels: Record<string, string> = {
-  en: 'Share', tr: 'PaylaÅŸ', de: 'Teilen', es: 'Compartir', it: 'Condividi',
-  fr: 'Partager', ja: 'å…±æœ‰', pt: 'Compartilhar', ru: 'ÐŸÐ¾Ð´ÐµÐ»Ð¸Ñ‚ÑŒÑÑ', zh: 'åˆ†äº«',
-  ko: 'ê³µìœ ', ar: 'Ù…Ø´Ø§Ø±ÙƒØ©', hi: 'à¤¸à¤¾à¤à¤¾ à¤•à¤°à¥‡à¤‚', nl: 'Delen', pl: 'UdostÄ™pnij',
-  sv: 'Dela', id: 'Bagikan', vi: 'Chia sáº»'
+  en: 'Share', tr: 'Paylaş', de: 'Teilen', es: 'Compartir', it: 'Condividi',
+  fr: 'Partager', ja: '共有', pt: 'Compartilhar', ru: 'Поделиться', zh: '分享',
+  ko: '공유', ar: 'مشاركة', hi: 'साझा करें', nl: 'Delen', pl: 'Udostępnij',
+  sv: 'Dela', id: 'Bagikan', vi: 'Chia sẻ'
 };
 const copiedLabels: Record<string, string> = {
-  en: 'Copied', tr: 'KopyalandÄ±', de: 'Kopiert', es: 'Copiado', it: 'Copiato',
-  fr: 'CopiÃ©', ja: 'ã‚³ãƒ”ãƒ¼ã—ã¾ã—ãŸ', pt: 'Copiado', ru: 'Ð¡ÐºÐ¾Ð¿Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¾', zh: 'å·²å¤åˆ¶',
-  ko: 'ë³µì‚¬ë¨', ar: 'ØªÙ… Ø§Ù„Ù†Ø³Ø®', hi: 'à¤•à¥‰à¤ªà¥€ à¤•à¥€ à¤—à¤ˆ', nl: 'Gekopieerd', pl: 'Skopiowano',
-  sv: 'Kopierad', id: 'Disalin', vi: 'ÄÃ£ sao chÃ©p'
+  en: 'Copied', tr: 'Kopyalandı', de: 'Kopiert', es: 'Copiado', it: 'Copiato',
+  fr: 'Copié', ja: 'コピーしました', pt: 'Copiado', ru: 'Скопировано', zh: '已复制',
+  ko: '복사됨', ar: 'تم النسخ', hi: 'कॉपी की गई', nl: 'Gekopieerd', pl: 'Skopiowano',
+  sv: 'Kopierad', id: 'Disalin', vi: 'Đã sao chép'
 };
 const shareLabel = shareLabels[lang] || shareLabels.en;
 const copiedLabel = copiedLabels[lang] || copiedLabels.en;
 const languageFlags: Record<string, string> = {
-  en: 'ðŸ‡¬ðŸ‡§', tr: 'ðŸ‡¹ðŸ‡·', de: 'ðŸ‡©ðŸ‡ª', es: 'ðŸ‡ªðŸ‡¸', it: 'ðŸ‡®ðŸ‡¹', fr: 'ðŸ‡«ðŸ‡·',
-  ja: 'ðŸ‡¯ðŸ‡µ', pt: 'ðŸ‡µðŸ‡¹', ru: 'ðŸ‡·ðŸ‡º', zh: 'ðŸ‡¨ðŸ‡³', ko: 'ðŸ‡°ðŸ‡·', ar: 'ðŸ‡¸ðŸ‡¦',
-  hi: 'ðŸ‡®ðŸ‡³', nl: 'ðŸ‡³ðŸ‡±', pl: 'ðŸ‡µðŸ‡±', sv: 'ðŸ‡¸ðŸ‡ª', id: 'ðŸ‡®ðŸ‡©', vi: 'ðŸ‡»ðŸ‡³'
+  en: '🇬🇧', tr: '🇹🇷', de: '🇩🇪', es: '🇪🇸', it: '🇮🇹', fr: '🇫🇷',
+  ja: '🇯🇵', pt: '🇵🇹', ru: '🇷🇺', zh: '🇨🇳', ko: '🇰🇷', ar: '🇸🇦',
+  hi: '🇮🇳', nl: '🇳🇱', pl: '🇵🇱', sv: '🇸🇪', id: '🇮🇩', vi: '🇻🇳'
 };
 const currentLanguageFlag = languageFlags[lang] || languageFlags.en;
 const categories = [
@@ -63,8 +63,8 @@ const POPULAR_CITIES_INITIAL = [
   'Lisbon', 'Dubai', 'Singapore', 'Seoul', 'Kyoto', 'Osaka', 'Venice',
   'Florence'
 ];
-// Deterministic (seeded) PRNG: aynÄ± seed her zaman aynÄ± sayÄ± dizisini Ã¼retir.
-// BÃ¶ylece sÄ±ralama rastgele GÃ–RÃœNÃœR ama tekrar Ã¼retilebilir/stabildir.
+// Deterministic (seeded) PRNG: aynı seed her zaman aynı sayı dizisini üretir.
+// Böylece sıralama rastgele GÖRÜNÜR ama tekrar üretilebilir/stabildir.
 function createSeededRandom(seed: number) {
   let s = seed >>> 0;
   return function () {
@@ -83,8 +83,8 @@ function hashStringToSeed(str: string) {
   }
   return hash;
 }
-// Seed gÃ¼nÃ¼n tarihine (UTC, YYYY-MM-DD) baÄŸlÄ±: aynÄ± gÃ¼n iÃ§indeki HER istek
-// aynÄ± sÄ±rayÄ± Ã¼retir (flicker yok), ertesi gÃ¼n sÄ±ra otomatik olarak deÄŸiÅŸir.
+// Seed günün tarihine (UTC, YYYY-MM-DD) bağlı: aynı gün içindeki HER istek
+// aynı sırayı üretir (flicker yok), ertesi gün sıra otomatik olarak değişir.
 const dailySeed = hashStringToSeed(new Date().toISOString().slice(0, 10));
 const seededRandom = createSeededRandom(dailySeed);
 function shuffleInitialVideos(items: Array<any>) {
@@ -164,8 +164,9 @@ const videoSchema = {
       name="description"
       content={pageSeo.description}
     />
-    <!-- Video preview baÄŸlantÄ±sÄ±nÄ± Ã¶nceden hazÄ±rla -->
+    <!-- Video preview bağlantısını önceden hazırla -->
     <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+    <link rel="preconnect" href="https://www.youtube.com" />
     <link rel="preconnect" href="https://i.ytimg.com" />
     <link rel="dns-prefetch" href="//www.youtube-nocookie.com" />
     <link rel="dns-prefetch" href="//googlevideo.com" />
@@ -419,7 +420,7 @@ const videoSchema = {
         min-height: 250px;
         width: 100%;
       }
-      /* AdSense henÃ¼z iÃ§erik yerleÅŸtirmediyse sol reklam alanÄ±nÄ± tamamen gizle. */
+      /* AdSense henüz içerik yerleştirmediyse sol reklam alanını tamamen gizle. */
       .sidebar-ad-container:empty {
         display: none;
       }
@@ -430,7 +431,7 @@ const videoSchema = {
         border-radius: 8px;
         margin-bottom: 24px;
       }
-      /* AdSense henÃ¼z iÃ§erik yerleÅŸtirmediyse Ã¼st reklam alanÄ±nÄ± tamamen gizle. */
+      /* AdSense henüz içerik yerleştirmediyse üst reklam alanını tamamen gizle. */
       .ad-banner-top:empty {
         display: none;
       }
@@ -498,13 +499,11 @@ const videoSchema = {
         grid-template-columns: repeat(3, 1fr);
         gap: 24px 20px;
       }
-      /* Fragment yerine kullanÄ±lan wrapper */
+      /* Fragment yerine kullanılan wrapper */
       .video-card-wrapper {
         display: contents;
       }
       .video-card {
-  content-visibility: auto;
-  contain-intrinsic-size: 320px 240px;
         display: flex;
         flex-direction: column;
         gap: 12px;
@@ -932,8 +931,6 @@ const videoSchema = {
         }
 
         .video-card {
-  content-visibility: auto;
-  contain-intrinsic-size: 320px 240px;
           width: 100%;
           min-width: 0;
         }
@@ -1058,24 +1055,24 @@ const videoSchema = {
             <span data-current-language-flag>{currentLanguageFlag}</span>
           </button>
           <div class="mobile-language-menu" data-mobile-language-menu>
-            <a href="/en" class="mobile-language-option" data-lang-code="en"><span class="mobile-language-flag">ðŸ‡¬ðŸ‡§</span><span>English</span></a>
-            <a href="/tr" class="mobile-language-option" data-lang-code="tr"><span class="mobile-language-flag">ðŸ‡¹ðŸ‡·</span><span>TÃ¼rkÃ§e</span></a>
-            <a href="/de" class="mobile-language-option" data-lang-code="de"><span class="mobile-language-flag">ðŸ‡©ðŸ‡ª</span><span>Deutsch</span></a>
-            <a href="/es" class="mobile-language-option" data-lang-code="es"><span class="mobile-language-flag">ðŸ‡ªðŸ‡¸</span><span>EspaÃ±ol</span></a>
-            <a href="/it" class="mobile-language-option" data-lang-code="it"><span class="mobile-language-flag">ðŸ‡®ðŸ‡¹</span><span>Italiano</span></a>
-            <a href="/fr" class="mobile-language-option" data-lang-code="fr"><span class="mobile-language-flag">ðŸ‡«ðŸ‡·</span><span>FranÃ§ais</span></a>
-            <a href="/ja" class="mobile-language-option" data-lang-code="ja"><span class="mobile-language-flag">ðŸ‡¯ðŸ‡µ</span><span>æ—¥æœ¬èªž</span></a>
-            <a href="/pt" class="mobile-language-option" data-lang-code="pt"><span class="mobile-language-flag">ðŸ‡µðŸ‡¹</span><span>PortuguÃªs</span></a>
-            <a href="/ru" class="mobile-language-option" data-lang-code="ru"><span class="mobile-language-flag">ðŸ‡·ðŸ‡º</span><span>Ð ÑƒÑÑÐºÐ¸Ð¹</span></a>
-            <a href="/zh" class="mobile-language-option" data-lang-code="zh"><span class="mobile-language-flag">ðŸ‡¨ðŸ‡³</span><span>ä¸­æ–‡</span></a>
-            <a href="/ko" class="mobile-language-option" data-lang-code="ko"><span class="mobile-language-flag">ðŸ‡°ðŸ‡·</span><span>í•œêµ­ì–´</span></a>
-            <a href="/ar" class="mobile-language-option" data-lang-code="ar"><span class="mobile-language-flag">ðŸ‡¸ðŸ‡¦</span><span>Ø§Ù„Ø¹Ø±Ø¨ÙŠØ©</span></a>
-            <a href="/hi" class="mobile-language-option" data-lang-code="hi"><span class="mobile-language-flag">ðŸ‡®ðŸ‡³</span><span>à¤¹à¤¿à¤¨à¥à¤¦à¥€</span></a>
-            <a href="/nl" class="mobile-language-option" data-lang-code="nl"><span class="mobile-language-flag">ðŸ‡³ðŸ‡±</span><span>Nederlands</span></a>
-            <a href="/pl" class="mobile-language-option" data-lang-code="pl"><span class="mobile-language-flag">ðŸ‡µðŸ‡±</span><span>Polski</span></a>
-            <a href="/sv" class="mobile-language-option" data-lang-code="sv"><span class="mobile-language-flag">ðŸ‡¸ðŸ‡ª</span><span>Svenska</span></a>
-            <a href="/id" class="mobile-language-option" data-lang-code="id"><span class="mobile-language-flag">ðŸ‡®ðŸ‡©</span><span>Bahasa Indonesia</span></a>
-            <a href="/vi" class="mobile-language-option" data-lang-code="vi"><span class="mobile-language-flag">ðŸ‡»ðŸ‡³</span><span>Tiáº¿ng Viá»‡t</span></a>
+            <a href="/en" class="mobile-language-option" data-lang-code="en"><span class="mobile-language-flag">🇬🇧</span><span>English</span></a>
+            <a href="/tr" class="mobile-language-option" data-lang-code="tr"><span class="mobile-language-flag">🇹🇷</span><span>Türkçe</span></a>
+            <a href="/de" class="mobile-language-option" data-lang-code="de"><span class="mobile-language-flag">🇩🇪</span><span>Deutsch</span></a>
+            <a href="/es" class="mobile-language-option" data-lang-code="es"><span class="mobile-language-flag">🇪🇸</span><span>Español</span></a>
+            <a href="/it" class="mobile-language-option" data-lang-code="it"><span class="mobile-language-flag">🇮🇹</span><span>Italiano</span></a>
+            <a href="/fr" class="mobile-language-option" data-lang-code="fr"><span class="mobile-language-flag">🇫🇷</span><span>Français</span></a>
+            <a href="/ja" class="mobile-language-option" data-lang-code="ja"><span class="mobile-language-flag">🇯🇵</span><span>日本語</span></a>
+            <a href="/pt" class="mobile-language-option" data-lang-code="pt"><span class="mobile-language-flag">🇵🇹</span><span>Português</span></a>
+            <a href="/ru" class="mobile-language-option" data-lang-code="ru"><span class="mobile-language-flag">🇷🇺</span><span>Русский</span></a>
+            <a href="/zh" class="mobile-language-option" data-lang-code="zh"><span class="mobile-language-flag">🇨🇳</span><span>中文</span></a>
+            <a href="/ko" class="mobile-language-option" data-lang-code="ko"><span class="mobile-language-flag">🇰🇷</span><span>한국어</span></a>
+            <a href="/ar" class="mobile-language-option" data-lang-code="ar"><span class="mobile-language-flag">🇸🇦</span><span>العربية</span></a>
+            <a href="/hi" class="mobile-language-option" data-lang-code="hi"><span class="mobile-language-flag">🇮🇳</span><span>हिन्दी</span></a>
+            <a href="/nl" class="mobile-language-option" data-lang-code="nl"><span class="mobile-language-flag">🇳🇱</span><span>Nederlands</span></a>
+            <a href="/pl" class="mobile-language-option" data-lang-code="pl"><span class="mobile-language-flag">🇵🇱</span><span>Polski</span></a>
+            <a href="/sv" class="mobile-language-option" data-lang-code="sv"><span class="mobile-language-flag">🇸🇪</span><span>Svenska</span></a>
+            <a href="/id" class="mobile-language-option" data-lang-code="id"><span class="mobile-language-flag">🇮🇩</span><span>Bahasa Indonesia</span></a>
+            <a href="/vi" class="mobile-language-option" data-lang-code="vi"><span class="mobile-language-flag">🇻🇳</span><span>Tiếng Việt</span></a>
           </div>
         </div>
         <button
@@ -1209,8 +1206,8 @@ const videoSchema = {
                       src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
                       alt={getVideoCardTitle(video, lang)}
                       class="video-poster"
-                      loading={index < 3 ? 'eager' : 'lazy'}
-                      fetchpriority={index === 0 ? 'high' : 'auto'}
+                      loading={index < 6 ? 'eager' : 'lazy'}
+                      fetchpriority={index < 6 ? 'high' : 'auto'}
                     />
                   </a>
                   <div class="video-details">
@@ -1383,9 +1380,9 @@ const videoSchema = {
               );
             }
           });
-          // Her 5 gÃ¶rÃ¼nÃ¼r videodan sonra 1 reklam alanÄ± oluÅŸtur.
-          // BÃ¶ylece TÃ¼mÃ¼ veya herhangi bir kategori seÃ§ildiÄŸinde
-          // reklamlar sadece o anda gÃ¶rÃ¼nen videolara gÃ¶re yeniden dizilir.
+          // Her 5 görünür videodan sonra 1 reklam alanı oluştur.
+          // Böylece Tümü veya herhangi bir kategori seçildiğinde
+          // reklamlar sadece o anda görünen videolara göre yeniden dizilir.
           if (videoGrid) {
             videoGrid
               .querySelectorAll('.ad-card-slot')
@@ -1696,14 +1693,14 @@ const videoSchema = {
         });
       }
       const languageFlags = {
-        en: 'ðŸ‡¬ðŸ‡§', tr: 'ðŸ‡¹ðŸ‡·', de: 'ðŸ‡©ðŸ‡ª', es: 'ðŸ‡ªðŸ‡¸', it: 'ðŸ‡®ðŸ‡¹', fr: 'ðŸ‡«ðŸ‡·',
-        ja: 'ðŸ‡¯ðŸ‡µ', pt: 'ðŸ‡µðŸ‡¹', ru: 'ðŸ‡·ðŸ‡º', zh: 'ðŸ‡¨ðŸ‡³', ko: 'ðŸ‡°ðŸ‡·', ar: 'ðŸ‡¸ðŸ‡¦',
-        hi: 'ðŸ‡®ðŸ‡³', nl: 'ðŸ‡³ðŸ‡±', pl: 'ðŸ‡µðŸ‡±', sv: 'ðŸ‡¸ðŸ‡ª', id: 'ðŸ‡®ðŸ‡©', vi: 'ðŸ‡»ðŸ‡³'
+        en: '🇬🇧', tr: '🇹🇷', de: '🇩🇪', es: '🇪🇸', it: '🇮🇹', fr: '🇫🇷',
+        ja: '🇯🇵', pt: '🇵🇹', ru: '🇷🇺', zh: '🇨🇳', ko: '🇰🇷', ar: '🇸🇦',
+        hi: '🇮🇳', nl: '🇳🇱', pl: '🇵🇱', sv: '🇸🇪', id: '🇮🇩', vi: '🇻🇳'
       };
       const pathParts = window.location.pathname.split('/').filter(Boolean);
       const activeLanguage = pathParts[0] || 'en';
       if (currentLanguageFlag) {
-        currentLanguageFlag.textContent = languageFlags[activeLanguage] || 'ðŸŒ';
+        currentLanguageFlag.textContent = languageFlags[activeLanguage] || '🌐';
       }
       document.querySelectorAll('[data-lang-code]').forEach((link) => {
         const code = link.getAttribute('data-lang-code');
@@ -1789,8 +1786,4 @@ const videoSchema = {
     />
   </body>
 </html>
-
-
-
-
 
