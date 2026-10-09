@@ -2230,16 +2230,21 @@ const clientLabels = {
   }
   @media (max-width: 760px) {
     .map-page {
-      padding: 64px 12px 48px;
+      padding: 86px 12px 48px;
     }
-    .breadcrumbs,
-    .map-hero,
-    .intro-card,
+    .map-hero {
+      align-items: flex-start;
+      flex-direction: column;
+      padding: 24px 20px;
+    }
+    .hero-stats {
+      justify-content: flex-start;
+    }
     .map-toolbar {
-      display: none;
+      flex-direction: column;
     }
-    .map-layout {
-      margin-top: 0;
+    #countryFilter {
+      width: 100%;
     }
     .world-map {
       height: 520px;
